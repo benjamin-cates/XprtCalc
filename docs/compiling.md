@@ -1,0 +1,5 @@
+# Compiling
+This project uses CMake for all of the compilation process. While you can technically pass all of the file names into a compiler to compile it in one go, it wouldn't be as convenient. In order to generate the cache, run the command `cmake -S. -B build` This sets the source directory to the current directory and the build directory to `./build`. To compile after that, run `cmake --build build` and the executable will either be `./build/xprtcalc` or `build/xprtcalc.exe` depending on your operating system. If you are having trouble with a particular part of the build system, feel free to edit `CMakeLists.txt`, but please don't push any changes.
+
+## Libraries
+This program is not dependent on any libraries other than MP++, a wrapper library around the GNU multi-precision library. It's not required, and the CMake script will automatically detect it and enable/disable to make the compile process smooth. If you have the library installed and would like to disable MP++, run `cmake build -DNOARB=1`. You can also install the repository here: [https://github.com/bluescarni/mppp](https://github.com/bluescarni/mppp).
