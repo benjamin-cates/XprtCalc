@@ -2,7 +2,7 @@
 
 void Program::startup() {
     buildFunctionNameMap();
-    Value::zero=make_shared<Number>(0);
+    Value::zero=std::make_shared<Number>(0);
     if(implementationStartup) implementationStartup();
 }
 void Program::cleanup() {
@@ -12,6 +12,7 @@ void Program::cleanup() {
 void (*Program::implementationStartup)() = 0;
 void (*Program::implementationCleanup)() = 0;
 ValList Program::history;
+ValPtr Value::zero;
 std::unordered_map<string, int> Program::globalFunctionMap;
 int Program::getGlobal(const string& name) {
     if(globalFunctionMap.find(name) == globalFunctionMap.end()) return -1;

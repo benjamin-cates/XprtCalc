@@ -452,6 +452,7 @@ ValPtr Tree::compute(ComputeCtx& ctx) {
     ValList computed(branches.size());
     bool computable = true;
     for(int i = 0;i < branches.size();i++) {
+        if(branches[i] == nullptr) branches[i] = Value::zero;
         computed[i] = branches[i]->compute(ctx);
         if(computed[i]->typeID() > 7) computable = false;
     }

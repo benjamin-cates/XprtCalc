@@ -122,7 +122,7 @@ ValPtr Function::operator()(ValList& input, ComputeCtx& ctx) {
     }
     //Map to new type if domain map supports that conversion
     for(auto& dm : domainMap) if(dm.first.match(cur)) {
-        ValList convertedInput;
+        ValList convertedInput(input.size(),Value::zero);
         //Find new map and create converted input
         Domain newMap = domainMap[cur];
         for(int i = 0;i < input.size();i++)
