@@ -85,7 +85,7 @@ ValPtr ComputeCtx::getArgument(int id)const { return *(argValue.begin() + id); }
 void ComputeCtx::pushArgs(const ValList& args) {
     //Replace self referential replacement args with proper pointer
     for(auto it = argValue.begin();it != argValue.end();it++) {
-        if((*it)->typeID() == 9) {
+        if((*it)->typeID() == Value::arg_t) {
             std::static_pointer_cast<Argument>(*it)->id += args.size();
         }
     }
@@ -160,7 +160,7 @@ Function::Domain::Domain(const ValList& input) {
     sig = 0;
     for(int i = 0;i < input.size();i++) {
         int id = input[i]->typeID();
-        if(id > 7) { sig = -1;return; }
+        if(id >= Value::tre_t) { sig = -1;return; }
         sig += (1 << (id - 1)) * (1 << (8 * i));
     }
 }

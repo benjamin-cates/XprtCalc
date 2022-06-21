@@ -255,33 +255,33 @@ bool Value::operator==(ValPtr comp) {
     std::shared_ptr<Map> m1, m2;
     std::shared_ptr<Set> st1, st2;
     switch(typeID()) {
-    case 1:
+    case Value::num_t:
         cast(Number, n1, n2)
             if(!(n1->unit == n2->unit)) return false;
         if(n1->num == n2->num) return true;
         return false;
-    case 2:
+    case Value::arb_t:
     #ifdef USE_ARB
         cast(Arb, a1, a2)
             if(!(a1->unit == a2->unit)) return false;
         if(a1->num == a2->num) return true;
     #endif
         return false;
-    case 3:
+    case Value::vec_t:
         cast(Vector, v1, v2)
             if(v1->size() != v2->size()) return false;
         for(int i = 0;i < v1->size();i++) if(*(v1->vec[i]) != v2->vec[i]) return false;
         return true;
-    case 4:
+    case Value::lmb_t:
         cast(Lambda, l1, l2)
             if(l1->inputNames.size() != l2->inputNames.size()) return false;
         if(*l1->func == l2->func) return true;
         return false;
-    case 5:
+    case Value::str_t:
         cast(String, s1, s2)
             if(s1->str == s2->str) return true;
         return false;
-    case 6:
+    case Value::map_t:
         cast(Map, m1, m2)
             if(*m1->leaf != m2->leaf) return false;
         if((m1->right == nullptr) ^ (m2->right == nullptr)) return false;
@@ -289,7 +289,7 @@ bool Value::operator==(ValPtr comp) {
         if(m1->right) if(*m1->right != m2->right) return false;
         if(m1->left) if(*m1->left != m2->left) return false;
         return true;
-    case 7:
+    case Value::set_t:
         cast(Set, st1, st2)
             if(st1->exclusive.size() != st2->exclusive.size()) return false;
         if(st1->ranges.size() != st2->ranges.size()) return false;
@@ -317,45 +317,42 @@ ValPtr Value::convert(ValPtr value, int type) {
     if(type == curType) return value;
 
 #define def(type,name) std::shared_ptr<type> name=std::static_pointer_cast<type>(value)
-    if(curType == 3 && type != 6) { def(Vector, v); return Value::convert(v->get(0), type); }
-    //To number
-    if(type == 1) {
+    if(curType == vec_t && type != map_t) { def(Vector, v); return Value::convert(v->get(0), type); }
+    if(type == num_t) {
     #ifdef USE_ARB
-        if(curType == 2) { def(Arb, a); return std::make_shared<Number>(double(a->num.real()), double(a->num.imag()), a->unit); }
+        if(curType == arb_t) { def(Arb, a); return std::make_shared<Number>(double(a->num.real()), double(a->num.imag()), a->unit); }
     #endif
-        if(curType == 4) throw "Cannot convert lambda to number";
-        else if(curType == 5) { def(String, s);return Expression::parseNumeral(s->str, 10); }
-        else if(curType == 6) throw "Cannot convert map to number";
-        else if(curType == 7) throw "Cannot convert set to number";
+        if(curType == lmb_t) throw "Cannot convert lambda to number";
+        else if(curType == str_t) { def(String, s);return Expression::parseNumeral(s->str, 10); }
+        else if(curType == map_t) throw "Cannot convert map to number";
+        else if(curType == set_t) throw "Cannot convert set to number";
     }
 #ifdef USE_ARB
-    //To arb
-    else if(type == 2) {
-        if(curType == 1) { def(Number, n); return std::make_shared<Arb>(n->num.real(), n->num.imag(), n->unit); }
-        else if(curType == 4) throw "Cannot convert lambda to arb";
-        else if(curType == 5) { def(String, s);return Expression::parseNumeral("0a" + s->str, 10); }
-        else if(curType == 6) throw "Cannot convert map to arb";
-        else if(curType == 7) throw "Cannot convert set to arb";
+    else if(type == arb_t) {
+        if(curType == num_t) { def(Number, n); return std::make_shared<Arb>(n->num.real(), n->num.imag(), n->unit); }
+        else if(curType == lmb_t) throw "Cannot convert lambda to arb";
+        else if(curType == str_t) { def(String, s);return Expression::parseNumeral("0a" + s->str, 10); }
+        else if(curType == map_t) throw "Cannot convert map to arb";
+        else if(curType == set_t) throw "Cannot convert set to arb";
     }
 #endif
-    //To vector from map
-    else if(type == 3) {
-        if(curType == 6) {
+    else if(type == vec_t) {
+        if(curType == map_t) {
             throw "Map to vector conversion not supported yet";
         }
     }
     //To lambda
-    else if(type == 4) {
+    else if(type == lmb_t) {
         return std::make_shared<Lambda>(std::vector<string>(), value);
     }
     //To string
-    else if(type == 5) {
+    else if(type == str_t) {
         return std::make_shared<String>(value->toString());
     }
     //To map
-    else if(type == 6) {
+    else if(type == map_t) {
         std::shared_ptr<Map> out = std::make_shared<Map>();
-        if(curType == 3) {
+        if(curType == vec_t) {
             def(Vector, v);
             for(unsigned int i = 0;i < v->size();i++)
                 out->append(std::make_shared<Number>(i), v->get(i));
@@ -364,13 +361,13 @@ ValPtr Value::convert(ValPtr value, int type) {
         return out;
     }
     //To set
-    else if(type == 7) {
-        if(curType == 1 || curType == 2) {
+    else if(type == set_t) {
+        if(curType == num_t || curType == arb_t) {
             std::shared_ptr<Set> set = std::make_shared<Set>();
             set->addPoint(value->getR());
             return set;
         }
-        if(curType == 3) {
+        if(curType == vec_t) {
             def(Vector, v);
             std::shared_ptr<Set> set = std::make_shared<Set>();
             for(unsigned int i = 0;i < v->size();i++) {
@@ -382,9 +379,9 @@ ValPtr Value::convert(ValPtr value, int type) {
             }
             return set;
         }
-        else if(curType == 4) throw "Cannot convert lambda to set";
-        else if(curType == 4) throw "Cannot convert string to set";
-        else if(curType == 6) throw "Cannot convert map to set";
+        else if(curType == lmb_t) throw "Cannot convert lambda to set";
+        else if(curType == str_t) throw "Cannot convert string to set";
+        else if(curType == map_t) throw "Cannot convert map to set";
     }
     return std::make_shared<Number>(0);
 }
@@ -454,7 +451,7 @@ ValPtr Tree::compute(ComputeCtx& ctx) {
     for(int i = 0;i < branches.size();i++) {
         if(branches[i] == nullptr) branches[i] = Value::zero;
         computed[i] = branches[i]->compute(ctx);
-        if(computed[i]->typeID() > 7) computable = false;
+        if(computed[i]->typeID() >= Value::tre_t) computable = false;
     }
     if(computable) return Program::globalFunctions[op](computed, ctx);
     else return std::make_shared<Tree>(op, std::forward<ValList>(computed));

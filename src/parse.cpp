@@ -399,13 +399,13 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             str = Expression::removeSpaces(str);
             ValPtr op = ctx.getVariable(str);
             if(op.get() == nullptr) throw "Variable " + str + " not found";
-            if(op->typeID() == 8) {
+            if(op->typeID() == Value::tre_t) {
                 int id = std::static_pointer_cast<Tree>(op)->op;
                 if(Program::assertArgCount(id, 0) != true)
                     throw "Variable " + str + " cannot run without arguments";
                 treeList.push_back(op);
             }
-            else if(op->typeID() == 9) {
+            else if(op->typeID() == Value::arg_t) {
                 treeList.push_back(op);
             }
             else { throw "Variable " + str + " not found"; }
@@ -422,14 +422,14 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             ValList arguments;
             for(int i = 0;i < argsStr.size();i++)
                 arguments.push_back(Tree::parseTree(argsStr[i], ctx));
-            if(op->typeID() == 8) {
+            if(op->typeID() == Value::tre_t) {
                 std::shared_ptr<Tree> tr = std::static_pointer_cast<Tree>(op);
                 if(Program::assertArgCount(tr->op, argsStr.size()) != true)
                     throw "Function '" + name + "' cannot run with " + std::to_string(argsStr.size()) + " arguments";
                 tr->branches = std::move(arguments);
                 treeList.push_back(op);
             }
-            if(op->typeID() == 7) {
+            if(op->typeID() == Value::arg_t) {
                 if(arguments.size() != 0) {
                     arguments.emplace(arguments.begin(), op);
                     treeList.push_back(std::make_shared<Tree>("run", std::move(arguments)));
