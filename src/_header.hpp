@@ -404,6 +404,7 @@ public:
     static bool isOne(ValPtr x);
     //Returns true only if type is num or arb and real, imag, and unit are zero
     static bool isZero(ValPtr x);
+    static ValPtr zero;
     //List of human-readable type names
     static const std::vector<string> typeNames;
     //Converts value into the return type with given type, throws error if incompatible

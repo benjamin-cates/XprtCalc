@@ -2,6 +2,7 @@
 
 void Program::startup() {
     buildFunctionNameMap();
+    Value::zero=make_shared<Number>(0);
     if(implementationStartup) implementationStartup();
 }
 void Program::cleanup() {

@@ -457,8 +457,8 @@ std::vector<Function> Program::globalFunctions = {
 #pragma region Functional
     Function("run", { "func","..." }, {}, {{D(lmb,all | opt,all | opt,all | opt),[](inp) {
         def(Lambda,func,0);
-        ValList args(func->inputNames.size() - 1);
-        for(int i = 1;i < input.size();i++) args.push_back(input[i]);
+        ValList args(func->inputNames.size(),Value::zero);
+        for(int i = 0;i < input.size() - 1;i++) args[i] = input[i + 1]->compute(ctx);
         ctx.pushArgs(args);
         ValPtr out = func->func->compute(ctx);
         ctx.popArgs(args);
