@@ -58,13 +58,6 @@ void Vector::set(int x, ValPtr val) {
     }
     vec[x] = val;
 }
-//map<ValPtr, ValPtr> Vector::toMap() {
-//    map<ValPtr, ValPtr> out;
-//    for(int i = 0;i < vec.size();i++) {
-//        if(!vec[i]->isZero()) out[make_shared<Number>(i)] = vec[i];
-//    }
-//    return out;
-//}
 #pragma endregion
 #pragma region Lambda
 Lambda::Lambda(std::vector<string> inputs, ValPtr funcTree) {
@@ -135,107 +128,6 @@ void Map::append(ValPtr key, ValPtr val, double flat) {
     }
 }
 #pragma endregion
-#pragma region Set
-ValPtr Set::orOperator(Set& a) {
-    std::shared_ptr<Set> out = std::make_shared<Set>(*this);
-    //Add ranges from a
-    for(auto it = a.ranges.begin();it != a.ranges.end();it++)
-        out->addRange(it->first, it->second);
-    //Remove excluded points that are being included by a
-    for(auto& point : exclusive)
-        if(a.test(point))
-            out->addPoint(point);
-    //Remove points that are excluded from a
-    for(auto& point : a.exclusive) {
-        if(!out->test(point)) out->removePoint(point);
-    }
-    out->optimize();
-    return out;
-}
-ValPtr Set::andOperator(Set& a) {
-    return std::make_shared<Set>();
-}
-ValPtr Set::notOperator() {
-    optimize();
-    std::shared_ptr<Set> out;
-    //Add -infinity to first range
-    if(ranges.begin()->first != -INFINITY)
-        out->addRange(-INFINITY, ranges.begin()->first);
-    //Add ranges to return between current ranges
-    for(auto it = std::next(ranges.begin());it != ranges.end();it++) {
-        out->addRange(std::prev(it)->second, it->first);
-        if(it->first == it->second) out->removePoint(it->first);
-    }
-    //Add end of ranges to infinity
-    if(ranges.end()->second != INFINITY)
-        out->addRange(ranges.end()->second, INFINITY);
-    //Add point ranges for exclusions
-    for(auto it : exclusive)
-        out->addRange(it, it);
-    return out;
-}
-void Set::addRange(double start, double end) {
-    ranges[start] = end;
-    optimize();
-}
-void Set::removeRange(double start, double end) {
-    optimize();
-    for(auto it = ranges.begin();it != ranges.end();it++) {
-        //If start of removal is within given range
-        if(it->first<start && it->second>start) {
-            //If entire removal is within one range
-            if(it->second > end) addRange(end, it->second);
-            //In both cases, move end of range to
-            it->second = start;
-        }
-        //If end of removal is within given range
-        else if(it->first<end && it->second>end) {
-            double rangeEnd = it->second;
-            ranges.erase(it);
-            addRange(end, rangeEnd);
-        }
-    }
-}
-void Set::removePoint(double r) {
-    //If r is a point-sized range, remove the range
-    if(ranges.find(r) != ranges.end() && ranges[r] == r)
-        ranges.erase(ranges.find(r));
-    //Else add it to the excluded list
-    else exclusive.insert(r);
-}
-void Set::addPoint(double a) {
-    auto exclusiveIT = exclusive.find(a);
-    //If the point is found in the excluded list, remove it from that list
-    if(exclusiveIT != exclusive.end()) {
-        exclusive.erase(exclusiveIT);
-        return;
-    }
-    //Else add a point-sized range
-    else addRange(a, a);
-    optimize();
-}
-bool Set::test(double n) {
-    //If n is an excluded point, return false
-    if(exclusive.count(n) != 0) return false;
-    //If the range starting before it extends past it, return true
-    if(ranges.lower_bound(n)->second > n) return true;
-    //Else return false
-    return false;
-}
-void Set::optimize() {
-    //Find overlapping ranges and merge
-    for(auto it = ranges.begin();it != ranges.end();it++) {
-        while(it->second >= std::next(it)->first) {
-            it->second = it->first;
-            ranges.erase(std::next(it));
-        }
-    }
-    //Remove unecessary excluded points
-    for(auto it = exclusive.begin();it != exclusive.end();it++) {
-        if(ranges.lower_bound(*it)->second < *it)
-            exclusive.erase(it);
-    }
-}
 #pragma endregion
 
 
@@ -253,7 +145,6 @@ bool Value::operator==(ValPtr comp) {
     std::shared_ptr<Lambda> l1, l2;
     std::shared_ptr<String> s1, s2;
     std::shared_ptr<Map> m1, m2;
-    std::shared_ptr<Set> st1, st2;
     switch(typeID()) {
     case Value::num_t:
         cast(Number, n1, n2)
@@ -289,20 +180,6 @@ bool Value::operator==(ValPtr comp) {
         if(m1->right) if(*m1->right != m2->right) return false;
         if(m1->left) if(*m1->left != m2->left) return false;
         return true;
-    case Value::set_t:
-        cast(Set, st1, st2)
-            if(st1->exclusive.size() != st2->exclusive.size()) return false;
-        if(st1->ranges.size() != st2->ranges.size()) return false;
-        for(auto aIt = st1->exclusive.begin(), bIt = st2->exclusive.begin();aIt != st1->exclusive.end();aIt++) {
-            if(*aIt != *bIt) return false;
-            bIt++;
-        }
-        for(auto aItR = st1->ranges.begin(), bItR = st2->ranges.begin();aItR != st1->ranges.end();aItR++) {
-            if(aItR->first != bItR->first) return false;
-            if(aItR->second != bItR->second) return false;
-            bItR++;
-        }
-        return true;
     default:
         return false;
     }
@@ -325,7 +202,6 @@ ValPtr Value::convert(ValPtr value, int type) {
         if(curType == lmb_t) throw "Cannot convert lambda to number";
         else if(curType == str_t) { def(String, s);return Expression::parseNumeral(s->str, 10); }
         else if(curType == map_t) throw "Cannot convert map to number";
-        else if(curType == set_t) throw "Cannot convert set to number";
     }
 #ifdef USE_ARB
     else if(type == arb_t) {
@@ -333,7 +209,6 @@ ValPtr Value::convert(ValPtr value, int type) {
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
         else if(curType == str_t) { def(String, s);return Expression::parseNumeral("0a" + s->str, 10); }
         else if(curType == map_t) throw "Cannot convert map to arb";
-        else if(curType == set_t) throw "Cannot convert set to arb";
     }
 #endif
     else if(type == vec_t) {
@@ -359,29 +234,6 @@ ValPtr Value::convert(ValPtr value, int type) {
         }
         else out->append(std::make_shared<Number>(0), value);
         return out;
-    }
-    //To set
-    else if(type == set_t) {
-        if(curType == num_t || curType == arb_t) {
-            std::shared_ptr<Set> set = std::make_shared<Set>();
-            set->addPoint(value->getR());
-            return set;
-        }
-        if(curType == vec_t) {
-            def(Vector, v);
-            std::shared_ptr<Set> set = std::make_shared<Set>();
-            for(unsigned int i = 0;i < v->size();i++) {
-                ValPtr element = v->get(i);
-                double val;
-                if(element == nullptr) val = 0;
-                else val = element->getR();
-                set->addPoint(val);
-            }
-            return set;
-        }
-        else if(curType == lmb_t) throw "Cannot convert lambda to set";
-        else if(curType == str_t) throw "Cannot convert string to set";
-        else if(curType == map_t) throw "Cannot convert map to set";
     }
     return std::make_shared<Number>(0);
 }
@@ -414,12 +266,6 @@ double Map::flatten()const {
     hash += leafKey->flatten() * 4.012485;
     hash += leaf->flatten() * 1.02305093;
     return hash;
-}
-double Set::flatten()const {
-    double out = 0;
-    for(auto it = exclusive.begin();it != exclusive.end();it++) out += *it;
-    for(auto it = ranges.begin();it != ranges.end();it++) out += it->first * 0.40238877 + it->second;
-    return out;
 }
 double Tree::flatten()const {
     double out = 0.0;
@@ -539,9 +385,6 @@ string Lambda::toStr(ParseCtx& ctx)const {
 }
 string Map::toStr(ParseCtx& ctx)const {
     return "{map object}";
-}
-string Set::toStr(ParseCtx& ctx)const {
-    return "{set object}";
 }
 string Tree::toStr(ParseCtx& ctx)const {
     string out = Program::globalFunctions[op].getName();

@@ -388,7 +388,7 @@ public:
     virtual double flatten()const { return 0; }
     //Returns id, see value type enum for type list
     virtual int typeID()const { return -1; }
-    enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, set_t = 7, tre_t = 8, arg_t = 9, };
+    enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, tre_t = 7, arg_t = 8, };
     //Returns the real component, or the first value in a vector, useful for converting into an integer value
     virtual double getR()const { return 0; }
     //Flattens down to single value
@@ -518,38 +518,6 @@ public:
     double flatten()const;
     string toStr(ParseCtx& ctx)const;
     int typeID()const { return Value::map_t; }
-};
-//value.cpp
-class Set : public Value {
-public:
-    //Set stores a range such as domain, or a list of point objects. It does not have arbitrary precision or complex number support.
-    //List of excluded points
-    std::set<double> exclusive;
-    //Maps starting point to ending point.
-    std::map<double, double> ranges;
-    Set() {};
-    //Retuns new set that is the binary and of this and a
-    ValPtr andOperator(Set& a);
-    //Retuns new set that is the binary or of this and a
-    ValPtr orOperator(Set& a);
-    //Returns new set that is the binary not of this
-    ValPtr notOperator();
-    //Adds range [start,end]
-    void addRange(double start, double end);
-    //Removes range [start,end]
-    void removeRange(double start, double end);
-    //Excludes point from set
-    void removePoint(double r);
-    //Adds point to set
-    void addPoint(double a);
-    //Tests whether point is in the set
-    bool test(double n);
-    //Combines ranges that overlap and excluded points that are not in the set
-    void optimize();
-    //Virtual functions
-    double flatten()const;
-    string toStr(ParseCtx& ctx)const;
-    int typeID()const { return Value::set_t; }
 };
 //tree.cpp
 class Tree : public Value {
