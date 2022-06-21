@@ -1,9 +1,8 @@
-build/.cmake
-build/CMakeFiles
-build/CMakeCache.txt
-build/compile_commands.json
-build/Makefile
-build/libxprt.a
-build/xprtcalc
-build/xprtcalc.exe
+build/*.cmake
+build/*
+
+!build/xprtcalc
+!build/xprttest
+
 .vscode
+!.gitignore
