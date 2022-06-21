@@ -368,7 +368,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             string out = string(str.length(), 0);
             int offset = 0;
             bool backslash = false;
-            for(int i = 1;i < str.size() - 2;i++) {
+            for(int i = 1;i < str.size() - 1;i++) {
                 if(!backslash) out[i - offset] = str[i];
                 if(str[i] == '\\') backslash = !backslash;
                 else if(backslash) {
