@@ -4,4 +4,4 @@ XprtCalc (pronounced expert calc) is an string based calculator for advanced exp
 XprtCalc is currently in development and should not be used for utility yet. The predecessor to this project is [CalcForJS](https://benjamin-cates.github.io/CalcForJS), so it should be used for now.
 
 ## Contributions
-This project is under the [MIT License](docs/LICENSE), and the [compiling guide](docs/compiling.md) will assist you in setting up the project.
+This project is under the [MIT License](docs/LICENSE), and the [compiling guide](build/compiling.md) will assist you in setting up the project.

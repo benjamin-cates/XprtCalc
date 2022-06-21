@@ -1,8 +1,7 @@
 build/*.cmake
 build/*
 
-!build/xprtcalc
-!build/xprttest
+!build/compiling.md
 
 .vscode
 !.gitignore
