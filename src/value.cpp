@@ -328,6 +328,7 @@ string Number::toStr(ParseCtx& ctx)const {
         else out += Number::componentToString(num.imag(), 10);
         out += 'i';
     }
+    if(out == "") out = "0";
     if(!unit.isUnitless()) {
         out += "[" + unit.toString() + "]";
     }
@@ -352,6 +353,7 @@ string Arb::toStr(ParseCtx& ctx)const {
         else out += Arb::componentToString(num.imag(), 10);
         out += 'i';
     }
+    if(out == "") out = "0";
     if(!unit.isUnitless()) {
         out += "[" + unit.toString() + "]";
     }
@@ -409,7 +411,7 @@ bool Value::isOne(ValPtr x) {
 #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = std::dynamic_pointer_cast<Arb>(x)) {
         if(n->num == std::complex<mppp::real>(1)) return true;
-    }
+}
 #endif
     return false;
 }
@@ -420,7 +422,7 @@ bool Value::isZero(ValPtr x) {
 #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = std::dynamic_pointer_cast<Arb>(x)) {
         if(n->num == std::complex<mppp::real>(0)) return true;
-    }
+}
 #endif
     return false;
 }
