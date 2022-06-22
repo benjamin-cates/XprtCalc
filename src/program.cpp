@@ -2,7 +2,7 @@
 
 void Program::startup() {
     buildFunctionNameMap();
-    Value::zero=std::make_shared<Number>(0);
+    Value::zero = std::make_shared<Number>(0);
     if(implementationStartup) implementationStartup();
 }
 void Program::cleanup() {
@@ -82,8 +82,8 @@ using namespace std;
 #pragma region Commands
 string combineArgs(std::vector<string>& args) {
     string out;
-    if(args.size()==0) return "";
-    int i=0;
+    if(args.size() == 0) return "";
+    int i = 0;
     for(int i;i < args.size() - 1;i++) {
         out += args[i] + " ";
     }
@@ -115,32 +115,44 @@ string command_include(std::vector<string>& input) {
     return "";
 }
 string command_sections(std::vector<string>& input) {
+    using sec = Expression::Section;
     string out;
     if(input.size() == 1) input.push_back("");
     ParseCtx ctx;
-    std::vector<std::pair<string, Expression::Section>> sections = Expression::getSections(input[0], ctx);
+    std::vector<std::pair<string, sec>> sections = Expression::getSections(input[0], ctx);
     for(int i = 0;i < sections.size();i++) {
-        Expression::Section type = sections[i].second;
+        sec type = sections[i].second;
         string& str = sections[i].first;
         char bracket = 0;
-        if(type == Expression::Section::function) bracket = '(';
-        else if(type == Expression::Section::parenthesis) bracket = '(';
-        else if(type == Expression::Section::lambda) {
+        if(type == sec::function) bracket = '(';
+        else if(type == sec::parenthesis) bracket = '(';
+        else if(type == sec::lambda) {
             out += input[1] + str.substr(0, Expression::findNext(str, 0, '>') + 1) + '\n';
-            std::vector<string> newInp{ str.substr(Expression::findNext(str,0,'>') + 1),input[0] + "    " };
+            std::vector<string> newInp{ str.substr(Expression::findNext(str,0,'>') + 1),input[0] + "  " };
             out += command_sections(newInp);
         }
-        else if(type == Expression::Section::square) bracket = '[';
-        else if(type == Expression::Section::squareUnit) bracket = '[';
-        else if(type == Expression::Section::vect) bracket = '<';
-        else if(type == Expression::Section::curly) bracket = '{';
+        else if(type == sec::square) bracket = '[';
+        else if(type == sec::squareUnit) bracket = '[';
+        else if(type == sec::vect) bracket = '<';
+        else if(type == sec::curly) bracket = '{';
         if(bracket) {
             int start = Expression::findNext(str, 0, bracket);
             int end = Expression::matchBracket(str, start);
             if(end == -1) end = str.length();
             out += input[1] + str.substr(0, start + 1) + '\n';
-            std::vector<string> newInp{ str.substr(start + 1, end - start - 1), input[1] + "    " };
-            out += command_sections(newInp);
+            if(type == sec::vect || type == sec::curly || type == sec::function) {
+                std::vector<string> secs = Expression::splitBy(str, start, end, ',');
+                string newTabbing = input[1] + "  ";
+                for(int i = 0;i < secs.size();i++) {
+                    std::vector<string> inp{ secs[i],newTabbing };
+                    out += command_sections(inp);
+                    if(i != secs.size() - 1) out += newTabbing + ",\n";
+                }
+            }
+            else {
+                std::vector<string> newInp{ str.substr(start + 1, end - start - 1), input[1] + "  " };
+                out += command_sections(newInp);
+            }
             out += input[1] + str.substr(end) + '\n';
         }
         else out += input[1] + str + '\n';
@@ -149,9 +161,9 @@ string command_sections(std::vector<string>& input) {
 }
 
 string command_parse(vector<string>& input) {
-    string inp=combineArgs(input);
+    string inp = combineArgs(input);
     ParseCtx ctx;
-    ValPtr tr=Tree::parseTree(inp,ctx);
+    ValPtr tr = Tree::parseTree(inp, ctx);
     return tr->toString();
 }
 map<string, Command> Program::commandList = {
