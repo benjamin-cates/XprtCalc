@@ -367,15 +367,16 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         }
         //Strings ""
         else if(type == Expression::quote) {
-            string out = string(str.length(), 0);
-            int offset = 0;
+            string out;
+            int offset = 1;
             bool backslash = false;
             for(int i = 1;i < str.size() - 1;i++) {
-                if(!backslash) out[i - offset] = str[i];
+                if(!backslash) out += str[i];
                 if(str[i] == '\\') backslash = !backslash;
                 else if(backslash) {
-                    if(str[i] == 'n') str[i] += '\n';
-                    else if(str[i] == 't') str[i] += '\t';
+                    if(str[i] == 'n') out += '\n';
+                    else if(str[i] == 't') out += '\t';
+                    else out += str[i];
                     backslash = false;
                 }
             }
