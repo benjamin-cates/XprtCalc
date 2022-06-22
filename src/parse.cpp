@@ -281,7 +281,7 @@ int Expression::matchBracket(const string& str, int start) {
 int Expression::findNext(const string& str, int index, char find) {
     for(int i = index;i < str.length();i++) {
         if(str[i] == find) return i;
-        if(str[i] == '(' || str[i] == '[' || str[i] == '{' || (str[i] == '<' && str[i + 1] == '=') || str[i] == '"') {
+        if(str[i] == '(' || str[i] == '[' || str[i] == '{' || (str[i] == '<' && str[i + 1] != '=') || str[i] == '"') {
             i = matchBracket(str, i);
             if(i == -1) return -1;
         }
