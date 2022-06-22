@@ -237,6 +237,13 @@ int Expression::matchBracket(const string& str, int start) {
     //Maps brackets to their unique match id
     //Brack stack stores the list of brackets types in order
     std::deque<int> bracStack{ bracs.at(str[start]) };
+    //If trying to match quote marks
+    if(bracStack.front() == 5) {
+        for(int i = start + 1;i < str.length();i++) {
+            if(str[i] == '"') return i;
+            if(str[i] == '\\') i++;
+        }
+    }
     for(int i = start + 1;i < str.length();i++) {
         char ch = str[i];
         auto typeIt = bracs.find(ch);
@@ -249,15 +256,13 @@ int Expression::matchBracket(const string& str, int start) {
             }
             //Quote marks treated differently
             if(type == 5) {
-                //Return if trying to match quotes
-                if(bracStack.front() == 5) return i;
                 //Iterate to end of string and continue program, this is to prevent  ("   ) " breaking the string because the first ending one has priority
-                bool backSlash = false;
-                for(i = i + 1;i < str.length();i++) {
-                    if(str[i] == '"' && !backSlash) break;
-                    if(str[i] == '\\') backSlash = !backSlash;
-                    else backSlash = false;
+                int j = i + 1;
+                for(;j < str.length();j++) {
+                    if(str[j] == '"') break;
+                    if(str[j] == '\\') j++;
                 }
+                i = j;
                 continue;
             }
             if(isStart.at(ch)) bracStack.push_back(type);
@@ -369,16 +374,17 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         else if(type == Expression::quote) {
             string out;
             int offset = 1;
-            bool backslash = false;
             for(int i = 1;i < str.size() - 1;i++) {
-                if(!backslash) out += str[i];
-                if(str[i] == '\\') backslash = !backslash;
-                else if(backslash) {
-                    if(str[i] == 'n') out += '\n';
-                    else if(str[i] == 't') out += '\t';
-                    else out += str[i];
-                    backslash = false;
+                if(str[i] == '\\') {
+                    char next = str[i + 1];
+                    if(next == '\"') out += '\"';
+                    else if(next == 'n') out += '\n';
+                    else if(next == 't') out += '\t';
+                    else if(next == '\\') out += '\\';
+                    else { out += "\\";out += next; }
+                    i++;
                 }
+                else out += str[i];
             }
             treeList.push_back(std::make_shared<String>(out));
         }
