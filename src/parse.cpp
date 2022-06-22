@@ -249,6 +249,8 @@ int Expression::matchBracket(const string& str, int start) {
             }
             //Quote marks treated differently
             if(type == 5) {
+                //Return if trying to match quotes
+                if(bracStack.front() == 5) return i;
                 //Iterate to end of string and continue program, this is to prevent  ("   ) " breaking the string because the first ending one has priority
                 bool backSlash = false;
                 for(i = i + 1;i < str.length();i++) {
@@ -443,7 +445,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             int arrow;
             if(str[0] == '(') {
                 int endBrace = Expression::matchBracket(str, 0);
-                arguments = Expression::splitBy(str, 0, endBrace,',');
+                arguments = Expression::splitBy(str, 0, endBrace, ',');
                 arrow = str.find('>', endBrace + 1);
             }
             else {
