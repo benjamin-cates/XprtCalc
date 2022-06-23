@@ -226,6 +226,8 @@ namespace Expression {
     string colorLine(string str, ParseCtx& ctx);
     //Remove non quoted spaces from an expression
     string removeSpaces(const string& str);
+    //List of base prefixes e.g. 0b is base 2
+    const extern std::unordered_map<char, int> basesPrefix;
     //Parses scalar from string into a value (number or arb if 0a prefix used)
     ValPtr parseNumeral(const string& str, int defaultBase);
     //Returns a list of strings split by given delimiter (start and end not included in output)

@@ -22,10 +22,13 @@ Arb::Arb(std::complex<mppp::real> n, Unit u) {
     unit = u;
 }
 mpfr_prec_t Arb::digitsToPrecision(int digits) {
-    return 0;
+    if(digits < 1) throw "Cannot have " + std::to_string(digits) + " digits of precision";
+    constexpr double conv = std::log(10) / std::log(2);
+    return mpfr_prec_t(conv * digits + 2);
 }
 int Arb::precisionToDigits(mpfr_prec_t prec) {
-    return 0;
+    constexpr double conv = std::log(10) / std::log(2);
+    return int(1.0 * (prec - 2) / conv);
 }
 #endif
 #pragma endregion
@@ -411,7 +414,7 @@ bool Value::isOne(ValPtr x) {
 #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = std::dynamic_pointer_cast<Arb>(x)) {
         if(n->num == std::complex<mppp::real>(1)) return true;
-}
+    }
 #endif
     return false;
 }
@@ -422,7 +425,7 @@ bool Value::isZero(ValPtr x) {
 #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = std::dynamic_pointer_cast<Arb>(x)) {
         if(n->num == std::complex<mppp::real>(0)) return true;
-}
+    }
 #endif
     return false;
 }

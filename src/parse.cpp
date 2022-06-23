@@ -83,46 +83,87 @@ std::map<string, std::pair<string, int>> Expression::operatorList = {
     {"<",{"lt",4}},
     {"<=",{"lt_equal",4}},
 };
-ValPtr Expression::parseNumeral(const string& str, int defaultBase) {
-    const static std::unordered_map<char, int> bases = {
-        {'b',2},{'t',3},{'o',8},{'d',10},{'x',16}
-        #ifdef USE_ARB
-        ,{'a',-1}
-        #endif
-    };
-    int base = defaultBase;
+const std::unordered_map<char, int> Expression::basesPrefix = {
+    {'b',2},{'t',3},{'o',8},{'d',10},{'x',16}
+};
+ValPtr Expression::parseNumeral(const string& str, int base) {
+    //Parse base
+    int start = 0;
     if(str[0] == '0') {
-        auto it = bases.find(str[1]);
-        if(it != bases.end()) base = it->second;
-    #ifdef USE_ARB
-        if(base == -1) {
-            return std::make_shared<Arb>(mppp::real(str.substr(2), defaultBase));
+        auto it = basesPrefix.find(str[1]);
+        if(it != basesPrefix.end()) {
+            base = it->second;
+            start = 2;
         }
-    #endif
-        if(base == 0) base = defaultBase;
     }
-    char maxAlphaChar = 'A' + base - 11;
-    double out = 0;
-    bool hasPeriod = false;
-    int periodDivide = 0;
-    for(int i = 0;i < str.size();i++) {
+    //Parse precision
+    int pPos;
+    long long precision = 15;
+    if((pPos = str.find('p')) != string::npos) {
+        string prec = str.substr(pPos + 1);
+        try { precision = std::stoll(prec, nullptr, base); }
+        catch(const std::invalid_argument& ia) { throw "Invalid precision " + prec; }
+    }
+    else pPos = str.length();
+    //Parse exponent
+    int ePos;
+    long long exponent = 0;
+    if((ePos = str.find('e')) != string::npos) {
+        if(ePos > pPos) throw "Exponent must be specified before precision";
+        string exp = str.substr(ePos + 1, pPos - ePos - 1);
+        try { exponent = std::stoll(exp, nullptr, base); }
+        catch(const std::invalid_argument& ia) { throw "Invalid exponent " + exp; }
+    }
+    else ePos = pPos;
+    //Get digits
+    string digits = str.substr(start, ePos - start);
+#ifdef USE_ARB
+    //If digits are longer than 15, default to arb
+    if(digits.length() > 15 && precision == 15)
+        precision = digits.length() - 1;
+    //Parse as arb if precision is specified
+    if(precision != 15) {
+        mppp::real out(digits, base, Arb::digitsToPrecision(precision));
+        if(exponent != 0) out *= mppp::pow(base, mppp::real(exponent));
+        return std::make_shared<Arb>(out);
+    }
+#else
+    if(precision != 15) throw "Precision could not be specified, arb library not present";
+#endif
+    char maxAlphaChar = 'A' + base - 10;
+    //Parse decimal part of digits
+    int period = digits.length();
+    double decimal = 0;
+    if(digits.find('.') != string::npos) {
+        period = digits.find('.');
+        for(int i = digits.length() - 1;i != period;i--) {
+            int digit = -1;
+            if(str[i] >= '0' && str[i] <= '9')
+                digit = digits[i] - '0';
+            else if(str[i] >= 'A' && str[i] < maxAlphaChar)
+                digit = digits[i] - 'A' + 10;
+            if(digit != -1) {
+                decimal += digit;
+                decimal /= base;
+            }
+        }
+    }
+    //Parse integer part of digits
+    double integer = 0;
+    for(int i = 0;i < period;i++) {
         int digit = -1;
-        if(str[i] >= '0' && str[i] <= '9')
-            digit = str[i] - '0';
-        else if(str[i] >= 'A' && str[i] <= maxAlphaChar)
-            digit = str[i] - 'A' + 10;
+        if(digits[i] >= '0' && digits[i] <= '9')
+            digit = digits[i] - '0';
+        else if(digits[i] >= 'A' && digits[i] < maxAlphaChar)
+            digit = digits[i] - 'A' + 10;
         if(digit != -1) {
-            out *= base;
-            out += digit;
-            if(hasPeriod) periodDivide += 1;
+            integer *= base;
+            integer += digit;
         }
-        else if(str[i] == 'e') {
-            double exponent = parseNumeral(str.substr(i + 1), base)->getR();
-            return std::make_shared<Number>(out * pow(double(base), exponent - periodDivide));
-        }
-        else if(str[i] == '.') hasPeriod = true;
     }
-    return std::make_shared<Number>(out / pow(double(base), periodDivide));
+    if(exponent != 0)
+        return std::make_shared<Number>(std::pow(base * 1.0, exponent * 1.0) * (integer + decimal));
+    return std::make_shared<Number>(integer + decimal);
 }
 int Expression::nextSection(const string& str, int start, Expression::Section* type, ParseCtx& ctx) {
     using namespace Expression;
@@ -157,17 +198,10 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
     //Numerals
     else if(ch >= '0' && ch <= '9') {
         //Deal with 0b and 0x... prefixes
-        const static std::unordered_map<char, int> bases = {
-
-            {'b',2},{'t',3},{'o',8},{'d',10},{'x',16}
-            #ifdef USE_ARB
-            ,{'a',-1}
-            #endif
-        };
         int base;
-        if(ch == '0' && (bases.find(str[1]) != bases.end())) {
+        if(ch == '0' && ((basesPrefix.find(str[1]) != basesPrefix.end()))) {
             start += 2;
-            base = bases.at(str[1]);
+            base = basesPrefix.at(str[1]);
         }
         else base = ctx.getBase();
         if(base == -1) base = ctx.getBase();
@@ -175,7 +209,7 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
         if(type) *type = Section::numeral;
         for(int i = start;i < str.length();i++) {
             char n = str[i];
-            if((n < '0' || n>'9') && n != '_' && n != '.' && n != ' ' && n != 'e' && (n<'A' || n>maxAlpha)) return i;
+            if((n < '0' || n>'9') && n != '_' && n != '.' && n != ' ' && n != 'e' && n != 'p' && (n<'A' || n>maxAlpha)) return i;
         }
         return str.length();
     }
