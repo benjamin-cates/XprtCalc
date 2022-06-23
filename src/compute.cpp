@@ -122,7 +122,7 @@ ValPtr Function::operator()(ValList& input, ComputeCtx& ctx) {
     }
     //Map to new type if domain map supports that conversion
     for(auto& dm : domainMap) if(dm.first.match(cur)) {
-        ValList convertedInput(input.size(),Value::zero);
+        ValList convertedInput(input.size(), Value::zero);
         //Find new map and create converted input
         Domain newMap = domainMap[cur];
         for(int i = 0;i < input.size();i++)
@@ -335,6 +335,7 @@ std::vector<Function> Program::globalFunctions = {
     Binary("sub","a","b",num1 - num2),
     BinaryWithUnit("mult","a","b",num1 * num2,unit1 * unit2),
     BinaryWithUnit("div","a","b",num1 / num2,unit1 / unit2),
+    BinaryWithUnit("pow","a","b",pow(num1,num2),unit1 ^ double(num2.real())),
     Binary("mod","a","b",fmod(num1.real(),num2.real())),
 
     UnaryWithUnit("sqrt",sqrt(num),unit ^ 0.5),

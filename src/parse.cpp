@@ -239,11 +239,11 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
         return i;
     }
     //Operators
-    else if(ch == '=' || ch == '>' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%') {
+    else if(ch == '=' || ch == '>' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^') {
         if(type) *type = Section::operat;
         int i = start + 1;
         char ch = str[i];
-        while(ch == '=' || ch == '>' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%') i++, ch = str[i];
+        while(ch == '=' || ch == '>' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^') i++, ch = str[i];
         return i;
     }
     if(type) *type = Section::undefined;
