@@ -17,7 +17,7 @@ namespace TestResult {
         return "";
     }
 };
-#define THROW_IF_FAIL catch(string message) {return TestResult::thrown(message,identifier,name);}
+#define THROW_IF_FAIL catch(string message) {return TestResult::thrown(message,identifier,name);} catch(const char* c) {return TestResult::thrown(string(c),identifier,name);} catch(...) {return TestResult::thrown("unknown",identifier,name);}
 namespace Generate {
     int fastrand_seed;
     inline int fastrand() {
@@ -110,7 +110,7 @@ namespace MatchingXpr {
         {"sqrt(-1)","i"},
         {"(1-4)+4","1"},
         {"3*-4","-21"},
-        {"3**5","243"},
+        {"2**4","4**2"},
         {"3^4","81"},
         {"24.5","24.5"},
         {"si n(0)","0"},
@@ -123,8 +123,8 @@ namespace MatchingXpr {
         {"[0A1 ]_16","17"},
         {"[0A1 ]_([10000]_2)","17"},
         {"run((x, y)=>( x + y) , 5, 3 . 4)","8.4"},
-        {"0xA1","17"},
-        {"0  b101.1","5.5"},
+        {"0x1A","17"},
+        {"0b101.1","5.5"},
         {"0d5 4.3","54.3"},
         {"0o10.1","8+1/8"},
         {"abs(<10,4;4,3,1,1;1>)","12"},
@@ -143,7 +143,7 @@ namespace MatchingXpr {
             ValPtr first = Expression::evaluate(it->first);
             ValPtr second = Expression::evaluate(it->second);
             if(*first != second)
-                return TestResult::fail(it->first + " does not match " + it->second, name);
+                return TestResult::fail(it->first + " does not match " + it->second + " (computed as " + first->toString() + " and " + second->toString() + ")", name);
             return TestResult::success();
         } THROW_IF_FAIL
     }
@@ -170,6 +170,7 @@ namespace LibTest {
 
 
         } THROW_IF_FAIL
+        return "";
     }
 
 }
@@ -180,6 +181,7 @@ namespace ParsingRand {
         try {
 
         } THROW_IF_FAIL
+        return "";
     }
 
 
@@ -211,6 +213,7 @@ void doTestRandom(string(*validate)(int index)) {
 #define RunTestList(name) doTestList(name::tests.begin(),name::tests.end(),&name::validate)
 
 int main() {
+    Program::startup();
     Generate::fastrand_seed = std::chrono::steady_clock::now().time_since_epoch().count();
     doTestList(MatchingXpr::tests.begin(), MatchingXpr::tests.end(), &MatchingXpr::validate);
     doTestList(Zeroes::tests.begin(), Zeroes::tests.end(), &Zeroes::validate);
