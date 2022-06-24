@@ -67,7 +67,7 @@ ValPtr ParseCtx::getVariable(const string& name)const {
     return nullptr;
 }
 #pragma endregion
-std::map<string, std::pair<string, int>> Expression::operatorList = {
+const std::map<string, std::pair<string, int>> Expression::operatorList = {
     {"+",{"add",3}},
     {"-",{"sub",3}},
     {"*",{"mult",2}},
@@ -82,6 +82,12 @@ std::map<string, std::pair<string, int>> Expression::operatorList = {
     {">=",{"gt_equal",4}},
     {"<",{"lt",4}},
     {"<=",{"lt_equal",4}},
+};
+const std::map<char, string> Expression::prefixOperators = {
+    {'-',"neg"},
+};
+const std::map<char, string> Expression::suffixOperators = {
+    {'!',"factorial"},
 };
 const std::unordered_map<char, int> Expression::basesPrefix = {
     {'b',2},{'t',3},{'o',8},{'d',10},{'x',16}
@@ -501,6 +507,18 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         //Operators +-
         else if(type == Expression::operat) {
             str = Expression::removeSpaces(str);
+            if(str.length() != 1) {
+                //Check for prefix and suffix unary operators like *-
+                if(Expression::prefixOperators.find(str.back()) != Expression::prefixOperators.end()) {
+                    unaryOpFront.resize(treeList.size() + 1);
+                    unaryOpFront[treeList.size()] = Expression::prefixOperators.find(str.back())->second;
+                }
+                if(Expression::suffixOperators.find(str.front()) != Expression::suffixOperators.end()) {
+                    unaryOpBack.resize(treeList.size() + 1);
+                    unaryOpBack[treeList.size() - 1] = Expression::suffixOperators.find(str.back())->second;
+                }
+
+            }
             bool neg = (str.back() == '-' && str.length() != 1);
             if(neg) str = str.substr(0, str.length() - 1);
             auto op = Expression::operatorList.find(str);

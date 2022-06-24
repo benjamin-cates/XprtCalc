@@ -328,9 +328,7 @@ std::vector<Function> Program::globalFunctions = {
     #define Unary3(name,real,imag,unitF,...) UnaryWithUnit(name,std::complex(real,imag),unitF,__VA_ARGS__)
 
 #pragma region Elementary Functions
-    Function("neg",{"a"},{},{{D(all),[](inp) {
-        ret(Number)(0.0);
-    }}}),
+    Unary("neg",-num),
     Binary("add","a","b",num1 + num2,{D(str_t,str_t),[](inp) {ret(String)(getS(0) + getS(1));}}),
     Binary("sub","a","b",num1 - num2),
     BinaryWithUnit("mult","a","b",num1 * num2,unit1 * unit2),

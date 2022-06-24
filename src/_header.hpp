@@ -195,7 +195,11 @@ namespace Expression {
     //Maps brackets to whether they are start or end
     extern const std::unordered_map<char, bool> isStart;
     //Map of operators such as +, -, * to their function name and precedence
-    extern std::map<string, std::pair<string, int>> operatorList;
+    extern const std::map<string, std::pair<string, int>> operatorList;
+    //Operators that are before an expression
+    extern const std::map<char, string> prefixOperators;
+    //Oeprators that are after an expression
+    extern const std::map<char, string> suffixOperators;
     //Types of parsed expressions
     enum Section {
         // section not understood
