@@ -138,7 +138,8 @@ void Map::append(ValPtr key, ValPtr val, double flat) {
 #pragma region Value comparison
 bool Value::operator==(ValPtr comp) {
     ValPtr sharedThis = shared_from_this();
-    if(typeid(this) != typeid(*comp)) return false;
+    if(comp==nullptr) return false;
+    if(typeID() != comp->typeID()) return false;
 #define cast(type,name1,name2) name1=std::static_pointer_cast<type>(sharedThis);name2=std::static_pointer_cast<type>(comp);
     std::shared_ptr<Number> n1, n2;
 #ifdef USE_ARB
