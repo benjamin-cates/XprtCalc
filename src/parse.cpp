@@ -89,6 +89,9 @@ const std::map<char, string> Expression::prefixOperators = {
 const std::map<char, string> Expression::suffixOperators = {
     {'!',"factorial"},
 };
+std::unordered_set<char> Expression::operatorChars = {
+    '+','-','*','/','%','^','=','!','>','<'
+};
 const std::unordered_map<char, int> Expression::basesPrefix = {
     {'b',2},{'t',3},{'o',8},{'d',10},{'x',16}
 };
@@ -254,11 +257,10 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
         return i;
     }
     //Operators
-    if(ch == '=' || ch == '>' || ch == '<' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^') {
+    if(operatorChars.find(ch) != operatorChars.end()) {
         if(type) *type = Section::operat;
         int i = start + 1;
-        char ch = str[i];
-        while(ch == '=' || ch == '>' || ch == '<' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^') i++, ch = str[i];
+        while(operatorChars.find(str[i]) != operatorChars.end()) i++;
         return i;
     }
     if(type) *type = Section::undefined;

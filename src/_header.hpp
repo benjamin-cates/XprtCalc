@@ -16,6 +16,7 @@
 #include <list>
 #include <deque>
 #include <set>
+#include <unordered_set>
 
 #ifdef USE_ARB
 #include <mp++/mp++.hpp>
@@ -198,8 +199,10 @@ namespace Expression {
     extern const std::map<string, std::pair<string, int>> operatorList;
     //Operators that are before an expression
     extern const std::map<char, string> prefixOperators;
-    //Oeprators that are after an expression
+    //Operators that are after an expression
     extern const std::map<char, string> suffixOperators;
+    //List of characters that are present in operators
+    extern std::unordered_set<char> operatorChars;
     //Types of parsed expressions
     enum Section {
         // section not understood
