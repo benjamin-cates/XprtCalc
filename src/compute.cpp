@@ -400,18 +400,10 @@ std::vector<Function> Program::globalFunctions = {
         if(*(input[0]) == input[1]) ret(Number)(0);
         else ret(Number)(1);
     }}}),
-//    Function("lt", { "a","b" }, TypeDomain(nmr | str, nmr | str), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("gt", { "a","b" }, TypeDomain(nmr | str, nmr | str), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("lt_equal", { "a","b" }, TypeDomain(nmr | str, nmr | str), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("gt_equal", { "a","b" }, TypeDomain(nmr | str, nmr | str), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
+    Binary("lt", "a","b", num1.real() < num2.real() ? T(1) : T(0)),
+    Binary("gt", "a","b", num1.real() > num2.real() ? T(1) : T(0)),
+    Binary("lt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? T(1) : T(0)),
+    Binary("gt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? T(1) : T(0)),
 //    Function("not", { "x" }, TypeDomain(nmr | set), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
