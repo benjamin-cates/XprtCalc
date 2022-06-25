@@ -495,11 +495,12 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             if(str[0] == '(') {
                 int endBrace = Expression::matchBracket(str, 0);
                 arguments = Expression::splitBy(str, 0, endBrace, ',');
+                for(int i = 0;i < arguments.size();i++) arguments[i] = Expression::removeSpaces(arguments[i]);
                 arrow = str.find('>', endBrace + 1);
             }
             else {
                 arrow = str.find('>');
-                arguments.push_back(str.substr(0, arrow - 1));
+                arguments.push_back(Expression::removeSpaces(str.substr(0, arrow - 1)));
             }
             ctx.push(arguments);
             ValPtr tr = Tree::parseTree(str.substr(arrow + 1), ctx);
