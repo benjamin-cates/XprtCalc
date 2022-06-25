@@ -436,7 +436,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             if(base >= 36) throw "base cannot be over 36";
             if(base <= 1) throw "base cannot be under 2";
             ctx.push(base, true);
-            treeList.push_back(Tree::parseTree(str.substr(1, endBracket - 2), ctx));
+            treeList.push_back(Tree::parseTree(str.substr(1, endBracket - 1), ctx));
             ctx.pop();
         }
         //Numeral 0.442e1
