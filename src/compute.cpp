@@ -437,7 +437,7 @@ std::vector<Function> Program::globalFunctions = {
     #define downscale {D(arb),D(dub)}
     #ifdef USE_ARB
     Function("arb_pi",{"prec"},{},{{D(dub),[](inp) {ret(Arb)(mppp::real_pi(Arb::digitsToPrecision(input[0]->getR())));}}}),
-    Function("arb_e",{"prec"},{},{{D(dub),[](inp) {ret(Arb)(mppp::real_euler(Arb::digitsToPrecision(input[0]->getR())));}}}),
+    Function("arb_e",{"prec"},{},{{D(dub),[](inp) {ret(Arb)(mppp::exp(mppp::real(1.0,Arb::digitsToPrecision(input[0]->getR()))));}}}),
     //Function("arb_rand", [](vector<Value> input) {
     //    ret Value(0.0);
     //}),
