@@ -431,6 +431,7 @@ public:
     static string componentToString(double x, int base);
     //Virtual functions
     double flatten()const;
+    double getR()const { return num.real(); }
     string toStr(ParseCtx& ctx)const;
     int typeID()const { return Value::num_t; }
 };
