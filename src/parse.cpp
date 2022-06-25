@@ -179,13 +179,16 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
     if(ch == '(' || ch == '[' || ch == '<' || ch == '{' || ch == '"') {
         int match = matchBracket(str, start);
         if(type) *type = Section(bracs.at(ch));
-        //<= operator
-        if(bracs.at(ch) == 4 && str[start + 1] == '=') {
-            if(type) *type = Section::operat;
-            return start + 2;
+        //Deal with less than or greater than mix up with brackets
+        if(bracs.at(ch) == 4) {
+            if(match == -1) match = -2;
+            if(str[start + 1] == '=') {
+                if(type) *type = Section::operat;
+                return start + 2;
+            }
         }
         if(match == -1) return str.length();
-        else {
+        else if(match != -2) {
             // [ABC]_16 base notation
             if(ch == '[' && str[match + 1] == '_') {
                 if(type) *type = Section::squareUnit;
@@ -246,11 +249,11 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
         return i;
     }
     //Operators
-    else if(ch == '=' || ch == '>' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^') {
+    if(ch == '=' || ch == '>' || ch == '<' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^') {
         if(type) *type = Section::operat;
         int i = start + 1;
         char ch = str[i];
-        while(ch == '=' || ch == '>' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^') i++, ch = str[i];
+        while(ch == '=' || ch == '>' || ch == '<' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^') i++, ch = str[i];
         return i;
     }
     if(type) *type = Section::undefined;
@@ -520,7 +523,6 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
                     unaryOpBack.resize(treeList.size() + 1);
                     unaryOpBack[treeList.size() - 1] = Expression::suffixOperators.find(str.back())->second;
                 }
-
             }
             bool neg = (str.back() == '-' && str.length() != 1);
             if(neg) str = str.substr(0, str.length() - 1);

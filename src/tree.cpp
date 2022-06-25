@@ -4,14 +4,14 @@ Tree::Tree(int opId, ValList&& branchList) {
     branches = std::forward<ValList>(branchList);
 }
 Tree::Tree(string opStr, ValList&& branchList) {
-    op = Program::globalFunctionMap[opStr];
+    auto it = Program::globalFunctionMap.find(opStr);
+    if(it == Program::globalFunctionMap.end())
+        throw "Function " + opStr + " not found";
+    op = it->second;
     branches = std::forward<ValList>(branchList);
 }
 Tree::Tree(string opStr, ValPtr one, ValPtr two) {
-    int opId = Program::globalFunctionMap[opStr];
-    if(opId == 0) throw "could not find " + opStr;
-    op = opId;
-    branches = ValList{ one,two };
+    *this = Tree(opStr, ValList{ one,two });
 }
 Tree::Tree(int opId) {
     op = opId;
