@@ -219,7 +219,12 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
         if(type) *type = Section::numeral;
         for(int i = start;i < str.length();i++) {
             char n = str[i];
-            if((n < '0' || n>'9') && n != '_' && n != '.' && n != ' ' && n != 'e' && n != 'p' && (n<'A' || n>maxAlpha)) return i;
+            if((n == '-' || n == '+') && str[i - 1] != 'e') return i;
+            if(n >= '0' && n <= '9');
+            else if(n >= 'A' && n < maxAlpha);
+            else if(n == '.' || n == ' ');
+            else if(n == '-' || n == '+' || n == 'e' || n == 'p');
+            else return i;
         }
         return str.length();
     }
