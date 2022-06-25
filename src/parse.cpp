@@ -388,14 +388,7 @@ ValPtr Expression::evaluate(const string& str) {
 ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
     std::vector<std::pair<string, Expression::Section>> sections = Expression::getSections(str, ctx);
     ValList treeList;
-    struct operatorData {
-        string name;
-        int priority;
-        bool negative;
-        operatorData(std::pair<string, int> d, int i, bool neg) { name = d.first;priority = d.second; negative = neg; }
-        operatorData() { priority = 400; }
-    };
-    std::vector<operatorData> operators;
+    std::vector<std::pair<string, int>> operators;
     std::vector<string> unaryOpFront;
     std::vector<string> unaryOpBack;
     //Parse each section individually
@@ -520,26 +513,31 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         //Operators +-
         else if(type == Expression::operat) {
             str = Expression::removeSpaces(str);
-            if(str.length() != 1) {
-                //Check for prefix and suffix unary operators like *-
-                if(Expression::prefixOperators.find(str.back()) != Expression::prefixOperators.end()) {
-                    unaryOpFront.resize(treeList.size() + 1);
+            //Prefix operators
+            if(Expression::prefixOperators.find(str.back()) != Expression::prefixOperators.end()) {
+                unaryOpFront.resize(treeList.size() + 1);
+                if(str.back() == '-' && j != 0 && str.length() == 1); //Ignore if a subtraction
+                else {
                     unaryOpFront[treeList.size()] = Expression::prefixOperators.find(str.back())->second;
-                }
-                if(Expression::suffixOperators.find(str.front()) != Expression::suffixOperators.end()) {
-                    unaryOpBack.resize(treeList.size() + 1);
-                    unaryOpBack[treeList.size() - 1] = Expression::suffixOperators.find(str.back())->second;
+                    if(str.length() == 1) continue;
+                    str = str.substr(0, str.length() - 1);
                 }
             }
-            bool neg = (str.back() == '-' && str.length() != 1);
-            if(neg) str = str.substr(0, str.length() - 1);
+            //Suffix operators
+            if(Expression::suffixOperators.find(str.front()) != Expression::suffixOperators.end()) {
+                unaryOpBack.resize(treeList.size() + 1);
+                unaryOpBack[treeList.size() - 1] = Expression::suffixOperators.find(str.front())->second;
+                if(str.length() == 1) continue;
+                str = str.substr(1);
+            }
+            //Find operator name
             auto op = Expression::operatorList.find(str);
             if(op == Expression::operatorList.end()) {
                 throw "Operator " + str + " not found";
             }
-            if(j == 0 && str == "-") { unaryOpFront.push_back("neg");continue; }
+            //Add to list
             operators.resize(treeList.size());
-            operators[treeList.size() - 1] = operatorData(op->second, treeList.size() - 1, neg);
+            operators[treeList.size() - 1] = op->second;
         }
     }
     for(int i = 0;i < unaryOpFront.size();i++) if(unaryOpFront[i] != "")
@@ -549,9 +547,9 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
     operators.resize(treeList.size());
     //Multiply adjacents when there is no operator
     for(int i = 0;i < operators.size();i++)
-        if(operators[i].name == "") operators[i] = operatorData(std::pair<string, int>("mult", 2), i, false);
+        if(operators[i].first == "") operators[i] = std::pair<string, int>("mult", 2);
     //Combine operators and values into singular list
-    typedef std::pair<ValPtr, operatorData*> valOp;
+    typedef std::pair<ValPtr, std::pair<string, int>*> valOp;
     //Push all but final value to data list
     std::list<valOp> data;
     for(int i = 0;i < treeList.size();i++)
@@ -560,13 +558,13 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
     std::list<std::list<valOp>::iterator> sortedByPrecedence;
     for(auto it = data.begin();it != std::prev(data.end());it++) sortedByPrecedence.push_back(it);
     sortedByPrecedence.sort([](std::list<valOp>::iterator a, std::list<valOp>::iterator b) {
-        return a->second->priority < b->second->priority;
+        return a->second->second < b->second->second;
         });
     //Combine elements
     for(auto& it : sortedByPrecedence) {
         auto cur = it;
         auto next = ++it;
-        next->first = std::make_shared<Tree>(cur->second->name, ValList{ cur->first,next->first });
+        next->first = std::make_shared<Tree>(cur->second->first, ValList{ cur->first,next->first });
         data.erase(cur);
     }
     if(data.size() != 1)
