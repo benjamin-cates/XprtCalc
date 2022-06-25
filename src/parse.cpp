@@ -61,7 +61,7 @@ ValPtr ParseCtx::getVariable(const string& name)const {
     if(useUnits()) {
         double coef = 1;
         Unit u = Unit::parseName(name, coef);
-        if(!(u == Unit(0)))
+        if(u.getBits() != 0)
             return std::make_shared<Number>(coef, 0, u);
     }
     return nullptr;
@@ -456,7 +456,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
                     throw "Variable " + str + " cannot run without arguments";
                 treeList.push_back(op);
             }
-            else if(op->typeID() == Value::arg_t) {
+            else if(op->typeID() == Value::arg_t || op->typeID() == Value::num_t) {
                 treeList.push_back(op);
             }
             else { throw "Variable " + str + " not found"; }

@@ -376,7 +376,7 @@ public:
     //Test whether two units are equal
     bool operator==(const Unit& comp)const;
     //Parses a singular unit symbol, such as "kg" or "Mb". Sets outCoefficient if it is not metric
-    static Unit parseName(string name, double& outCoefficient);
+    static Unit parseName(const string& name, double& outCoefficient);
     //Output preference, this could be something like "kg"->"lb" and every weight unit will be expressed in pounds
     static std::map<Unit, string> outputPreference();
     typedef std::tuple<Unit, double, bool, string> Builtin;

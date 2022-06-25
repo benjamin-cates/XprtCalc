@@ -81,11 +81,11 @@ string Unit::toString()const {
     }
     return out;
 }
-Unit Unit::parseName(string name, double& outCoefficient) {
+Unit Unit::parseName(const string& name, double& outCoefficient) {
     //Parse first character being a prefix
     char firstChar = name[0];
-    if(Unit::powers.find(firstChar) != Unit::powers.end()) {
-        string baseName;
+    if(name.length() != 1 && Unit::powers.find(firstChar) != Unit::powers.end()) {
+        string baseName = name.substr(1);
         if(Unit::listOfUnits.find(baseName) != Unit::listOfUnits.end()) {
             auto data = Unit::listOfUnits.find(baseName)->second;
             if(std::get<2>(data)) {
@@ -138,14 +138,14 @@ Unit bit = Unit(0x100000000000000);
 Unit newton = kilogram * meter / (second ^ 2);
 Unit watt = newton * meter / second;
 
-std::pair<string, Unit::Builtin> unitConstructor(string symbol, string fullName, Unit u, double coef,bool allowPrefix) {
+std::pair<string, Unit::Builtin> unitConstructor(string symbol, string fullName, Unit u, double coef, bool allowPrefix) {
     return std::pair<string, Unit::Builtin>(symbol, Unit::Builtin(u, coef, allowPrefix, fullName));
 }
 auto newUnt(string symbol, string fullName, Unit u, double coef = 1.0) {
-    return unitConstructor(symbol,fullName,u,coef,false);
+    return unitConstructor(symbol, fullName, u, coef, false);
 }
 auto metric(string symbol, string fullName, Unit u, double coef = 1.0) {
-    return unitConstructor(symbol,fullName,u,coef,true);
+    return unitConstructor(symbol, fullName, u, coef, true);
 }
 
 //Unit list intself
