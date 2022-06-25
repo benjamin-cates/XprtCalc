@@ -120,10 +120,10 @@ namespace MatchingXpr {
         {"run (n=>n+1,4)","5"},
         {"run(run(n=>(j=>(n+j)),4),3)","7"},
         {"sum(n= > n+1,0, 5,1)","1"},
-        {"[0A1 ]_16","17"},
-        {"[0A1 ]_([10000]_2)","17"},
+        {"[0A1 ]_16","161"},
+        {"[0A1 ]_([10000]_2)","161"},
         {"run((x, y)=>( x + y) , 5, 3 . 4)","8.4"},
-        {"0x1A","17"},
+        {"0x1A","26"},
         {"0b101.1","5.5"},
         {"0d5 4.3","54.3"},
         {"0o10.1","8+1/8"},
@@ -151,7 +151,26 @@ namespace MatchingXpr {
 namespace Zeroes {
     const string name = "zero";
     std::vector<string> tests = {
-        "1-1",
+        //Arithmetic
+        "i-i", "neg(1)+1", "-1+1", "pow(10,0)-1", "2^0-1", "mod(10,5)", "10%5", "mult(0,10)", "0*10", "10/10-1", "add(neg(1),1)",
+        //Trigonometric
+        "sin(0)", "cos(0)-1", "floor(tan(1.56))-92", "csc(pi/2)-1", "sec(pi)+1", "floor(1/cot(1.56))-92", "floor(sinh(10.3))-14866", "cosh(0)-1", "tanh(0)", "asin(1)-pi/2", "acos(1)", "atan(1e50)-pi/2", "asinh(sinh(1))-1", "acosh(cosh(1))-1", "round(atanh(tanh(1)))-1",
+        //Exponential
+        "sqrt(4)-2", "exp(ln(2))-2", "ln(exp(2))-2", "round(log(1000))-3", "round(logb(1000,10))-3", "round(fact(3))-6", "sgn(i)-i", "abs(-i)-1", "arg(i)-pi/2",
+        //Rounding
+        "round(0.5)-1", "floor(0.5)", "ceil(0.3)-1", "getr(i)", "geti(10.5[m])", "getu([km])/[m]-1",
+        //Compaarison
+        "(10>4)-1","(-10>4)", "10!=10","(10=10)-1", "equal(10.3,10.3)-1", "min(4,5)-4", "min(5,4)-4", "max(5,4)-5", "max(4,5)-5", "lerp(-1,1,0.5)", "dist(0,3+4i)-5",
+        //Binary Operators
+        "not(1)+2", "and(0,5)", "or(0,5)-5", "xor(5,3)-6", "ls(5,1)-10", "rs(5,1)-2",
+        //Variables
+        "floor(1/(pi-3.14))-627", "floor(1/(phi-1.6))-55", "floor(1/(e-2.71))-120", "histnum", "floor(rand)",
+        //Lambda
+        "run(x=>x+1,-1)", "sum(x=>x,0,10,1)-55", "product(x=>x,1,10,1)-3628800",
+        //Vectors
+        "width(<>)-1", "height(<10;20>)-2", "length(<1,1,1;1>)-6", "ge(<0,1>,0,0)", "ge(<0,1>,0)", "abs(fill(x=>0,4,4))", "abs(map(<0,1,2,3,4,5>,(v,x)=>v-x))",
+        //Numerical parsing
+        "1e-2-0.01","1e2-100","1e34-10000000000000000000000000000000000"
     };
     string validate(std::vector<string>::iterator it) {
         const string& identifier = *it;
@@ -170,7 +189,7 @@ namespace LibTest {
 
 
         } THROW_IF_FAIL
-        return "";
+            return "";
     }
 
 }
@@ -181,7 +200,7 @@ namespace ParsingRand {
         try {
 
         } THROW_IF_FAIL
-        return "";
+            return "";
     }
 
 
