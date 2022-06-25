@@ -490,27 +490,77 @@ std::vector<Function> Program::globalFunctions = {
 //    }),
 //#pragma endregion
 //#pragma region Vector
-//    Function("length", { "v" }, TypeDomain(vec | str | map), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("normalize", { "v" }, TypeDomain(vec), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("get", { "map","key" }, TypeDomain(vec | map, all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("fill", { "func","count" }, TypeDomain(lbm, com), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("map_vec", { "map","func" }, TypeDomain(vec | map, lbm), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("concat", { "a","b" }, TypeDomain(all, all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("sort", { "vec" }, TypeDomain({ vec,lbm }, 2, 1), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
+    Function("length", {"obj"}, {}, {{D(vec_t),[](inp) {
+        def(Vector,v,0); ret(Number)(v->size());
+    }},{D(str_t),[](inp) {
+        def(String,s,0); ret(Number)(s->str.length());
+    }}}),
+    Function("magnitude",{"vec"},{}, {{D(vec_t),[](inp) {
+        def(Vector,v,0);
+        ValPtr out=make_shared<Number>(0);
+        ValPtr two=make_shared<Number>(2);
+        for(int i=0;i<v->size();i++) {
+            out=Program::computeGlobal("add",ValList{out,Program::computeGlobal("pow",ValList{v->vec[i],two},ctx)},ctx);
+        }
+        return Program::computeGlobal("sqrt",ValList{out},ctx);
+    }}}),
+    Function("normalize",{"vec"},{},{{D(vec_t),[](inp) {
+        return Program::computeGlobal("div",ValList{input[0],Program::computeGlobal("magnitude",ValList{input[0]},ctx)},ctx);
+    }}}),
+    Function("get",{"map","key"},{},{{D(vec_t,dub|arb),[](inp) {
+        def(Vector,v,0);
+        int index=input[1]->getR();
+        if(index<0||index>=v->size()) return ValPtr(make_shared<Number>(0));
+        return v->vec[index];
+    }}}),
+    Function("fill",{"func","count"},{},{{D(lmb,arb|dub),[](inp) {
+        def(Lambda,func,0);
+        int count=input[1]->getR();
+        shared_ptr<Vector> out=make_shared<Vector>();
+        shared_ptr<Number> index=make_shared<Number>(0);
+        ValList lambdaInput = ValList{index};
+        for(int i=0;i<count;i++) {
+            index->num = {double(i),0.0};
+            out->vec.push_back((*func)(lambdaInput));
+        }
+        return out;
+    }}}),
+    Function("map",{"map","func"},{},{{D(vec_t,lmb),[](inp) {
+        def(Vector,v,0);def(Lambda,func,1);
+        shared_ptr<Vector> out=make_shared<Vector>();
+        shared_ptr<Number> index=make_shared<Number>(0);
+        ValList lambdaInput{nullptr,index};
+        for(int i=0;i<v->size();i++) {
+            lambdaInput[0]=v->vec[i];
+            index->num={double(i),0};
+            out->vec.push_back((*func)(lambdaInput));
+        }
+        return out;
+    }}}),
+    Function("concat",{"a","b"},{},{{D(vec_t,vec_t),[](inp) {
+        def(Vector,a,0);def(Vector,b,1);
+        shared_ptr<Vector> out=make_shared<Vector>();
+        for(int i=0;i<a->size();i++) out->vec.push_back(a->vec[i]);
+        for(int i=0;i<b->size();i++) out->vec.push_back(b->vec[i]);
+        return ValPtr(out);
+    }}}),
+    Function("sort",{"vec","comp"},{},{{D(vec_t),[](inp) {
+        def(Vector,v,0);
+        auto compare=[&ctx=ctx](ValPtr a,ValPtr b) {
+            return Program::computeGlobal("lt",ValList{a,b},ctx)->getR();
+        };
+        shared_ptr<Vector> out=make_shared<Vector>(std::forward<ValList>(v->vec));
+        std::sort(out->vec.begin(),out->vec.end(),compare);
+        return out;
+    }},{D(vec_t,lmb),[](inp) {
+        def(Vector,v,0); def(Lambda,func,1);
+        auto compare=[&ctx=ctx,func=func](ValPtr a,ValPtr b) {
+            return (*func)(ValList{a,b})->getR();
+        };
+        shared_ptr<Vector> out=make_shared<Vector>(std::forward<ValList>(v->vec));
+        std::sort(out->vec.begin(),out->vec.end(),compare);
+        return out;
+    }}}),
 //#pragma endregion
 //#pragma region String
 //    Function("eval", { "str" }, TypeDomain(str), [](vector<Value> input) {
