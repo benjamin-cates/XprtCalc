@@ -138,7 +138,7 @@ void Map::append(ValPtr key, ValPtr val, double flat) {
 #pragma region Value comparison
 bool Value::operator==(ValPtr comp) {
     ValPtr sharedThis = shared_from_this();
-    if(comp==nullptr) return false;
+    if(comp == nullptr) return false;
     if(typeID() != comp->typeID()) return false;
 #define cast(type,name1,name2) name1=std::static_pointer_cast<type>(sharedThis);name2=std::static_pointer_cast<type>(comp);
     std::shared_ptr<Number> n1, n2;
@@ -324,11 +324,10 @@ string Number::toStr(ParseCtx& ctx)const {
         else if(Math::isNan(num.real())) return "nan";
         else out += Number::componentToString(num.real(), 10);
     }
-    bool imagNeg = num.imag() < 0;
-    if(num.imag() != 0) if(imagNeg || num.real() != 0) out += imagNeg ? '-' : '+';
     if(num.imag() != 0) {
-        if(Math::isInf(num.imag())) out += "inf*";
-        else if(Math::isNan(num.imag())) out += "nan*";
+        if(num.imag() > 0 && num.real() != 0) out += '+';
+        if(Math::isInf(num.imag())) out += "+inf*";
+        else if(Math::isNan(num.imag())) out += "+nan*";
         else out += Number::componentToString(num.imag(), 10);
         out += 'i';
     }
