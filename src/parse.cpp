@@ -173,6 +173,7 @@ ValPtr Expression::parseNumeral(const string& str, int base) {
 }
 int Expression::nextSection(const string& str, int start, Expression::Section* type, ParseCtx& ctx) {
     using namespace Expression;
+    while(str[start] == ' ') start++;
     char ch = str[start];
     //Brackets and quotes
     if(ch == '(' || ch == '[' || ch == '<' || ch == '{' || ch == '"') {
@@ -227,7 +228,7 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
             if(c >= 'a' && c <= 'z') continue;
             else if(c >= 'A' && c <= 'Z') continue;
             else if(c >= '0' && c <= '9') continue;
-            else if(c == '_' || c == '$') continue;
+            else if(c == ' ' || c == '_' || c == '$') continue;
             else if(c == '(') {
                 if(type) *type = Section::function;
                 return nextSection(str, i, nullptr, ctx);
@@ -343,6 +344,7 @@ string Expression::removeSpaces(const string& str) {
         }
         out[i - offset] = str[i];
     }
+    out.resize(str.size() - offset);
     return out;
 }
 std::vector<string> Expression::splitBy(const string& str, int start, int end, char delimiter) {
