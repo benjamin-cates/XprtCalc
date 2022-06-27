@@ -391,7 +391,7 @@ std::vector<Function> Program::globalFunctions = {
     Unary("arg",arg(num)),
     UnaryWithUnit("atan2",atan2(num.imag(),num.real()),unit),
     #pragma endregion
-    #pragma region Binary logic
+#pragma region Binary logic
     Function("equal",{"a","b"},{},{{D(all,all),[](inp) {
         if(*(input[0]) == input[1]) ret(Number)(1);
         else ret(Number)(0);
@@ -488,8 +488,8 @@ std::vector<Function> Program::globalFunctions = {
 //    Function("domain", { "func" }, TypeDomain(lbm), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
-//#pragma endregion
-//#pragma region Vector
+#pragma endregion
+#pragma region Vector
     Function("length", {"obj"}, {}, {{D(vec_t),[](inp) {
         def(Vector,v,0); ret(Number)(v->size());
     }},{D(str_t),[](inp) {
@@ -497,29 +497,29 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     Function("magnitude",{"vec"},{}, {{D(vec_t),[](inp) {
         def(Vector,v,0);
-        ValPtr out=make_shared<Number>(0);
-        ValPtr two=make_shared<Number>(2);
-        for(int i=0;i<v->size();i++) {
-            out=Program::computeGlobal("add",ValList{out,Program::computeGlobal("pow",ValList{v->vec[i],two},ctx)},ctx);
+        ValPtr out = make_shared<Number>(0);
+        ValPtr two = make_shared<Number>(2);
+        for(int i = 0;i < v->size();i++) {
+            out = Program::computeGlobal("add",ValList{out,Program::computeGlobal("pow",ValList{v->vec[i],two},ctx)},ctx);
         }
         return Program::computeGlobal("sqrt",ValList{out},ctx);
     }}}),
     Function("normalize",{"vec"},{},{{D(vec_t),[](inp) {
         return Program::computeGlobal("div",ValList{input[0],Program::computeGlobal("magnitude",ValList{input[0]},ctx)},ctx);
     }}}),
-    Function("get",{"map","key"},{},{{D(vec_t,dub|arb),[](inp) {
+    Function("get",{"map","key"},{},{{D(vec_t,dub | arb),[](inp) {
         def(Vector,v,0);
-        int index=input[1]->getR();
-        if(index<0||index>=v->size()) return ValPtr(make_shared<Number>(0));
+        int index = input[1]->getR();
+        if(index < 0 || index >= v->size()) return ValPtr(make_shared<Number>(0));
         return v->vec[index];
     }}}),
-    Function("fill",{"func","count"},{},{{D(lmb,arb|dub),[](inp) {
+    Function("fill",{"func","count"},{},{{D(lmb,arb | dub),[](inp) {
         def(Lambda,func,0);
-        int count=input[1]->getR();
-        shared_ptr<Vector> out=make_shared<Vector>();
-        shared_ptr<Number> index=make_shared<Number>(0);
+        int count = input[1]->getR();
+        shared_ptr<Vector> out = make_shared<Vector>();
+        shared_ptr<Number> index = make_shared<Number>(0);
         ValList lambdaInput = ValList{index};
-        for(int i=0;i<count;i++) {
+        for(int i = 0;i < count;i++) {
             index->num = {double(i),0.0};
             out->vec.push_back((*func)(lambdaInput));
         }
@@ -527,68 +527,104 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     Function("map",{"map","func"},{},{{D(vec_t,lmb),[](inp) {
         def(Vector,v,0);def(Lambda,func,1);
-        shared_ptr<Vector> out=make_shared<Vector>();
-        shared_ptr<Number> index=make_shared<Number>(0);
+        shared_ptr<Vector> out = make_shared<Vector>();
+        shared_ptr<Number> index = make_shared<Number>(0);
         ValList lambdaInput{nullptr,index};
-        for(int i=0;i<v->size();i++) {
-            lambdaInput[0]=v->vec[i];
-            index->num={double(i),0};
+        for(int i = 0;i < v->size();i++) {
+            lambdaInput[0] = v->vec[i];
+            index->num = {double(i),0};
             out->vec.push_back((*func)(lambdaInput));
         }
         return out;
     }}}),
     Function("concat",{"a","b"},{},{{D(vec_t,vec_t),[](inp) {
         def(Vector,a,0);def(Vector,b,1);
-        shared_ptr<Vector> out=make_shared<Vector>();
-        for(int i=0;i<a->size();i++) out->vec.push_back(a->vec[i]);
-        for(int i=0;i<b->size();i++) out->vec.push_back(b->vec[i]);
+        shared_ptr<Vector> out = make_shared<Vector>();
+        for(int i = 0;i < a->size();i++) out->vec.push_back(a->vec[i]);
+        for(int i = 0;i < b->size();i++) out->vec.push_back(b->vec[i]);
         return ValPtr(out);
     }}}),
     Function("sort",{"vec","comp"},{},{{D(vec_t),[](inp) {
         def(Vector,v,0);
-        auto compare=[&ctx=ctx](ValPtr a,ValPtr b) {
+        auto compare = [&ctx = ctx](ValPtr a,ValPtr b) {
             return Program::computeGlobal("lt",ValList{a,b},ctx)->getR();
         };
-        shared_ptr<Vector> out=make_shared<Vector>(std::forward<ValList>(v->vec));
+        shared_ptr<Vector> out = make_shared<Vector>(std::forward<ValList>(v->vec));
         std::sort(out->vec.begin(),out->vec.end(),compare);
         return out;
     }},{D(vec_t,lmb),[](inp) {
         def(Vector,v,0); def(Lambda,func,1);
-        auto compare=[&ctx=ctx,func=func](ValPtr a,ValPtr b) {
+        auto compare = [&ctx = ctx,func = func](ValPtr a,ValPtr b) {
             return (*func)(ValList{a,b})->getR();
         };
-        shared_ptr<Vector> out=make_shared<Vector>(std::forward<ValList>(v->vec));
+        shared_ptr<Vector> out = make_shared<Vector>(std::forward<ValList>(v->vec));
         std::sort(out->vec.begin(),out->vec.end(),compare);
         return out;
     }}}),
-//#pragma endregion
-//#pragma region String
-//    Function("eval", { "str" }, TypeDomain(str), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
+#pragma endregion
+#pragma region String
+    Function("eval",{"str"},{},{{D(str_t),[](inp) {
+        def(String,str,0);
+        return Expression::evaluate(str->str);
+    }}}),
+    Function("error",{"str"},{},{{D(str_t),[](inp) {
+        def(String,str,0);
+        throw str;
+        return make_shared<Number>(0);
+    }}}),
+    Function("substr",{"str","begin","len"},{},{{D(str_t,dub | arb,dub | arb | opt),[](inp) {
+        def(String,str,0);
+        int start = input[1]->getR();
+        if(start < 0) throw "Start of substring cannot be negative";
+        if(input.size() == 2)
+            return make_shared<String>(str->str.substr(start));
+        int len = input[2]->getR();
+        if(start < 0) throw "Start of substring cannot be negative";
+        return make_shared<String>(str->str.substr(start,len));
+    }}}),
+    Function("lowercase",{"str"},{},{{D(str_t),[](inp) {
+        def(String,in,0);
+        string out(in->str.length(),' ');
+        for(int i = 0;i < in->str.length();i++)
+            out[i] = std::tolower(in->str[i]);
+        return make_shared<String>(out);
+    }}}),
+    Function("uppercase",{"str"},{},{{D(str_t),[](inp) {
+        def(String,in,0);
+        string out(in->str.length(),' ');
+        for(int i = 0;i < in->str.length();i++)
+            out[i] = std::toupper(in->str[i]);
+        return make_shared<String>(out);
+    }}}),
+    Function("indexof",{"str","query"},{},{{D(str_t,str_t),[](inp) {
+        def(String,str,0);def(String,find,1);
+        int index = str->str.find(find->str);
+        if(index == string::npos) return make_shared<Number>(-1);
+        else return make_shared<Number>(double(index));
+    }}}),
+    Function("replace",{"str","find","rep"},{},{{D(str_t,str_t,str_t),[](inp) {
+        def(String,str,0);def(String,find,1);def(String,rep,2);
+        int findLen=find->str.length();
+        int position = -1;
+        vector<int> positions;
+        while(true) {
+            position = str->str.find(find->str,position + 1);
+            if(position == string::npos) break;
+            positions.push_back(position);
+        }
+        positions.push_back(str->str.length());
+        string out = str->str.substr(0,positions[0]);
+        for(int i = 0;i < positions.size() - 1;i++) {
+            out += rep->str;
+            out += str->str.substr(positions[i] + findLen,positions[i+1] - positions[i] - findLen);
+        }
+        return make_shared<String>(out);
+    }}}),
 //    Function("print", { "str" }, TypeDomain(str), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
-//    Function("error", { "str" }, TypeDomain(str), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("replace", { "str","find","rep" }, TypeDomain({ str | vec,all,all }), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("indexof", { "str","find" }, TypeDomain(str | vec, all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("substr", { "str","begin","end" }, TypeDomain({ str | vec,com,com }, 3, 2), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("lowercase", { "str" }, TypeDomain(str), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("uppercase", { "str" }, TypeDomain(str), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//#pragma endregion
-//#pragma region Conversion and variables
+#pragma endregion
+#pragma region Conversion and variables
 //    Function("getlocal", { "name" }, TypeDomain(str), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
