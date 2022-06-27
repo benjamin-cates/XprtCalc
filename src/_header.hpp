@@ -56,8 +56,8 @@ namespace Metadata {
     const std::map<string, string> info = {
         {"author","Benjamin Cates"},
         {"version","0.1"},
-        {"github","https://github.com/benjamin-cates/..."},
-        {"name","exprtcalc"}
+        {"github","https://github.com/benjamin-cates/XprtCalc"},
+        {"name","xprtcalc"}
     };
 };
 

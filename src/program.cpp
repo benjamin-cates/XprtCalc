@@ -167,8 +167,16 @@ string command_parse(vector<string>& input) {
     ValPtr tr = Tree::parseTree(inp, ctx);
     return tr->toString();
 }
+
+string command_meta(vector<string>& input) {
+    string out;
+    for(auto it = Metadata::info.begin();it != Metadata::info.end();it++)
+        out += it->first + ": " + it->second + '\n';
+    return out;
+}
 map<string, Command> Program::commandList = {
     {"include",{{"literal"},{"solvequad"},false,&command_include}},
     {"sections",{{"expression"},{"xpr"},false,&command_sections}},
     {"parse",{{"expression"},{"xpr"},true,&command_parse}},
+    {"meta",{{},{},false,&command_meta}},
 };
