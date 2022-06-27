@@ -659,27 +659,16 @@ std::vector<Function> Program::globalFunctions = {
 //    Function("setglobal", { "name","val" }, TypeDomain(str, all), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
-//    Function("double", { "val" }, TypeDomain(all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("arb", { "val" }, TypeDomain(all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("vec", { "val" }, TypeDomain(all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("map", { "val" }, TypeDomain(all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("string", { "val" }, TypeDomain(all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("set", { "val" }, TypeDomain(all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("typeof", { "val" }, TypeDomain(all), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
+#undef vec_t
+#undef map_t
+#undef str_t
+    Function("tonumber",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::num_t);}}}),
+    Function("toarb",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::arb_t);}}}),
+    Function("tovec",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::vec_t);}}}),
+    Function("tomap",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::map_t);}}}),
+    Function("tostring",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::str_t);}}}),
+    Function("tolambda",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::lmb_t);}}}),
+    Function("typeof",{"val"},{},{{D(all),[](inp) {return make_shared<Number>(input[0]->typeID());}}}),
 #pragma endregion
 
 };
