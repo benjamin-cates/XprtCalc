@@ -97,8 +97,9 @@ string Program::runCommand(string call) {
     if(Program::commandList.find(name) == Program::commandList.end()) {
         throw "command " + name + " not found";
     }
-    string args = call.substr(space + 1);
     std::vector<string> argsList;
+    if(space == call.length()) return Program::commandList[name].run(argsList);
+    string args = call.substr(space + 1);
     int pos = 0;
     while(args[pos] != 0) {
         int next = Expression::findNext(args, pos, ' ');
