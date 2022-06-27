@@ -464,12 +464,34 @@ std::vector<Function> Program::globalFunctions = {
     }},{D(str_t,vec_t),[](inp) {
         return Program::computeGlobal(getV(String,0)->str,getV(Vector,1)->vec,ctx);
     }}}),
-//    Function("sum", { "func","begin","end","step" }, TypeDomain({ lbm,com,com,com }, 4, 3), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("product", { "func","begin","end","step" }, TypeDomain({ lbm,com,com,com }, 4, 3), [](vector<Value> input) {
-//        ret Value(0.0);
-//        }),
+    Function("sum",{"func","begin","end","step"},{},{{D(lmb,arb | dub,arb | dub,arb | dub | opt), [](inp) {
+        def(Lambda,func,0);
+        double begin = input[1]->getR(), end = input[2]->getR();
+        double step = 1.0;
+        if(input.size() == 4) step = input[3]->getR();
+        shared_ptr<Number> n = make_shared<Number>(0);
+        ValList lambdaInput{n};
+        ValPtr out = make_shared<Number>(0);
+        for(double index = begin;index <= end;index += step) {
+            n->num = {index,0.0};
+            out = Program::computeGlobal("add",ValList{out,(*func)(lambdaInput)},ctx);
+        }
+        return out;
+    }}}),
+    Function("product",{"func","begin","end","step"},{},{{D(lmb,arb | dub,arb | dub,arb | dub | opt), [](inp) {
+        def(Lambda,func,0);
+        double begin = input[1]->getR(), end = input[2]->getR();
+        double step = 1.0;
+        if(input.size() == 4) step = input[3]->getR();
+        shared_ptr<Number> n = make_shared<Number>(0);
+        ValList lambdaInput{n};
+        ValPtr out = make_shared<Number>(1);
+        for(double index = begin;index <= end;index += step) {
+            n->num = {index,0.0};
+            out = Program::computeGlobal("mult",ValList{out,(*func)(lambdaInput)},ctx);
+        }
+        return out;
+    }}}),
 //    Function("infinite_sum", { "func" }, TypeDomain(lbm), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
