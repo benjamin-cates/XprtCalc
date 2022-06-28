@@ -21,8 +21,11 @@ int main(int argc, char** argv) {
             std::cout << "$" << i << " = " << a->toString() << std::endl;
             i++;
         }
-        catch(string e) {
-            std::cout << "Error: " << e << std::endl;
+        catch(string e) { std::cout << "Error: " << e << std::endl; }
+        catch(const char* e) {std::cout << "Error: " << e << std::endl;}
+        catch(...) {
+            std::cout << "Unknown error type" << std::endl;
+            throw;
         }
     }
     return 0;
