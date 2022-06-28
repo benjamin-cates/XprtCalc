@@ -186,6 +186,7 @@ string command_include(std::vector<string>& input) {
         else if(Library::functions.find(input[i]) != Library::functions.end()) {
             out += Library::functions[input[i]].include();
         }
+        else out+=input[i] + " not found\n";
     }
     return out;
 }
