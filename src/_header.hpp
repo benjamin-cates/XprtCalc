@@ -77,8 +77,13 @@ namespace Program {
     //Runs command in str (containing whole name and prefix) and returns the output
     string runCommand(string str);
 
+    //Global variables
     //Contains every value in previous calculations
     extern ValList history;
+    //Global compute context
+    extern ComputeCtx computeCtx;
+    //Global parsing context
+    extern ParseCtx parseCtx;
 
     //Vector of every global function (compute.cpp)
     extern std::vector<Function> globalFunctions;
@@ -158,11 +163,8 @@ class ParseCtx {
     std::deque<string> argStack;
     //Stores size of arg stack for each new context push
     std::deque<int> argStackSizes;
-    //Stores local variable names with most recent at the front
-    std::deque<string> localStack;
-    //Stores list of local variable stack sizes for each new context
-    std::deque<int> localStackSizes;
-
+    //List of all named variables, storing number of declarations
+    std::map<string, int> variables;
     //Stores stack of bases with current base at top
     std::stack<int> bases;
     //Stores whether to use units with the current one on top
@@ -177,6 +179,12 @@ public:
     void push(const std::vector<string>& arguments);
     //Pop most recent context
     void pop();
+    //Adds variable definition
+    void pushVariable(const string& name);
+    //Undefines variables
+    void popVariables(const std::vector<string>& names);
+    //Returns bool whether variable exists
+    bool variableExists(const string& name)const;
     //Returns whether units are allowed in current context
     bool useUnits()const;
     //Returns base of current context
@@ -303,8 +311,8 @@ namespace Math {
     bool isNan(double x);
     //Tests if x is an infinite type
     bool isInf(double x);
-#ifdef USE_ARB
-//Tests if x is NaN
+    #ifdef USE_ARB
+    //Tests if x is NaN
     mppp::real isNan(const mppp::real& x);
     //Tests if x is an infinite type
     mppp::real isInf(const mppp::real& x);
@@ -312,25 +320,28 @@ namespace Math {
     mppp::real NaN(int accu);
     //Returns inifity given accuracy in decimal digits and positive/negative bool
     mppp::real Inf(int accu, bool negative);
-#endif
+    #endif
 
 };
 //compute.cpp
 class ComputeCtx {
-    //Map of local variables to their values
-    std::map<string, ValPtr> local;
+public:
+    //Map of variables to their values
+    std::map<string, std::vector<ValPtr>> variables;
     //Indexed list of arguments
     std::deque<ValPtr> argValue;
 
-public:
     //Empty constructor
     ComputeCtx();
-    //Get local variable from name
-    ValPtr getLocal(const string& name)const;
-    //Set local variable to val
-    void setLocal(const string& name, ValPtr val);
-    //Erase list of local variables (used at end of context)
-    void eraseLocal(const std::vector<string>& names);
+
+    //Sets variable that is highest on the stack
+    void setVariable(const string& n, ValPtr value);
+    //Creates new definition of a variable
+    void defineVariable(const string& n, ValPtr value);
+    //Pops most recent definition of each variable
+    void undefineVariables(const std::vector<string>& vars);
+    //Get variable from name, nullptr if not found
+    ValPtr getVariable(const string& name);
 
     //Get argument from id
     ValPtr getArgument(int id)const;
@@ -397,7 +408,7 @@ public:
     virtual double flatten()const { return 0; }
     //Returns id, see value type enum for type list
     virtual int typeID()const { return -1; }
-    enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, tre_t = 7, arg_t = 8, };
+    enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, tre_t = 7, arg_t = 8, var_t = 9 };
     //Returns the real component, or the first value in a vector, useful for converting into an integer value
     virtual double getR()const { return 0; }
     //Flattens down to single value
@@ -492,7 +503,7 @@ public:
     //Takes in input list and funcTree, then sets funcTree to nullptr for memory safety
     Lambda(std::vector<string> inputs, ValPtr funcTree);
     //Computes with argument list
-    ValPtr operator()(ValList inputs);
+    ValPtr operator()(ValList inputs, ComputeCtx& ctx);
     //Virtual functions
     ValPtr compute(ComputeCtx& ctx);
     double flatten()const;
@@ -576,8 +587,18 @@ class Argument : public Value {
 public:
     int id;
     Argument(int i) { id = i; }
+    //Virtual functions
     string toStr(ParseCtx& ctx)const;
     ValPtr compute(ComputeCtx& ctx);
     int typeID()const { return Value::arg_t; }
+};
+class Variable : public Value {
+public:
+    string name;
+    Variable(const string& n) { name = n; }
+    //Virtual functions
+    string toStr(ParseCtx& ctx) { return name; }
+    ValPtr compute(ComputeCtx& ctx) { return ctx.getVariable(name); }
+    int typeID()const { return Value::var_t; }
 };
 #pragma endregion

@@ -53,7 +53,7 @@ namespace Math {
     double gamma(double x) { return tgamma(x); }
     double leftShift(double x, long shift) { return long(x) << shift; }
     double rightShift(double x, long shift) { return long(x) >> shift; }
-#ifdef USE_ARB
+    #ifdef USE_ARB
     mppp::real abs(const mppp::real& x) { return mppp::abs(x); }
     mppp::real ln(const mppp::real& x) { return mppp::log(x); }
     mppp::real log(const mppp::real& x, const mppp::real& b) { return mppp::log(x) / mppp::log(b); }
@@ -69,17 +69,11 @@ namespace Math {
     mppp::real isInf(const mppp::real& x) { return inf_p(x); }
     mppp::real NaN(int accu) { mppp::real r("0.0", Arb::digitsToPrecision(accu));set_nan(r); return r; }
     mppp::real Inf(int accu, bool negative) { mppp::real r("0.0", Arb::digitsToPrecision(accu));set_inf(r, negative); return r; }
-#endif
+    #endif
 };
 #pragma region ComputeCtx
 ComputeCtx::ComputeCtx() {
 
-}
-ValPtr ComputeCtx::getLocal(const string& name)const { return local.at(name); }
-void ComputeCtx::setLocal(const string& name, ValPtr val) { local[name] = val; }
-void ComputeCtx::eraseLocal(const std::vector<string>& names) {
-    //Iterates backwards so the erased object is always a leaf
-    for(int i = names.size() - 1;i >= 0;i--) local.erase(names[i]);
 }
 ValPtr ComputeCtx::getArgument(int id)const { return *(argValue.begin() + id); }
 void ComputeCtx::pushArgs(const ValList& args) {
@@ -95,6 +89,31 @@ void ComputeCtx::pushArgs(const ValList& args) {
 void ComputeCtx::popArgs(const ValList& args) {
     for(int i = 0;i < args.size();i++)
         argValue.pop_front();
+}
+void ComputeCtx::setVariable(const string& n, ValPtr value) {
+    std::map<string, std::vector<ValPtr>>::iterator it = variables.find(n);
+    if(it == variables.end()) variables[n] = { value };
+    else it->second.back() = value;
+}
+void ComputeCtx::defineVariable(const string& n, ValPtr value) {
+    std::map<string, std::vector<ValPtr>>::iterator it = variables.find(n);
+    if(it == variables.end()) {
+        variables[n] = { value };
+    }
+    else it->second.push_back(value);
+}
+//Erases all variables in the list
+void ComputeCtx::undefineVariables(const std::vector<string>& vars) {
+    for(int i = 0;i < vars.size();i++) {
+        auto it = variables.find(vars[i]);
+        if(it->second.size() == 1) variables.erase(it);
+        else it->second.pop_back();
+    }
+}
+ValPtr ComputeCtx::getVariable(const string& name) {
+    auto it = variables.find(name);
+    if(it == variables.end()) return nullptr;
+    return it->second.back();
 }
 #pragma endregion
 #pragma region class Function
@@ -449,11 +468,8 @@ std::vector<Function> Program::globalFunctions = {
     Function("run", { "func","..." }, {}, {{D(lmb,all | opt,all | opt,all | opt),[](inp) {
         def(Lambda,func,0);
         ValList args(func->inputNames.size(),Value::zero);
-        for(int i = 0;i < input.size() - 1;i++) args[i] = input[i + 1]->compute(ctx);
-        ctx.pushArgs(args);
-        ValPtr out = func->func->compute(ctx);
-        ctx.popArgs(args);
-        return out;
+        for(int i = 0;i < input.size() - 1;i++) args[i] = input[i + 1];
+        return (*func)(args,ctx);
     }}}),
     Function("apply",{"func","args"},{},{{D(lmb,vec_t),[](inp) {
         def(Vector,v,1);
@@ -474,7 +490,7 @@ std::vector<Function> Program::globalFunctions = {
         ValPtr out = make_shared<Number>(0);
         for(double index = begin;index <= end;index += step) {
             n->num = {index,0.0};
-            out = Program::computeGlobal("add",ValList{out,(*func)(lambdaInput)},ctx);
+            out = Program::computeGlobal("add",ValList{out,(*func)(lambdaInput,ctx)},ctx);
         }
         return out;
     }}}),
@@ -488,7 +504,7 @@ std::vector<Function> Program::globalFunctions = {
         ValPtr out = make_shared<Number>(1);
         for(double index = begin;index <= end;index += step) {
             n->num = {index,0.0};
-            out = Program::computeGlobal("mult",ValList{out,(*func)(lambdaInput)},ctx);
+            out = Program::computeGlobal("mult",ValList{out,(*func)(lambdaInput,ctx)},ctx);
         }
         return out;
     }}}),
@@ -543,7 +559,7 @@ std::vector<Function> Program::globalFunctions = {
         ValList lambdaInput = ValList{index};
         for(int i = 0;i < count;i++) {
             index->num = {double(i),0.0};
-            out->vec.push_back((*func)(lambdaInput));
+            out->vec.push_back((*func)(lambdaInput,ctx));
         }
         return out;
     }}}),
@@ -555,7 +571,7 @@ std::vector<Function> Program::globalFunctions = {
         for(int i = 0;i < v->size();i++) {
             lambdaInput[0] = v->vec[i];
             index->num = {double(i),0};
-            out->vec.push_back((*func)(lambdaInput));
+            out->vec.push_back((*func)(lambdaInput,ctx));
         }
         return out;
     }}}),
@@ -577,7 +593,7 @@ std::vector<Function> Program::globalFunctions = {
     }},{D(vec_t,lmb),[](inp) {
         def(Vector,v,0); def(Lambda,func,1);
         auto compare = [&ctx = ctx,func = func](ValPtr a,ValPtr b) {
-            return (*func)(ValList{a,b})->getR();
+            return (*func)(ValList{a,b},ctx)->getR();
         };
         shared_ptr<Vector> out = make_shared<Vector>(std::forward<ValList>(v->vec));
         std::sort(out->vec.begin(),out->vec.end(),compare);
@@ -626,7 +642,7 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     Function("replace",{"str","find","rep"},{},{{D(str_t,str_t,str_t),[](inp) {
         def(String,str,0);def(String,find,1);def(String,rep,2);
-        int findLen=find->str.length();
+        int findLen = find->str.length();
         int position = -1;
         vector<int> positions;
         while(true) {
@@ -638,7 +654,7 @@ std::vector<Function> Program::globalFunctions = {
         string out = str->str.substr(0,positions[0]);
         for(int i = 0;i < positions.size() - 1;i++) {
             out += rep->str;
-            out += str->str.substr(positions[i] + findLen,positions[i+1] - positions[i] - findLen);
+            out += str->str.substr(positions[i] + findLen,positions[i + 1] - positions[i] - findLen);
         }
         return make_shared<String>(out);
     }}}),

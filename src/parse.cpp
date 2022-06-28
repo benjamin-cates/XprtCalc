@@ -13,7 +13,6 @@ void ParseCtx::push(int base, bool forceUnits) {
     if(forceUnits) useUnitsStack.push(true);
     else useUnitsStack.push(useUnits());
     argStackSizes.push_back(0);
-    localStackSizes.push_back(0);
 }
 void ParseCtx::push(const std::vector<string>& arguments) {
     bases.push(getBase());
@@ -22,7 +21,6 @@ void ParseCtx::push(const std::vector<string>& arguments) {
     for(auto it = arguments.rbegin();it != arguments.rend();it++)
         argStack.push_front(*it);
     argStackSizes.push_back(arguments.size());
-    localStackSizes.push_back(0);
 }
 void ParseCtx::pop() {
     bases.pop();
@@ -32,10 +30,6 @@ void ParseCtx::pop() {
     int argRemoveCount = argStackSizes.back();
     for(int i = 0;i < argRemoveCount;i++) argStack.pop_front();
     argStackSizes.pop_back();
-    //Remove local variables
-    int localRemoveCount = localStackSizes.back();
-    for(int i = 0;i < localRemoveCount;i++) localStack.pop_front();
-    localStackSizes.pop_back();
 }
 bool ParseCtx::useUnits()const {
     return useUnitsStack.top();
@@ -46,18 +40,35 @@ int ParseCtx::getBase()const {
 string ParseCtx::getArgName(int index)const {
     return *(argStack.begin() + index);
 }
-void ParseCtx::pushLocal(const string& name) {
-    localStackSizes.front() += 1;
-    localStack.push_front(name);
+void ParseCtx::pushVariable(const string& name) {
+    auto it = variables.find(name);
+    if(it == variables.end()) variables[name] = 1;
+    else it->second++;
+}
+//Undefines variables
+void ParseCtx::popVariables(const std::vector<string>& names) {
+    for(int i = 0;i < names.size();i++) {
+        auto it = variables.find(names[i]);
+        if(it == variables.end()) continue;
+        it->second--;
+        if(it->second == 0) variables.erase(it);
+    }
+}
+//Returns bool whether variable exists
+bool ParseCtx::variableExists(const string& name)const {
+    auto it = variables.find(name);
+    if(it == variables.end()) return false;
+    return it->second > 0;
 }
 ValPtr ParseCtx::getVariable(const string& name)const {
-    if(Program::globalFunctionMap.find(name) != Program::globalFunctionMap.end())
-        return std::make_shared<Tree>(Program::globalFunctionMap[name]);
-    //for(int i = 0;i < localStack.size();i++)
-    //    if(name == localStack[i]) return Tree::Operator(Tree::tt_local, i);
     for(auto it = argStack.begin();it != argStack.end();it++) {
         if(name == *it) return std::make_shared<Argument>(std::distance(argStack.begin(), it));
     }
+    if(variableExists(name)) {
+        return std::make_shared<Variable>(name);
+    }
+    if(Program::globalFunctionMap.find(name) != Program::globalFunctionMap.end())
+        return std::make_shared<Tree>(Program::globalFunctionMap[name]);
     if(useUnits()) {
         double coef = 1;
         Unit u = Unit::parseName(name, coef);
@@ -126,8 +137,8 @@ ValPtr Expression::parseNumeral(const string& str, int base) {
     else ePos = pPos;
     //Get digits
     string digits = str.substr(start, ePos - start);
-#ifdef USE_ARB
-    //If digits are longer than 15, default to arb
+    #ifdef USE_ARB
+        //If digits are longer than 15, default to arb
     if(digits.length() > 15 && precision == 15)
         precision = digits.length() - 1;
     //Parse as arb if precision is specified
@@ -136,9 +147,9 @@ ValPtr Expression::parseNumeral(const string& str, int base) {
         if(exponent != 0) out *= mppp::pow(base, mppp::real(exponent));
         return std::make_shared<Arb>(out);
     }
-#else
+    #else
     if(precision != 15) throw "Precision could not be specified, arb library not present";
-#endif
+    #endif
     char maxAlphaChar = 'A' + base - 10;
     //Parse decimal part of digits
     int period = digits.length();
@@ -374,10 +385,8 @@ std::vector<string> Expression::splitBy(const string& str, int start, int end, c
     return out;
 }
 ValPtr Expression::evaluate(const string& str) {
-    ParseCtx pctx;
-    ValPtr tr = Tree::parseTree(str, pctx);
-    ComputeCtx cctx;
-    return tr->compute(cctx);
+    ValPtr tr = Tree::parseTree(str, Program::parseCtx);
+    return tr->compute(Program::computeCtx);
 }
 //THE TREE PARSER
 //
@@ -401,7 +410,8 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         //Square brackets for units []
         else if(type == Expression::square) {
             ctx.push(0, true);
-            treeList.push_back(Tree::parseTree(str.substr(1, str.length() - 2), ctx));
+            try{ treeList.push_back(Tree::parseTree(str.substr(1, str.length() - 2), ctx));}
+            catch(...) {ctx.pop();throw;}
             ctx.pop();
         }
         //Vectors <>
@@ -441,7 +451,8 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             if(base >= 36) throw "base cannot be over 36";
             if(base <= 1) throw "base cannot be under 2";
             ctx.push(base, true);
-            treeList.push_back(Tree::parseTree(str.substr(1, endBracket - 1), ctx));
+            try{ treeList.push_back(Tree::parseTree(str.substr(1, endBracket - 1), ctx));}
+            catch(...) {ctx.pop(); throw;}
             ctx.pop();
         }
         //Numeral 0.442e1
@@ -459,7 +470,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
                     throw "Variable " + str + " cannot run without arguments";
                 treeList.push_back(op);
             }
-            else if(op->typeID() == Value::arg_t || op->typeID() == Value::num_t) {
+            else if(op->typeID() == Value::arg_t || op->typeID() == Value::num_t || op->typeID() == Value::var_t) {
                 treeList.push_back(op);
             }
             else { throw "Variable " + str + " not found"; }
@@ -483,7 +494,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
                 tr->branches = std::move(arguments);
                 treeList.push_back(op);
             }
-            if(op->typeID() == Value::arg_t) {
+            if(op->typeID() == Value::arg_t || op->typeID() == Value::var_t) {
                 if(arguments.size() != 0) {
                     arguments.emplace(arguments.begin(), op);
                     treeList.push_back(std::make_shared<Tree>("run", std::move(arguments)));
@@ -506,7 +517,9 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
                 arguments.push_back(Expression::removeSpaces(str.substr(0, arrow - 1)));
             }
             ctx.push(arguments);
-            ValPtr tr = Tree::parseTree(str.substr(arrow + 1), ctx);
+            ValPtr tr;
+            try {tr = Tree::parseTree(str.substr(arrow + 1), ctx);}
+            catch(...) {ctx.pop(); throw;}
             ctx.pop();
             treeList.push_back(std::make_shared<Lambda>(arguments, tr));
         }

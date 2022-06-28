@@ -67,11 +67,16 @@ Lambda::Lambda(std::vector<string> inputs, ValPtr funcTree) {
     inputNames = inputs;
     func = funcTree;
 }
-ValPtr Lambda::operator()(ValList inputs) {
+ValPtr Lambda::operator()(ValList inputs, ComputeCtx& ctx) {
     if(inputs.size() != inputNames.size()) throw "error wrong number of arguments for lambda";
-    ComputeCtx ctx;
     ctx.pushArgs(inputs);
-    return func->compute(ctx);
+    ValPtr out;
+    try {
+        out = func->compute(ctx);
+    }
+    catch(...) { ctx.popArgs(inputs);throw; }
+    ctx.popArgs(inputs);
+    return out;
 }
 #pragma endregion
 #pragma region String
@@ -140,11 +145,11 @@ bool Value::operator==(ValPtr comp) {
     ValPtr sharedThis = shared_from_this();
     if(comp == nullptr) return false;
     if(typeID() != comp->typeID()) return false;
-#define cast(type,name1,name2) name1=std::static_pointer_cast<type>(sharedThis);name2=std::static_pointer_cast<type>(comp);
+    #define cast(type,name1,name2) name1=std::static_pointer_cast<type>(sharedThis);name2=std::static_pointer_cast<type>(comp);
     std::shared_ptr<Number> n1, n2;
-#ifdef USE_ARB
+    #ifdef USE_ARB
     std::shared_ptr<Arb> a1, a2;
-#endif
+    #endif
     std::shared_ptr<Vector> v1, v2;
     std::shared_ptr<Lambda> l1, l2;
     std::shared_ptr<String> s1, s2;
@@ -156,11 +161,11 @@ bool Value::operator==(ValPtr comp) {
         if(n1->num == n2->num) return true;
         return false;
     case Value::arb_t:
-    #ifdef USE_ARB
+        #ifdef USE_ARB
         cast(Arb, a1, a2)
             if(!(a1->unit == a2->unit)) return false;
         if(a1->num == a2->num) return true;
-    #endif
+        #endif
         return false;
     case Value::vec_t:
         cast(Vector, v1, v2)
@@ -197,24 +202,24 @@ ValPtr Value::convert(ValPtr value, int type) {
     int curType = value->typeID();
     if(type == curType) return value;
 
-#define def(type,name) std::shared_ptr<type> name=std::static_pointer_cast<type>(value)
+    #define def(type,name) std::shared_ptr<type> name=std::static_pointer_cast<type>(value)
     if(curType == vec_t && type != map_t) { def(Vector, v); return Value::convert(v->get(0), type); }
     if(type == num_t) {
-    #ifdef USE_ARB
+        #ifdef USE_ARB
         if(curType == arb_t) { def(Arb, a); return std::make_shared<Number>(double(a->num.real()), double(a->num.imag()), a->unit); }
-    #endif
+        #endif
         if(curType == lmb_t) throw "Cannot convert lambda to number";
         else if(curType == str_t) { def(String, s);return Expression::parseNumeral(s->str, 10); }
         else if(curType == map_t) throw "Cannot convert map to number";
     }
-#ifdef USE_ARB
+    #ifdef USE_ARB
     else if(type == arb_t) {
         if(curType == num_t) { def(Number, n); return std::make_shared<Arb>(n->num.real(), n->num.imag(), n->unit); }
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
         else if(curType == str_t) { def(String, s);return Expression::parseNumeral("0a" + s->str, 10); }
         else if(curType == map_t) throw "Cannot convert map to arb";
     }
-#endif
+    #endif
     else if(type == vec_t) {
         if(curType == map_t) {
             throw "Map to vector conversion not supported yet";
@@ -291,7 +296,9 @@ ValPtr Lambda::compute(ComputeCtx& ctx) {
         unreplacedArgs.push_back(std::make_shared<Argument>(i));
     }
     ctx.pushArgs(unreplacedArgs);
-    ValPtr newLambda = func->compute(ctx);
+    ValPtr newLambda;
+    try { newLambda = func->compute(ctx); }
+    catch(...) { ctx.popArgs(unreplacedArgs);throw; }
     ctx.popArgs(unreplacedArgs);
     return std::make_shared<Lambda>(inputNames, newLambda);
 }
@@ -311,7 +318,7 @@ ValPtr Argument::compute(ComputeCtx& ctx) {
 }
 #pragma endregion
 #pragma region toString
-string Value::toString()const { ParseCtx ctx;return this->toStr(ctx); }
+string Value::toString()const { return this->toStr(Program::parseCtx); }
 string Number::componentToString(double x, int base) {
     std::stringstream s;
     s << x;
@@ -411,22 +418,22 @@ bool Value::isOne(ValPtr x) {
     if(std::shared_ptr<Number> n = std::dynamic_pointer_cast<Number>(x)) {
         if(n->num == std::complex<double>(1)) return true;
     }
-#ifdef USE_ARB
+    #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = std::dynamic_pointer_cast<Arb>(x)) {
         if(n->num == std::complex<mppp::real>(1)) return true;
     }
-#endif
+    #endif
     return false;
 }
 bool Value::isZero(ValPtr x) {
     if(std::shared_ptr<Number> n = std::dynamic_pointer_cast<Number>(x)) {
         if(n->num == std::complex<double>(0)) return true;
     }
-#ifdef USE_ARB
+    #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = std::dynamic_pointer_cast<Arb>(x)) {
         if(n->num == std::complex<mppp::real>(0)) return true;
     }
-#endif
+    #endif
     return false;
 }
 

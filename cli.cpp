@@ -11,15 +11,13 @@ int main(int argc, char** argv) {
             string input;
             std::getline(std::cin, input);
             //Commands
-            if(input.substr(0,commandPrefix.size()) == commandPrefix) {
+            if(input.substr(0, commandPrefix.size()) == commandPrefix) {
                 std::cout << Program::runCommand(input.substr(commandPrefix.size())) << std::endl;
                 continue;
             }
             //Parse and compute tree
-            ParseCtx pctx;
-            ValPtr tr = Tree::parseTree(input, pctx);
-            ComputeCtx cctx;
-            ValPtr a = tr->compute(cctx);
+            ValPtr tr = Tree::parseTree(input, Program::parseCtx);
+            ValPtr a = tr->compute(Program::computeCtx);
             std::cout << "$" << i << " = " << a->toString() << std::endl;
             i++;
         }

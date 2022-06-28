@@ -12,6 +12,8 @@ void Program::cleanup() {
 void (*Program::implementationStartup)() = 0;
 void (*Program::implementationCleanup)() = 0;
 ValList Program::history;
+ComputeCtx Program::computeCtx;
+ParseCtx Program::parseCtx;
 ValPtr Value::zero;
 std::unordered_map<string, int> Program::globalFunctionMap;
 int Program::getGlobal(const string& name) {
@@ -174,9 +176,35 @@ string command_meta(vector<string>& input) {
         out += it->first + ": " + it->second + '\n';
     return out;
 }
+string command_def(vector<string>& input) {
+    //If is in the form a=2
+    char eq;
+    if((eq = input[0].find('=')) != string::npos) {
+        input.resize(2);
+        input[1] = input[0].substr(eq + 1);
+        input[0] = input[0].substr(0, eq);
+    }
+    //Push variable to compute context
+    ValPtr value = Expression::evaluate(input[1]);
+    //Push variable to respective contexts
+    Program::parseCtx.pushVariable(input[0]);
+    Program::computeCtx.setVariable(input[0], value);
+    return input[0] + "=" + value->toString();
+}
+string command_ls(vector<string>& input) {
+    auto& vars = Program::computeCtx.variables;
+    string out;
+    for(auto it = vars.begin();it != vars.end();it++) {
+        out += it->first + " = " + it->second.back()->toString() + '\n';
+    }
+    return out;
+
+}
 map<string, Command> Program::commandList = {
     {"include",{{"literal"},{"solvequad"},false,&command_include}},
     {"sections",{{"expression"},{"xpr"},false,&command_sections}},
     {"parse",{{"expression"},{"xpr"},true,&command_parse}},
     {"meta",{{},{},false,&command_meta}},
+    {"def",{{"literal","expression"},{"name","xpr"},true,&command_def}},
+    {"ls",{{},{},true,&command_ls}},
 };
