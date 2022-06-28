@@ -308,6 +308,7 @@ ValPtr Tree::compute(ComputeCtx& ctx) {
     for(int i = 0;i < branches.size();i++) {
         if(branches[i] == nullptr) branches[i] = Value::zero;
         computed[i] = branches[i]->compute(ctx);
+        if(computed[i] == nullptr) throw "Argument " + std::to_string(i) + " in " + Program::globalFunctions[op].getName() + " return nullptr";
         if(computed[i]->typeID() >= Value::tre_t) computable = false;
     }
     if(computable) return Program::globalFunctions[op](computed, ctx);
