@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
             i++;
         }
         catch(string e) { std::cout << "Error: " << e << std::endl; }
-        catch(const char* e) {std::cout << "Error: " << e << std::endl;}
+        catch(const char* e) { std::cout << "Error: " << e << std::endl; }
         catch(...) {
             std::cout << "Unknown error type" << std::endl;
             throw;

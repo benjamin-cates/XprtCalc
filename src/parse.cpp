@@ -395,6 +395,7 @@ ValPtr Expression::evaluate(const string& str) {
 //
 //
 ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
+    if(str.length() == 0) return Value::zero;
     std::vector<std::pair<string, Expression::Section>> sections = Expression::getSections(str, ctx);
     ValList treeList;
     std::vector<std::pair<string, int>> operators;
@@ -410,8 +411,8 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         //Square brackets for units []
         else if(type == Expression::square) {
             ctx.push(0, true);
-            try{ treeList.push_back(Tree::parseTree(str.substr(1, str.length() - 2), ctx));}
-            catch(...) {ctx.pop();throw;}
+            try { treeList.push_back(Tree::parseTree(str.substr(1, str.length() - 2), ctx)); }
+            catch(...) { ctx.pop();throw; }
             ctx.pop();
         }
         //Vectors <>
@@ -451,8 +452,8 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             if(base >= 36) throw "base cannot be over 36";
             if(base <= 1) throw "base cannot be under 2";
             ctx.push(base, true);
-            try{ treeList.push_back(Tree::parseTree(str.substr(1, endBracket - 1), ctx));}
-            catch(...) {ctx.pop(); throw;}
+            try { treeList.push_back(Tree::parseTree(str.substr(1, endBracket - 1), ctx)); }
+            catch(...) { ctx.pop(); throw; }
             ctx.pop();
         }
         //Numeral 0.442e1
@@ -518,8 +519,8 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             }
             ctx.push(arguments);
             ValPtr tr;
-            try {tr = Tree::parseTree(str.substr(arrow + 1), ctx);}
-            catch(...) {ctx.pop(); throw;}
+            try { tr = Tree::parseTree(str.substr(arrow + 1), ctx); }
+            catch(...) { ctx.pop(); throw; }
             ctx.pop();
             treeList.push_back(std::make_shared<Lambda>(arguments, tr));
         }
