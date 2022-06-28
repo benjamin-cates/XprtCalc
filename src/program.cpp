@@ -174,7 +174,9 @@ string Program::runCommand(string call) {
         argsList.push_back(args.substr(pos, next - pos));
         pos = next + 1;
     }
-    return Program::commandList[name].run(argsList);
+    string out = Program::commandList[name].run(argsList);
+    if(out.back() == '\n') out.resize(out.length() - 1);
+    return out;
 }
 string command_include(std::vector<string>& input) {
     string out;
@@ -186,7 +188,7 @@ string command_include(std::vector<string>& input) {
         else if(Library::functions.find(input[i]) != Library::functions.end()) {
             out += Library::functions[input[i]].include();
         }
-        else out+=input[i] + " not found\n";
+        else out += input[i] + " not found\n";
     }
     return out;
 }
