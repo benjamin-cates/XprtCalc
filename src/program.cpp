@@ -53,30 +53,92 @@ void Preferences::set(string name, ValPtr val) {
 #pragma endregion
 #pragma region Library
 using namespace Library;
-bool LibFunc::include() {
-    if(Program::globalFunctionMap[name] != 0) return false;
-    ParseCtx ctx;
-    ctx.push(inputs);
-    ValPtr tree = Tree::parseTree(xpr, ctx);
-    //Program::globalFunctions.push_back(Function(name, inputs, tree));
-    Program::globalFunctionMap[name] = Program::globalFunctions.size() - 1;
-    return true;
+string LibFunc::include() {
+    if(Program::parseCtx.getVariable(name) != nullptr) return "";
+    string out;
+    //Resolve dependencies
+    for(int i = 0;i < dependencies.size();i++) {
+        if(Library::functions.find(dependencies[i]) == Library::functions.end())
+            out += "Dependency " + dependencies[i] + " not found\n";
+        else out += Library::functions[dependencies[i]].include();
+    }
+    ValPtr lambda;
+    try {
+        lambda = Tree::parseTree(inputs + "=>" + xpr, Program::parseCtx);
+    }
+    catch(string mess) { return out + "Error in " + name + ": " + mess + '\n'; }
+    catch(const char* mess) { return out + "Error in " + name + ": " + mess + '\n'; }
+    catch(...) { return out + "Error in " + name + '\n'; }
+    Program::parseCtx.pushVariable(name);
+    Program::computeCtx.setVariable(name, lambda);
+    return out + name + " included\n";
 }
-void Library::includeAll(string type) {
-    for(auto it = functions.begin();it != functions.end();it++)
-        if(it->second.type == type) it->second.include();
-}
-LibFunc::LibFunc(string n, std::vector<string> in, string fullN, string t, string expression) {
+Library::LibFunc::LibFunc(string n, string in, string fullN, string expression, std::vector<string> dependants) {
     name = n;
     inputs = in;
     fullName = fullN;
-    type = t;
     xpr = expression;
+    dependencies = dependants;
 }
+std::map<string, std::vector<string>> Library::categories = {
+    {"algebra",{"solvequad"}},
+    {"statistics",{"p","npr","ncr","mean","mean_geom","quartile1","quartile3","median","iqr","stddev","sample_stddev","prob_complement","correlation","binomial"}},
+    {"vector",{"cross","dot","angle_between"}},
+    {"complex",{"comp_argument","comp_complement","comp_magnitude"}},
+    {"random",{"rand_int","rand_range","rand_member"}},
+};
 std::map<string, LibFunc> Library::functions = {
-    {"solvequad",LibFunc("solvequad",{"a","b","c"},
-        "Solve Quadratic","algebra",
-        "<-b-sqrt(b^2-4ac),-b+srqt(b^2-4ac)>/2a")},
+    {"solvequad",LibFunc("solvequad","(a,b,c)","Solve Quadratic",
+        "<-b-sqrt(b^2-4ac),-b+sqrt(b^2-4ac)>/2a",{})},
+    {"cross",LibFunc("cross","(u,v)", "Cross product",
+        "determinant(<<<1,0,0>,get(u,0),get(v,0)>,<<0,1,0>,get(u,1),get(v,2)>,<<0,0,1>,get(u,2),get(v,2)>>)",{"determinant"})},
+    {"dot",LibFunc("dot","(u,v)", "Dot product",
+        "sum(x=>get(u,x)*get(v,x),0,max(length(u),length(v)))",{})},
+    {"angle_between",LibFunc("angle_between","(u,v)","Angle between vector",
+        "acos(dot(u,v)/magnitude(u)/magnitude(v))",{"dot"})},
+    {"comp_argument",LibFunc("comp_argument","(z)","Complex argument",
+        "atan2(geti(z),getr(z))",{})},
+    {"comp_complement",LibFunc("comp_complement","(z)","Complex complement",
+        "getr(z)-geti(z)",{})},
+    {"comp_magnitude",LibFunc("comp_magnitude","(z)","Complex magnitude",
+        "sqrt(getr(z)^2+geti(z)^2)",{})},
+    {"comp_cis",LibFunc("comp_cis","(angle)","Cosine i sine",
+        "cos(angle)+i*sin(angle)",{})},
+    {"p",LibFunc("p","(event,count)","Probability",
+        "sum(_=>event()!=0,0,count)/count",{})},
+    {"npr",LibFunc("npr","(n,r)","Permutations",
+        "factorial(n)/factorial(n-r)",{})},
+    {"ncr",LibFunc("ncr","(n,r)","Choose",
+        "factorial(n)/factorial(n-r)/factorial(r)",{})},
+    {"mean",LibFunc("mean","(data)","Mean",
+        "sum(x=>get(data,x),0,length(data))/length(data)",{})},
+    {"mean_geom",LibFunc("mean_geom","(data)","Geometric mean",
+        "product(x=>get(data,x),0,length(data))^(1/length(data)",{})},
+    {"quartile1",LibFunc("quartile1","(data)","First quartile",
+        "get(sort(data),floor(length(data)/4))",{})},
+    {"quartile3",LibFunc("quartile3","(data)","Third quartile",
+        "get(sort(data),floor(3*length(data)/4))",{})},
+    {"median",LibFunc("median","(data)","Median",
+        "get(sort(data),floor(length(data)/2))",{})},
+    {"iqr",LibFunc("iqr","(data)","Interquartile range",
+        "quartile3(data)-quartile1(data)",{"quartile1","quartile3"})},
+    {"stddev",LibFunc("stddev","(data)","Standard deviation",
+        "run(mean=>sqrt(sum(x=>get(data,x)-mean,0,length(data))/length(data)),mean(data))",{"mean"})},
+    {"sample_stddev",LibFunc("sample_stddev","(data)","Sample standard deviation",
+        "stddev(data)*sqrt(length(data))/sqrt(length(data)-1)",{"stddev"})},
+    {"prob_complement",LibFunc("prob_complement","(p)","Probability complement",
+        "1-p",{})},
+    {"correlation",LibFunc("correlation","(data1,data2)","Correlation coefficient",
+        "run((mean1,mean2,count)=>sum(x=>(get(data1,x)-mean1)*(get(data2,x)-mean2),0,count)/sqrt(sum(x=>(get(data1,x)-mean1)^2,0,count)*sum(x=>(get(data2,x)-mean2)^2,0,count)),mean(data1),mean(data2),max(length(data1),length(data2)))",{"mean"})},
+    {"binomial",LibFunc("binomial","(p,n,x)","Binomial distribution",
+        "ncr(n,x)*p^x*(1-p)^(n-x)",{"ncr"})},
+    {"rand_int",LibFunc("rand_int","(min,max)","Random integer",
+        "floor(rand()*(max-min)+min)",{})},
+    {"rand_member",LibFunc("rand_member","(data)","Random member",
+        "get(data,floor(rand*length(data)))",{})},
+    {"rand_range",LibFunc("rand_range","(min,max)","Random within range",
+        "rand()*(max-min)+min",{})},
+
 
 };
 using namespace std;
@@ -115,7 +177,17 @@ string Program::runCommand(string call) {
     return Program::commandList[name].run(argsList);
 }
 string command_include(std::vector<string>& input) {
-    return "";
+    string out;
+    for(int i = 0;i < input.size();i++) {
+        if(Library::categories.find(input[i]) != Library::categories.end()) {
+            vector<string> libs = Library::categories[input[i]];
+            out += command_include(libs);
+        }
+        else if(Library::functions.find(input[i]) != Library::functions.end()) {
+            out += Library::functions[input[i]].include();
+        }
+    }
+    return out;
 }
 string command_sections(std::vector<string>& input) {
     using sec = Expression::Section;

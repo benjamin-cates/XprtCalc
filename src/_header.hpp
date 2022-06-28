@@ -140,19 +140,21 @@ struct Command {
 namespace Library {
     struct LibFunc {
         string name;
-        std::vector<string> inputs;
+        string inputs;
         string fullName;
-        string type;
         string xpr;
-        //Compiles xpr and adds to globalFunctions
-        bool include();
+        std::vector<string> dependencies;
+        //Compiles xpr and adds to variables, returns error message
+        string include();
         //LibrFunc constructor
-        LibFunc(string n, std::vector<string> in, string fullN, string t, string expression);
+        LibFunc(string n, string in, string fullN, string expression,std::vector<string> dependants);
+        LibFunc() {}
     };
     //Include all library functions of a certain type (library.cpp)
     void includeAll(string type);
     //Map of function name to the function itself, allows for quick lookups
     extern std::map<string, LibFunc> functions;
+    extern std::map<string,std::vector<string>> categories;
 }
 #pragma endregion
 #pragma region Parsing
@@ -597,7 +599,7 @@ public:
     string name;
     Variable(const string& n) { name = n; }
     //Virtual functions
-    string toStr(ParseCtx& ctx) { return name; }
+    string toStr(ParseCtx& ctx)const { return name; }
     ValPtr compute(ComputeCtx& ctx) { return ctx.getVariable(name); }
     int typeID()const { return Value::var_t; }
 };
