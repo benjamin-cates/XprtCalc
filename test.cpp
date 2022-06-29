@@ -188,8 +188,11 @@ namespace LibTest {
     string validate(std::map<string, Library::LibFunc>::iterator it) {
         const string& identifier = it->second.fullName;
         try {
-
-
+            for(int i=0;i<it->second.dependencies.size();i++) {
+                Library::functions[it->second.dependencies[i]].include();
+            }
+            Tree::parseTree(it->second.inputs+"=>"+it->second.xpr,Program::parseCtx);
+            return TestResult::success();
         } THROW_IF_FAIL
             return "";
     }
