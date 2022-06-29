@@ -329,6 +329,8 @@ int Expression::matchBracket(const string& str, int start) {
             }
             if(isStart.at(ch)) bracStack.push_back(type);
             else {
+                //Ignore less than and greater than signs
+                if(type == 4 && bracStack.back() != 4) continue;
                 //Iterate backwards until matching type is found, for example if stack is [<{<( and type is }, it will iterate backwards to { and destroy the <( sequence from the list
                 int destroyCount = 1;
                 for(auto it = bracStack.rbegin();it != bracStack.rend();it++, destroyCount++)
@@ -480,7 +482,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         else if(type == Expression::function) {
             int startBrace = Expression::findNext(sect, 0, '(');
             int endBrace = Expression::matchBracket(sect, startBrace);
-            string name = str.substr(0, startBrace);
+            string name = sect.substr(0, startBrace);
             name = Expression::removeSpaces(name);
             ValPtr op = ctx.getVariable(name);
             if(op.get() == nullptr) throw "Function " + name + " not found";
