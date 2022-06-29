@@ -459,10 +459,13 @@ std::vector<Function> Program::globalFunctions = {
     Constant("nan",NAN),
     Constant("inf",INFINITY),
     Constant("histlen",Program::history.size()),
-    Function("ans",{"index"},{downscale},{{D(dub | opt),[](inp) {
-        if(input.size() == 0) return Program::history.back();
-        int index = getN(0).real();if(index < 0) index += Program::history.size();
-        return Program::history[index];}}}),
+    Function("ans",{"index"},{},{{D(dub | arb | opt),[](inp) {
+        int index = Program::history.size() - 1;
+        if(input.size() == 1) index = input[0]->getR();
+        if(index < 0) index += Program::history.size();
+        if(index < 0 || index >= Program::history.size()) return Value::zero;
+        return Program::history[index];
+    }}}),
 #pragma endregion
 #pragma region Functional
     Function("run", { "func","..." }, {}, {{D(lmb,all | opt,all | opt,all | opt),[](inp) {
