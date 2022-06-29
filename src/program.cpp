@@ -89,7 +89,7 @@ std::map<string, std::vector<string>> Library::categories = {
 };
 std::map<string, LibFunc> Library::functions = {
     {"solvequad",LibFunc("solvequad","(a,b,c)","Solve Quadratic",
-        "<-b-sqrt(b^2-4ac),-b+sqrt(b^2-4ac)>/2a",{})},
+        "(-b- <-1,1>*sqrt(b^2-4a*c))/2a",{})},
     {"cross",LibFunc("cross","(u,v)", "Cross product",
         "determinant(<<<1,0,0>,get(u,0),get(v,0)>,<<0,1,0>,get(u,1),get(v,2)>,<<0,0,1>,get(u,2),get(v,2)>>)",{"determinant"})},
     {"dot",LibFunc("dot","(u,v)", "Dot product",
