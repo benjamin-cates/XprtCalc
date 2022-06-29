@@ -540,7 +540,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
                 }
             }
             //Suffix operators
-            if(Expression::suffixOperators.find(sect.front()) != Expression::suffixOperators.end()) {
+            if(Expression::suffixOperators.find(sect.front()) != Expression::suffixOperators.end() && sect != "!=") {
                 unaryOpBack.resize(treeList.size() + 1);
                 unaryOpBack[treeList.size() - 1] = Expression::suffixOperators.find(sect.front())->second;
                 if(sect.length() == 1) continue;
