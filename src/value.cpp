@@ -68,7 +68,8 @@ Lambda::Lambda(std::vector<string> inputs, ValPtr funcTree) {
     func = funcTree;
 }
 ValPtr Lambda::operator()(ValList inputs, ComputeCtx& ctx) {
-    if(inputs.size() != inputNames.size()) throw "error wrong number of arguments for lambda";
+    if(inputs.size() < inputNames.size()) throw "not enough arguments for lambda";
+    if(inputs.size() != inputNames.size()) inputs.resize(inputNames.size());
     ctx.pushArgs(inputs);
     ValPtr out;
     try {
@@ -291,10 +292,16 @@ ValPtr Vector::compute(ComputeCtx& ctx) {
     return std::make_shared<Vector>(std::move(a));
 }
 ValPtr Lambda::compute(ComputeCtx& ctx) {
+    if(ctx.argValue.size() == 0) return shared_from_this();
     ValList unreplacedArgs;
     for(int i = 0;i < inputNames.size();i++) {
         unreplacedArgs.push_back(std::make_shared<Argument>(i));
     }
+    //Move previous unreplaced args
+    for(int i = 0;i < ctx.argValue.size();i++)
+        if(ctx.getArgument(i)->typeID() == Value::arg_t)
+            std::static_pointer_cast<Argument>(ctx.getArgument(i))->id = i + inputNames.size();
+    //Push arguments to stack
     ctx.pushArgs(unreplacedArgs);
     ValPtr newLambda;
     try { newLambda = func->compute(ctx); }
@@ -394,6 +401,7 @@ string Lambda::toStr(ParseCtx& ctx)const {
     ctx.push(inputNames);
     out += "=>(";
     out += func->toStr(ctx) + ")";
+    ctx.pop();
     return out;
 }
 string Map::toStr(ParseCtx& ctx)const {
