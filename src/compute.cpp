@@ -389,8 +389,26 @@ std::vector<Function> Program::globalFunctions = {
     UnaryWithUnit("getr",std::complex<T>(num.real(),0),0),
     UnaryWithUnit("geti",std::complex<T>(num.imag(),0),0),
     UnaryWithUnit("getu",std::complex<T>(1.0,0.0),unit),
-    Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,Apply2VecMax("max")),
-    Binary("min","a","b",num1.real() > num2.real() ? num2 : num1,Apply2VecMax("min")),
+    Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,Apply2VecMax("max"),{D(vec_t),[](inp){
+        def(Vector,v,0);
+        ValPtr max = Value::zero;
+        for(int i = 0;i < v->vec.size();i++) {
+            if(v->vec[i]->typeID() == Value::num_t || v->vec[i]->typeID() == Value::arb_t)
+                if(max->getR() < v->vec[i]->getR())
+                    max = v->vec[i];
+        }
+        return max;
+    }}),
+    Binary("min","a","b",num1.real() > num2.real() ? num2 : num1,Apply2VecMax("min"),{D(vec_t),[](inp) {
+        def(Vector,v,0);
+        ValPtr min = make_shared<Number>(INFINITY);
+        for(int i = 0;i < v->vec.size();i++) {
+            if(v->vec[i]->typeID() == Value::num_t || v->vec[i]->typeID() == Value::arb_t)
+                if(min->getR() > v->vec[i]->getR())
+                    min = v->vec[i];
+        }
+        return min;
+    }}),
     Function("lerp",{"a","b","x"},{},{{D(dub | arb | vec_t,dub | arb | vec_t,dub | arb | vec_t),[](inp) {
         //return  (a*(1-f)) + (b*f)
         #define CptBin(name,input0,input1) Program::computeGlobal(name,ValList{input0,input1},ctx)
