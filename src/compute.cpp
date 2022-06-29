@@ -389,7 +389,7 @@ std::vector<Function> Program::globalFunctions = {
     UnaryWithUnit("getr",std::complex<T>(num.real(),0),0),
     UnaryWithUnit("geti",std::complex<T>(num.imag(),0),0),
     UnaryWithUnit("getu",std::complex<T>(1.0,0.0),unit),
-    Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,Apply2VecMax("max"),{D(vec_t),[](inp){
+    Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,Apply2VecMax("max"),{D(vec_t),[](inp) {
         def(Vector,v,0);
         ValPtr max = Value::zero;
         for(int i = 0;i < v->vec.size();i++) {
@@ -427,7 +427,19 @@ std::vector<Function> Program::globalFunctions = {
     Unary("sgn", num / abs(num)),
     Unary("abs",abs(num)),
     Unary("arg",arg(num)),
-    UnaryWithUnit("atan2",atan2(num.imag(),num.real()),unit),
+    UnaryWithUnit("atan2",atan2(num.imag(),num.real()),unit,{D(dub | arb,dub | arb),[](inp) {
+        if(input[0]->typeID() == Value::num_t && input[1]->typeID() == Value::num_t) {
+            double i = getN(0).real(), r = getN(1).real();
+            return Program::computeGlobal("atan2",ValList{make_shared<Number>(complex<double>(r,i))},ctx);
+        }
+        #ifdef USE_ARB
+        else {
+            mppp::real i = getArbN(0).real(), r = getArbN(1).real();
+            return Program::computeGlobal("atan2",ValList{make_shared<Arb>(complex<mppp::real>(r,i))},ctx);
+        }
+        #endif
+        return Value::zero;
+    }}),
     #pragma endregion
 #pragma region Binary logic
     Function("equal",{"a","b"},{},{{D(all,all),[](inp) {
