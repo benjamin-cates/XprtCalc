@@ -362,6 +362,7 @@ std::vector<Function> Program::globalFunctions = {
 
     Binary("logb","x","b",log(num1) / log(num2),BinVecApply("logb"),Apply2VecMin("logb")),
     DoubleArbTemplate("gamma",if(num.imag() != 0) throw "Gamma function does not support complex";ret(R)(Math::gamma(num.real()),unit)),
+    DoubleArbTemplate("factorial",if(num.imag() != 0) throw "Factorial function does not support complex";ret(R)(Math::gamma(num.real() + 1),unit)),
     DoubleArbTemplate("erf",if(num.imag() != 0) throw "Error function does not support complex";ret(R)(erf(num.real()),unit)),
 #pragma endregion
 #pragma region Trig
