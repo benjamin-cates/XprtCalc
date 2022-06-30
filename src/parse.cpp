@@ -375,16 +375,21 @@ string Expression::removeSpaces(const string& str) {
     out.resize(str.size() - offset);
     return out;
 }
+std::vector<int> getDelimiterList(const string& str, int start, int end, char delimiter) {
+    //Get positions
+    std::vector<int> out = { start };
+    while(out.back() != -1)
+        out.push_back(Expression::findNext(str, out.back() + 1, delimiter));
+    //Add end and return
+    out.back() = end;
+    return out;
+}
 std::vector<string> Expression::splitBy(const string& str, int start, int end, char delimiter) {
-    //Get comma positions
-    std::vector<int> commas = { start };
-    while(commas.back() != -1)
-        commas.push_back(findNext(str, commas.back() + 1, delimiter));
-    commas.back() = end;
+    std::vector<int> indicies = getDelimiterList(str, start, end, delimiter);
     //Turn to string vector
     std::vector<string> out;
-    for(int i = 0;i < commas.size() - 1;i++) {
-        out.push_back(str.substr(commas[i] + 1, commas[i + 1] - commas[i] - 1));
+    for(int i = 0;i < indicies.size() - 1;i++) {
+        out.push_back(str.substr(indicies[i] + 1, indicies[i + 1] - indicies[i] - 1));
     }
     //Prevent () from returning one argument
     if(out.size() == 1 && Expression::removeSpaces(out[0]) == "")
@@ -394,6 +399,177 @@ std::vector<string> Expression::splitBy(const string& str, int start, int end, c
 ValPtr Expression::evaluate(const string& str) {
     ValPtr tr = Tree::parseTree(str, Program::parseCtx);
     return tr->compute(Program::computeCtx);
+}
+void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
+    if(str.length() == 0) return;
+    std::vector<std::pair<string, Section>> secs = Expression::getSections(str, ctx);
+    int pos = 0;
+    //Deal with front-trailing spaces
+    while(str[pos] == ' ') {
+        *(output + pos) = ColorType::hl_space;
+        pos++;
+    }
+    //Loop through sections
+    for(int i = 0;i < secs.size();i++) {
+        string& sec = secs[i].first;
+        Section& type = secs[i].second;
+        string::iterator out = output + pos;
+        if(type == Section::numeral)
+            std::fill(out, out + sec.length(), ColorType::hl_numeral);
+        else if(type == Section::quote) {
+            std::fill(out, out + sec.length(), ColorType::hl_string);
+        }
+        else if(type == Section::parenthesis) {
+            //Color parenthesis
+            if(sec.back() != ')') *out = ColorType::hl_error;
+            else {
+                *out = ColorType::hl_bracket;
+                *(out + sec.length() - 1) = ColorType::hl_bracket;
+            }
+            //Color innards
+            Expression::color(sec.substr(1, sec.length() - 2), out + 1, ctx);
+        }
+        else if(type == Section::square) {
+            ctx.push(0, true);
+            //Color brackets
+            if(sec.back() != ']') *out = ColorType::hl_error;
+            else {
+                *out = ColorType::hl_bracket;
+                *(out + sec.length() - 1) = ColorType::hl_bracket;
+            }
+            //Color innards
+            Expression::color(sec.substr(1, sec.length() - 2), out + 1, ctx);
+            ctx.pop();
+        }
+        else if(type == Section::squareUnit) {
+            int endB = matchBracket(sec, 0);
+            int underscore = endB + 1;
+            double base = -1;
+            try {
+                ValPtr v = Expression::evaluate(sec.substr(underscore + 1));
+                if(v != nullptr) base = v->getR();
+            }
+            catch(...) {}
+            if(base < 2 || base>36) {
+                std::fill(out + underscore + 1, out + sec.length(), ColorType::hl_error);
+                base = ctx.getBase();
+            }
+            else Expression::color(sec.substr(underscore + 1), out + underscore + 1, ctx);
+            ctx.push(base);
+            Expression::color(sec.substr(1, endB - 1), out + 1, ctx);
+            ctx.pop();
+            *out = ColorType::hl_bracket;
+            *(out + underscore) = ColorType::hl_operator;
+            *(out + endB) = ColorType::hl_bracket;
+        }
+        else if(type == Section::vect) {
+            std::vector<int> commas = getDelimiterList(sec, 0, sec.length() - 1, ',');
+            for(int i = 0;i < commas.size() - 1;i++) {
+                *(out + commas[i]) = ColorType::hl_delimiter;
+                Expression::color(sec.substr(commas[i] + 1, commas[i + 1] - commas[i] - 1), out + commas[i] + 1, ctx);
+            }
+            //Color brackets
+            *out = ColorType::hl_bracket;
+            *(out + sec.length() - 1) = ColorType::hl_bracket;
+        }
+        else if(type == Section::variable) {
+            int len = sec.length();
+            sec = Expression::removeSpaces(sec);
+            ValPtr a = ctx.getVariable(sec);
+            ColorType type;
+            if(a == nullptr) type = ColorType::hl_error;
+            else if(a->typeID() == Value::tre_t) type = ColorType::hl_function;
+            else if(a->typeID() == Value::arg_t) type = ColorType::hl_argument;
+            else if(a->typeID() == Value::num_t) type = ColorType::hl_unit;
+            else if(a->typeID() == Value::var_t) type = ColorType::hl_variable;
+            std::fill(out, out + len, type);
+        }
+        else if(type == Section::function) {
+            int bracket = findNext(sec, 0, '(');
+            //Color name
+            string name = sec.substr(0, bracket);
+            int nameLen = name.length();
+            name = Expression::removeSpaces(name);
+            ValPtr func = ctx.getVariable(name);
+            ColorType nameType;
+            if(func == nullptr) nameType = ColorType::hl_error;
+            else if(func->typeID() == Value::tre_t) nameType = ColorType::hl_function;
+            else if(func->typeID() == Value::arg_t) nameType = ColorType::hl_argument;
+            else if(func->typeID() == Value::num_t) nameType = ColorType::hl_error;
+            else if(func->typeID() == Value::var_t) nameType = ColorType::hl_variable;
+            std::fill(out, out + nameLen, nameType);
+            //Color commas and arguments
+            std::vector<int> commas = getDelimiterList(sec, bracket, sec.length() - 1, ',');
+            for(int i = 0;i < commas.size() - 1;i++) {
+                *(out + commas[i]) = ColorType::hl_delimiter;
+                Expression::color(sec.substr(commas[i] + 1, commas[i + 1] - commas[i] - 1), out + commas[i] + 1, ctx);
+            }
+            //Color brackets
+            if(sec.back() != ')')
+                *(out + bracket) = ColorType::hl_error;
+            else {
+                *(out + bracket) = ColorType::hl_bracket;
+                *(out + sec.length() - 1) = ColorType::hl_bracket;
+            }
+        }
+        else if(type == Section::lambda) {
+            int equal;
+            std::vector<string> arguments;
+            //Color arg list (a,b)
+            if(sec[0] == '(') {
+                int end = Expression::matchBracket(sec, 0);
+                equal = Expression::findNext(sec, end + 1, '=');
+                //Split by commas
+                std::vector<int> commas = getDelimiterList(sec, 0, end, ',');
+                for(int i = 0;i < commas.size() - 1;i++) {
+                    //Color comma
+                    *(out + commas[i]) = ColorType::hl_delimiter;
+                    //Color if is valid argument
+                    string arg = sec.substr(commas[i] + 1, commas[i + 1] - commas[i] - 1);
+                    bool isValid = true;
+                    if(arg[0] >= '0' && arg[0] <= '9') isValid = false;
+                    else for(int x = 0;x < arg.length();x++) {
+                        if(arg[i] >= 'a' && arg[i] <= 'z');
+                        if(arg[i] >= 'A' && arg[i] <= 'Z');
+                        if(arg[i] >= '0' && arg[i] <= '9');
+                        if(arg[i] == '_' || arg[i] == ' ');
+                        else { isValid = false;break; }
+                    }
+                    ColorType type = isValid ? hl_argument : hl_error;
+                    std::fill(out + commas[i] + 1, out + commas[i + 1] - 1, type);
+                    //Add to arg list if valid
+                    if(isValid) arguments.push_back(Expression::removeSpaces(arg));
+                    //Color brackets
+                    *out = ColorType::hl_bracket;
+                    *(out + end) = ColorType::hl_bracket;
+                }
+            }
+            //Else if single variable
+            else {
+                equal = Expression::findNext(sec, 0, '=');
+                std::fill(out, out + equal, ColorType::hl_argument);
+                string name = Expression::removeSpaces(sec.substr(0, equal));
+                if(name != "_") arguments.push_back(name);
+            }
+            //Color => symbol
+            *(out + equal) = ColorType::hl_operator;
+            *(out + equal + 1) = ColorType::hl_operator;
+            //Color rest of statement
+            ctx.push(arguments);
+            Expression::color(sec.substr(equal + 2), out + equal + 2, ctx);
+            ctx.pop();
+        }
+        else if(type == Section::operat) {
+            std::fill(out, out + sec.length(), ColorType::hl_operator);
+        }
+        else std::fill(out, out + sec.length(), ColorType::hl_error);
+        //Iterate out to next position
+        pos += sec.length();
+        while(str[pos] == ' ') {
+            *(output + pos) = ColorType::hl_space;
+            pos++;
+        }
+    }
 }
 //THE TREE PARSER
 //

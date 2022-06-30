@@ -35,11 +35,11 @@ namespace Generate {
             if(num & 1) str[fastrand() % str.length()] = '.';
             if(num & 2) str[fastrand() % str.length()] = 'e';
             if(num & 4) {
-            #ifdef USE_ARB
+                #ifdef USE_ARB
                 static const string bases = "btodxa";
-            #else
+                #else
                 static const string bases = "btodx";
-            #endif
+                #endif
                 str[0] = '0';
                 str[1] = bases[fastrand() % bases.length()];
             }
@@ -143,7 +143,7 @@ namespace MatchingXpr {
             ValPtr first = Expression::evaluate(it->first);
             ValPtr second = Expression::evaluate(it->second);
             if(*first != second) {
-                if(first->toString()!=second->toString())
+                if(first->toString() != second->toString())
                     return TestResult::fail(it->first + " does not match " + it->second + " (computed as " + first->toString() + " and " + second->toString() + ")", name);
             }
             return TestResult::success();
@@ -183,15 +183,45 @@ namespace Zeroes {
         } THROW_IF_FAIL
     }
 };
+namespace Highlight {
+    const string name = "highlight";
+    std::map<string, string> tests = {
+        {"1+2","non"},
+        {"1p2-4**2","nnnonoon"},
+        {"add(5,[kg])","fffbndbuubb"},
+        {"x=>x+1","aooaon"},
+        {"0x12A3","nnnnnn"},
+        {"<3,4,5>","bndndnb"},
+        {"(4<3)+(3>2)","bnonbobnonb"},
+        {"( 3 + (4-5)","e nno bnonb"},
+        {"<5,x=>x+1,x>","bndaooaondeb"},
+        {"[<0A1,1F,3G>]_16","bbnnndnndnebbonn"},
+        {"run(x=>[0A1]_x,16)","fffbaoobneeboednnb"},
+        {"x=><x,2x,0.5>","aoobadnadnnnb"},
+        {"\"abc\\\"123\"","ssssssssss"},
+        {"\"abc\"+4.5","sssssonnn"},
+        {"^%#$%@","ooeeoe"},
+    };
+    string validate(std::map<string, string>::iterator it) {
+        const string& identifier = it->first;
+        try {
+            string colored(identifier.length(), Expression::ColorType::hl_error);
+            Expression::color(identifier, colored.begin(), Program::parseCtx);
+            if(colored != it->second)
+                return TestResult::fail(identifier + " highlighted as " + colored + " not as " + it->second, name);
+            return TestResult::success();
+        } THROW_IF_FAIL
+    }
+};
 namespace LibTest {
     const string name = "library";
     string validate(std::map<string, Library::LibFunc>::iterator it) {
         const string& identifier = it->second.fullName;
         try {
-            for(int i=0;i<it->second.dependencies.size();i++) {
+            for(int i = 0;i < it->second.dependencies.size();i++) {
                 Library::functions[it->second.dependencies[i]].include();
             }
-            Tree::parseTree(it->second.inputs+"=>"+it->second.xpr,Program::parseCtx);
+            Tree::parseTree(it->second.inputs + "=>" + it->second.xpr, Program::parseCtx);
             return TestResult::success();
         } THROW_IF_FAIL
             return "";
@@ -242,5 +272,6 @@ int main() {
     doTestList(MatchingXpr::tests.begin(), MatchingXpr::tests.end(), &MatchingXpr::validate);
     doTestList(Zeroes::tests.begin(), Zeroes::tests.end(), &Zeroes::validate);
     doTestList(Library::functions.begin(), Library::functions.end(), &LibTest::validate);
+    doTestList(Highlight::tests.begin(), Highlight::tests.end(), &Highlight::validate);
     doTestRandom(&ParsingRand::validate);
 }

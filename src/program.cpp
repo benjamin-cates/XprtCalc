@@ -193,11 +193,12 @@ string command_include(std::vector<string>& input) {
     return out;
 }
 string command_sections(std::vector<string>& input) {
+    string inp = combineArgs(input);
     using sec = Expression::Section;
     string out;
     if(input.size() == 1) input.push_back("");
     ParseCtx ctx;
-    std::vector<std::pair<string, sec>> sections = Expression::getSections(input[0], ctx);
+    std::vector<std::pair<string, sec>> sections = Expression::getSections(inp, ctx);
     for(int i = 0;i < sections.size();i++) {
         sec type = sections[i].second;
         string& str = sections[i].first;
@@ -273,7 +274,12 @@ string command_ls(vector<string>& input) {
         out += it->first + " = " + it->second.back()->toString() + '\n';
     }
     return out;
-
+}
+string command_highlight(vector<string>& input) {
+    string inp = combineArgs(input);
+    string colors(inp.length(),Expression::ColorType::hl_error);
+    Expression::color(inp,colors.begin(),Program::parseCtx);
+    return colors;
 }
 map<string, Command> Program::commandList = {
     {"include",{{"literal"},{"solvequad"},false,&command_include}},
@@ -282,4 +288,5 @@ map<string, Command> Program::commandList = {
     {"meta",{{},{},false,&command_meta}},
     {"def",{{"literal","expression"},{"name","xpr"},true,&command_def}},
     {"ls",{{},{},true,&command_ls}},
+    {"highlight",{{"literal"},{"xpr"},false,&command_highlight}},
 };

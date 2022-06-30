@@ -237,8 +237,11 @@ namespace Expression {
         //Operator
         operat
     };
-    //Returns string with color data of the expression
-    string color(string str, ParseCtx& ctx);
+    enum ColorType : char {
+        hl_null='a', hl_numeral='n', hl_function='f', hl_variable='v', hl_argument='a', hl_error='e', hl_bracket='b',hl_operator='o',hl_string='s',hl_comment='c',hl_delimiter='d',hl_unit='u',hl_space=' '
+    };
+    //Sets string contained inside iterator to color data of str
+    void color(string str, string::iterator output, ParseCtx& ctx);
     //Returns string with color data of the expression and command support
     string colorLine(string str, ParseCtx& ctx);
     //Remove non quoted spaces from an expression
