@@ -127,12 +127,11 @@ ValPtr Expression::parseNumeral(const string& str, int base) {
     else pPos = str.length();
     //Parse exponent
     int ePos;
-    long long exponent = 0;
+    double exponent = 0;
     if((ePos = str.find('e')) != string::npos) {
         if(ePos > pPos) throw "Exponent must be specified before precision";
         string exp = str.substr(ePos + 1, pPos - ePos - 1);
-        try { exponent = std::stoll(exp, nullptr, base); }
-        catch(const std::invalid_argument& ia) { throw "Invalid exponent " + exp; }
+        exponent = Expression::parseNumeral(exp, base)->getR();
     }
     else ePos = pPos;
     //Get digits
