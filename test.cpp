@@ -118,11 +118,11 @@ namespace Generate {
         //Vector
         else if(type == 5) {
             int count = fastrand() % 5;
-            string out = "<";
+            string out = "(<";
             for(int i = 0;i < count;i++) {
                 out += (i != 0 ? "," : " ") + expression(nestLeft - 1, ctx);
             }
-            return out + ">";
+            return out + ">)";
         }
         //Lambda
         else if(type == 90) {
@@ -147,7 +147,7 @@ namespace Generate {
         else if(type == 7) {
             auto it = Expression::operatorList.begin();
             std::advance(it, fastrand() % Expression::operatorList.size());
-            return expression(nestLeft - 1, ctx) + it->first + expression(nestLeft - 1, ctx);
+            return "(" + expression(nestLeft - 1, ctx) + it->first + expression(nestLeft - 1, ctx) + ")";
         }
         //String
         else if(type == 8) {
@@ -316,14 +316,18 @@ namespace LibTest {
 namespace ParsingRand {
     const string name = "rand_parse";
     string validate(int index) {
-        string identifier;
+        string identifier = Generate::expression(3, Program::parseCtx);
         try {
-
+            //Parse random expression
+            ValPtr tr=Tree::parseTree(identifier,Program::parseCtx);
+            //Test computation for segfault, other errors are ignored
+            try {
+                tr->compute(Program::computeCtx);
+            } catch (...) {}
+            //Return success
+            return TestResult::success();
         } THROW_IF_FAIL
-            return "";
     }
-
-
 }
 //Highlighting tests
 //Help page tests
@@ -339,7 +343,7 @@ void doTestList(T begin, T end, string(*validate)(T)) {
     std::chrono::duration<double> diff = endTime - startTime;
     std::cout << "Tests took " << diff.count() << std::endl;
 }
-void doTestRandom(string(*validate)(int index),float timeSeconds=3.0) {
+void doTestRandom(string(*validate)(int index), float timeSeconds = 3.0) {
     auto startTime = std::chrono::steady_clock::now();
     int thousands = 0;
     while(std::chrono::duration<float>(std::chrono::steady_clock::now() - startTime) < std::chrono::duration<float>(timeSeconds)) {
