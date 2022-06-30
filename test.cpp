@@ -24,6 +24,56 @@ namespace Generate {
         fastrand_seed = (214013 * fastrand_seed + 2531011);
         return (fastrand_seed >> 16) & 0x7FFF;
     }
+    string variable_name() {
+        const static string str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_____.....0123456789";
+        const static int chars = str.length();
+        int count = fastrand() % 5 + 1;
+        string out(size_t(count), ' ');
+        out[0] = fastrand() % (chars - 10);
+        for(int i = 1;i < count;i++)
+            out[i] = fastrand() % chars;
+        return out;
+    }
+    string valid_variable(ParseCtx& ctx, bool isFunction, int* argCount, bool allowUnit) {
+        int type = fastrand() % 4;
+        if(type == 1 && (isFunction || !allowUnit)) type = 0;
+        //Variable
+        if(type == 2) {
+            std::map<string, int>& vars = ctx.getVariableList();
+            if(vars.size() == 0) type = 0;
+            else {
+                std::map<string, int>::iterator it = vars.begin();
+                std::advance(it, (fastrand() % vars.size()));
+                return it->first;
+            }
+        }
+        //Argument
+        if(type == 3) {
+            if(ctx.argCount() == 0) type = 0;
+            else return ctx.getArgName(fastrand() % ctx.argCount());
+        }
+        //Unit
+        if(type == 1) {
+            std::unordered_map<string, Unit::Builtin>::const_iterator it = Unit::listOfUnits.begin();
+            std::advance(it, fastrand() % Unit::listOfUnits.size());
+            string prefix;
+            if(std::get<2>(it->second)) {
+                auto it = Unit::powers.begin();
+                std::advance(it, fastrand() % Unit::powers.size());
+                prefix = it->first;
+            }
+            return prefix + it->first;
+        }
+        //Global function
+        if(type == 0 && isFunction) {
+            std::unordered_map<string, int>::iterator it = Program::globalFunctionMap.begin();
+            std::advance(it, fastrand() % Program::globalFunctionMap.size());
+            if(argCount)
+                while(!Program::globalFunctions[it->second].assertArgCount(*argCount)) (*argCount)++;
+            return it->first;
+        }
+        return "pi";
+    }
     string expression(int nestLeft, ParseCtx& ctx) {
         int type = fastrand();
         if(nestLeft == 0) type %= 3;
@@ -33,45 +83,75 @@ namespace Generate {
             int num = fastrand();
             string str = std::to_string(num);
             if(num & 1) str[fastrand() % str.length()] = '.';
-            if(num & 2) str[fastrand() % str.length()] = 'e';
-            if(num & 4) {
-                #ifdef USE_ARB
-                static const string bases = "btodxa";
-                #else
+            if(num & 2 && str.length() > 2) str[1 + fastrand() % (str.length() - 2)] = 'e';
+            if(num & 4 && str.length() > 2) {
                 static const string bases = "btodx";
-                #endif
                 str[0] = '0';
                 str[1] = bases[fastrand() % bases.length()];
             }
             return str;
         }
         //Variable
-        else if(type == 1) {
-
-        }
+        else if(type == 1)
+            return valid_variable(ctx, false, nullptr, ctx.useUnits());
         //Parenthesis
-        else if(type == 2) {
-
-        }
+        else if(type == 2)
+            return "(" + expression(nestLeft, ctx) + ")";
         //Square brackets
         else if(type == 3) {
-
+            ctx.push(0, true);
+            string out = "[" + expression(nestLeft - 1, ctx) + "]";
+            ctx.pop();
+            return out;
         }
         //Function
         else if(type == 4) {
-
+            int argCount = 0;
+            string name = valid_variable(ctx, true, &argCount, false);
+            if(argCount == 0) return name;
+            std::vector<string> args;
+            for(int i = 0;i < argCount;i++) args.push_back(expression(nestLeft - 1, ctx));
+            string out = name + "(";
+            for(int i = 0;i < argCount;i++)  out += (i != 0 ? "," : " ") + args[i];
+            return out + ")";
         }
         //Vector
         else if(type == 5) {
-
+            int count = fastrand() % 5;
+            string out = "<";
+            for(int i = 0;i < count;i++) {
+                out += (i != 0 ? "," : " ") + expression(nestLeft - 1, ctx);
+            }
+            return out + ">";
         }
         //Lambda
-        else if(type == 6) {
-
+        else if(type == 90) {
+            int argCount = fastrand() % 4;
+            string out;
+            std::vector<string> args;
+            if(argCount == 0) out = "_";
+            if(argCount == 1) { args.push_back(variable_name());out = args.back(); }
+            else {
+                for(int i = 0;i < argCount;i++) {
+                    args.push_back(variable_name());
+                    out += (i == 0 ? "(" : ",") + args.back();
+                }
+                out += ")";
+            }
+            ctx.push(args);
+            out += "=>" + expression(nestLeft - 1, ctx);
+            ctx.pop();
+            return out;
+        }
+        //Operator
+        else if(type == 7) {
+            auto it = Expression::operatorList.begin();
+            std::advance(it, fastrand() % Expression::operatorList.size());
+            return expression(nestLeft - 1, ctx) + it->first + expression(nestLeft - 1, ctx);
         }
         //String
-        else if(type == 7) {
-
+        else if(type == 8) {
+            return "\"stringy\"";
         }
         return "0";
     }
@@ -82,16 +162,6 @@ namespace Generate {
         for(int i = 0;i < count;i++) {
             out[i] = validChars[fastrand() % validChars.size()];
         }
-        return out;
-    }
-    string variable_name() {
-        const static string str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_____.....0123456789";
-        const static int chars = str.length();
-        int count = fastrand() % 5 + 1;
-        string out(size_t(count), ' ');
-        out[0] = fastrand() % (chars - 10);
-        for(int i = 1;i < count;i++)
-            out[i] = fastrand() % chars;
         return out;
     }
     string argList() {
@@ -213,6 +283,22 @@ namespace Highlight {
         } THROW_IF_FAIL
     }
 };
+namespace RandomHighlight {
+    const string name = "random highlight";
+    string validate(int index) {
+        string identifier = Generate::expression(4, Program::parseCtx);
+        try {
+            string colored(identifier.length(), Expression::ColorType::hl_error);
+            Expression::color(identifier, colored.begin(), Program::parseCtx);
+            if(colored.find(Expression::ColorType::hl_error) != string::npos) {
+                if(identifier[colored.find(Expression::ColorType::hl_error)] != ',')
+                    return TestResult::fail(identifier + " highlighted as " + colored + " with error", name + "[" + std::to_string(index) + "]");
+                else return TestResult::success();
+            }
+            else return TestResult::success();
+        } THROW_IF_FAIL
+    }
+}
 namespace LibTest {
     const string name = "library";
     string validate(std::map<string, Library::LibFunc>::iterator it) {
@@ -226,12 +312,11 @@ namespace LibTest {
         } THROW_IF_FAIL
             return "";
     }
-
 }
 namespace ParsingRand {
     const string name = "rand_parse";
     string validate(int index) {
-        const string identifier;
+        string identifier;
         try {
 
         } THROW_IF_FAIL
@@ -254,15 +339,16 @@ void doTestList(T begin, T end, string(*validate)(T)) {
     std::chrono::duration<double> diff = endTime - startTime;
     std::cout << "Tests took " << diff.count() << std::endl;
 }
-void doTestRandom(string(*validate)(int index)) {
+void doTestRandom(string(*validate)(int index),float timeSeconds=3.0) {
     auto startTime = std::chrono::steady_clock::now();
     int thousands = 0;
-    while((std::chrono::steady_clock::now() - startTime).count() < 3) {
+    while(std::chrono::duration<float>(std::chrono::steady_clock::now() - startTime) < std::chrono::duration<float>(timeSeconds)) {
         for(int i = 0;i < 1000;i++) {
             TestResult::printIfError(validate(thousands + i));
         }
         thousands += 1000;
     }
+    std::cout << "Did random tests" << std::endl;
 }
 #define RunTestList(name) doTestList(name::tests.begin(),name::tests.end(),&name::validate)
 
@@ -273,5 +359,6 @@ int main() {
     doTestList(Zeroes::tests.begin(), Zeroes::tests.end(), &Zeroes::validate);
     doTestList(Library::functions.begin(), Library::functions.end(), &LibTest::validate);
     doTestList(Highlight::tests.begin(), Highlight::tests.end(), &Highlight::validate);
+    doTestRandom(&RandomHighlight::validate);
     doTestRandom(&ParsingRand::validate);
 }

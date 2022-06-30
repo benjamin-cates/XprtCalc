@@ -147,14 +147,14 @@ namespace Library {
         //Compiles xpr and adds to variables, returns error message
         string include();
         //LibrFunc constructor
-        LibFunc(string n, string in, string fullN, string expression,std::vector<string> dependants);
+        LibFunc(string n, string in, string fullN, string expression, std::vector<string> dependants);
         LibFunc() {}
     };
     //Include all library functions of a certain type (library.cpp)
     void includeAll(string type);
     //Map of function name to the function itself, allows for quick lookups
     extern std::map<string, LibFunc> functions;
-    extern std::map<string,std::vector<string>> categories;
+    extern std::map<string, std::vector<string>> categories;
 }
 #pragma endregion
 #pragma region Parsing
@@ -197,6 +197,10 @@ public:
     ValPtr getVariable(const string& name)const;
     //Returns argument name at given index
     string getArgName(int index)const;
+    //Get count of arguments
+    int argCount()const { return argStack.size(); }
+    //Get list of variables
+    std::map<string, int>& getVariableList() { return variables; }
 };
 
 //All of this is stored in parse.cpp
@@ -238,7 +242,7 @@ namespace Expression {
         operat
     };
     enum ColorType : char {
-        hl_null='a', hl_numeral='n', hl_function='f', hl_variable='v', hl_argument='a', hl_error='e', hl_bracket='b',hl_operator='o',hl_string='s',hl_comment='c',hl_delimiter='d',hl_unit='u',hl_space=' '
+        hl_null = 'a', hl_numeral = 'n', hl_function = 'f', hl_variable = 'v', hl_argument = 'a', hl_error = 'e', hl_bracket = 'b', hl_operator = 'o', hl_string = 's', hl_comment = 'c', hl_delimiter = 'd', hl_unit = 'u', hl_space = ' '
     };
     //Sets string contained inside iterator to color data of str
     void color(string str, string::iterator output, ParseCtx& ctx);
