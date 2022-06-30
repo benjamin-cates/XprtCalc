@@ -220,12 +220,12 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
         }
     }
     //Numerals
-    else if(ch >= '0' && ch <= '9') {
+    else if(ch >= '0' && ch <= '9' || ch == '.') {
         //Deal with 0b and 0x... prefixes
         int base;
-        if(ch == '0' && ((basesPrefix.find(str[1]) != basesPrefix.end()))) {
+        if(ch == '0' && ((basesPrefix.find(str[start + 1]) != basesPrefix.end()))) {
+            base = basesPrefix.at(str[start + 1]);
             start += 2;
-            base = basesPrefix.at(str[1]);
         }
         else base = ctx.getBase();
         if(base == -1) base = ctx.getBase();
