@@ -201,7 +201,7 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
                 return start + 2;
             }
         }
-        if(match == -1) return str.length();
+        if(match == -1) return str.length() + 1;
         else if(match != -2) {
             // [ABC]_16 base notation
             if(ch == '[' && str[match + 1] == '_') {
@@ -284,6 +284,11 @@ std::vector<std::pair<string, Expression::Section>> Expression::getSections(cons
         Expression::Section type;
         int end = Expression::nextSection(str, i, &type, ctx);
         out.push_back(std::pair<string, Expression::Section>(str.substr(i, end - i), type));
+        //Deal with unmatched brackets
+        if(end > str.length()) {
+            out.back().first += " ";
+        }
+        //Iterate to next index
         i = end - 1;
     }
     return out;
