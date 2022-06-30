@@ -446,7 +446,10 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             int underscore = endB + 1;
             double base = -1;
             try {
-                ValPtr v = Expression::evaluate(sec.substr(underscore + 1));
+                ParseCtx pctx;
+                ValPtr tr = Tree::parseTree(sec.substr(underscore + 1), ctx);
+                ComputeCtx cctx;
+                ValPtr v = tr->compute(cctx);
                 if(v != nullptr) base = v->getR();
             }
             catch(...) {}
