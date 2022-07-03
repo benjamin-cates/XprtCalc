@@ -6,7 +6,7 @@ struct Function::Domain {
     Domain(int a = 0, int b = 0, int c = 0, int d = 0) { sig = a + b * 0x100 + c * 0x10000 + d * 0x1000000; }
     Domain(const ValList& input);
     //Whether a matches this
-    inline bool match(Domain a)const { return (a.sig & sig) == a.sig; }
+    inline bool match(Domain a)const { return (a.sig & sig) == a.sig && assertArgCount(a.maxArgCount()); }
     //Only for sorting
     bool operator<(const Domain& a)const { return sig < a.sig; }
     //Get
