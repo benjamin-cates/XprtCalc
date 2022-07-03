@@ -269,8 +269,25 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
     //Operators
     if(operatorChars.find(ch) != operatorChars.end()) {
         if(type) *type = Section::operat;
-        int i = start + 1;
-        while(operatorChars.find(str[i]) != operatorChars.end()) i++;
+        //i is the character past the end of the operator
+        int i = start;
+        //Suffix operators
+        if(suffixOperators.find(str[i]) != suffixOperators.end()) i++;
+        //Find upper and lower bounds on first character of the operator
+        auto lower = operatorList.lower_bound(string(1, str[i]));
+        auto upper = operatorList.upper_bound(string(1, str[i]));
+        //Fix faulty comparison in upper bound
+        if(upper != operatorList.end()) while(upper->first[0] == str[i]) upper++;
+        //Find longest operator in list
+        int maxOpLen = 1;
+        for(;lower != upper;lower++) {
+            if(lower->first.length() > maxOpLen)
+                if(str.compare(i, lower->first.length(), lower->first) == 0)
+                    maxOpLen = lower->first.length();
+        }
+        i += maxOpLen;
+        //Prefix operators
+        if(prefixOperators.find(str[i]) != prefixOperators.end()) i++;
         return i;
     }
     if(type) *type = Section::undefined;
