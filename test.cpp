@@ -305,6 +305,8 @@ namespace LibTest {
         const string& identifier = it->second.fullName;
         try {
             for(int i = 0;i < it->second.dependencies.size();i++) {
+                if(Library::functions.find(it->second.dependencies[i])==Library::functions.end())
+                    return TestResult::fail("Could not resolve dependency " + it->second.dependencies[i],name);
                 Library::functions[it->second.dependencies[i]].include();
             }
             Tree::parseTree(it->second.inputs + "=>" + it->second.xpr, Program::parseCtx);
