@@ -1,26 +1,5 @@
 #include "_header.hpp"
 
-struct Function::Domain {
-    //Contains binary data on support for first four arguments
-    uint32_t sig;
-    Domain(int a = 0, int b = 0, int c = 0, int d = 0) { sig = a + b * 0x100 + c * 0x10000 + d * 0x1000000; }
-    Domain(const ValList& input);
-    //Whether a matches this
-    inline bool match(Domain a)const { return (a.sig & sig) == a.sig && assertArgCount(a.maxArgCount()); }
-    //Only for sorting
-    bool operator<(const Domain& a)const { return sig < a.sig; }
-    //Get
-    int get(int id)const { return (sig >> (id * 8)) & 0b11111111; }
-    //Returns domain as list (num,vec,map...)
-    string toString()const;
-    //Asserts whether arg count is supported
-    bool assertArgCount(int c)const;
-    //Gets maximum number of args supported
-    int maxArgCount()const;
-    //Gets minimum number of args supported
-    int minArgCount()const;
-};
-
 bool Program::assertArgCount(int id, int count) {
     return Program::globalFunctions[id].assertArgCount(count);
 }
