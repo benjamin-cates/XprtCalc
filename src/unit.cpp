@@ -167,14 +167,6 @@ const std::unordered_map<string, Unit::Builtin> Unit::listOfUnits = {
     metric("Pa","Pascal",newton / (meter ^ 2)),
     metric("bps","Bits per second",bit / second),
     metric("Hz","Hertz",Unit() / second),
-    metric("kat","Katal",mole / second),
-    metric("H","Henry",newton * meter / (amp ^ 2)),
-    metric("S","Siemens",(amp ^ 2) * (second ^ 3) / kilogram / (meter ^ 2)),
-    metric("Wb","Weber",watt * second / amp),
-    metric("T","Tesla",newton / meter / amp),
-    metric("ohm","Ohm",watt / (amp ^ 2)),
-    metric("Sv","Sievert",(meter ^ 2) / (second ^ 2)),
-    metric("F","Farad",(second ^ 4) * (amp ^ 2) / (meter ^ 2) / kilogram),
 
     //Normal metric units
     metric("Wh","Watt hour",watt * second,3600),
@@ -211,7 +203,6 @@ const std::unordered_map<string, Unit::Builtin> Unit::listOfUnits = {
     newUnt("nmi","Nautical Mile",meter,1852.0),
     newUnt("oz","Ounce",kilogram,0.028349523125),
     newUnt("psi","Pound per square inch",newton / (meter ^ 2),6894.75729316836133),
-    newUnt("st","Stone",kilogram,6.35029318),
     newUnt("tbsp","Tablespoon",meter ^ 3,0.00001478676478125),
     newUnt("tsp","Teaspoon",meter ^ 3,0.000000492892159375),
     newUnt("yd","Yard",meter,0.9144),
