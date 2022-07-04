@@ -132,6 +132,12 @@ ValPtr Function::operator()(ValList& input, ComputeCtx& ctx) {
 }
 string Function::getName()const { return name; }
 std::vector<string>& Function::getInputNames() { return inputNames; }
+std::vector<Function::Domain> Function::getDomain()const {
+    std::vector<Function::Domain> out;
+    for(auto it = domainMap.begin();it != domainMap.end();it++) out.push_back(it->first);
+    for(auto it = funcs.begin();it != funcs.end();it++) out.push_back(it->first);
+    return out;
+}
 string Function::debugStr() {
     string out = "name: " + name + "\nargs: ";
     for(int i = 0;i < inputNames.size();i++) out += inputNames[i] + ", ";
