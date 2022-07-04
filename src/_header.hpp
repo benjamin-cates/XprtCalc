@@ -1,6 +1,7 @@
 #pragma once
 #pragma region Include directives
 #include <string>
+#include <cstring>
 #include <complex>
 #include <memory>
 #include <cmath>
@@ -104,24 +105,28 @@ namespace Program {
 //help.cpp
 namespace Help {
     class Page {
+    public:
         string name;
         string symbol;
         string type;
         string content;
-        std::set<string> aliases;
-    public:
+        string seeMore;
+        std::vector<string> aliases;
         string toPlainText();
+        string toString();
         string toJSON();
-        string getName();
-        string getSymbol();
-        string getType();
-        string getContent();
-        std::set<string>& getAliases();
-        int calculatePriority(const string& query);
+        Page() {}
+        Page(string n, string s, string t, string cont, std::vector<string> alias = {}, string more = "") { name = n; symbol = s; type = t; content = cont; aliases = alias;seeMore = more; }
+        static Page fromUnit(string n, string message, std::vector<string> aliases = {}, string more = "");
+        static Page fromFunction(string n, string message, string sym, std::vector<string> aliases = {}, string more = "");
+        static Page fromLibrary(string n, string message, std::vector<string> aliases = {}, string more = "");
     };
+    extern std::map<uint64_t, std::vector<std::pair<int, int>>> queryHash;
     extern std::vector<Page> pages;
+    void generateQueryHash();
+    void stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, const string& str, int basePriority);
     //Returns list of pointers to pages, sorted by relevance of the query
-    std::vector<Page*> search(const string& query);
+    std::vector<Page*> search(const string& query, int maxResults = 20);
 };
 
 //program.cpp

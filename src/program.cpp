@@ -280,6 +280,52 @@ string command_highlight(vector<string>& input) {
     Expression::color(inp, colors.begin(), Program::parseCtx);
     return colors;
 }
+string command_help(vector<string>& input) {
+    string inp = combineArgs(input);
+    if(inp.length() == 0) inp = "welcome";
+    std::vector<Help::Page*> res = Help::search(inp, 1);
+    if(res.size() == 0) throw "Help page not found";
+    Help::Page& p = *res[0];
+    return res[0]->toString();
+}
+string command_query(vector<string>& input) {
+    string out;
+    string inp = input[0];
+    //Print out results
+    std::vector<Help::Page*> res = Help::search(inp, 10);
+    for(int i = 0;i < res.size();i++)
+        out += std::to_string(i) + ": " + res[i]->name + "\n";
+    //Message to rerun with index
+    if(input.size() == 1) {
+        out += "Rerun query with search and index to print help page\n";
+    }
+    //If index is provided, print the page
+    else {
+        int index=Expression::evaluate(input[1])->getR();
+        if(index<0||index>=res.size()) out += "Unable to print page, index out of bounds\n";
+        else return res[index]->toString();
+    }
+    return out;
+}
+string command_debug_help(vector<string>& input) {
+    if(Help::queryHash.size() == 0) Help::generateQueryHash();
+    string out;
+    for(auto it = Help::queryHash.begin();it != Help::queryHash.end();it++) {
+        uint64_t hash = it->first;
+        string name(8, ' ');
+        for(int x = 0;(hash & (uint64_t(0xff) << ((7 - x) * 8))) && x < 8;x++) {
+            name[x] = char((hash >> ((7 - x) * 8)) & 0xff);
+        }
+        out += name + ": ";
+        for(int x = 0;x < it->second.size();x++) {
+            if(x != 0) out += ", ";
+            out += Help::pages[it->second[x].first].name;
+            out += "(" + std::to_string(it->second[x].second) + ")";
+        }
+        out += "\n";
+    }
+    return out;
+}
 map<string, Command> Program::commandList = {
     {"include",{{"literal"},{"solvequad"},false,&command_include}},
     {"sections",{{"expression"},{"xpr"},false,&command_sections}},
@@ -288,4 +334,7 @@ map<string, Command> Program::commandList = {
     {"def",{{"literal","expression"},{"name","xpr"},true,&command_def}},
     {"ls",{{},{},true,&command_ls}},
     {"highlight",{{"literal"},{"xpr"},false,&command_highlight}},
+    {"help",{{"literal"},{"query"},false,&command_help}},
+    {"query",{{"literal"},{"query"},false,&command_query}},
+    {"debug_help",{{},{},false,&command_debug_help} },
 };
