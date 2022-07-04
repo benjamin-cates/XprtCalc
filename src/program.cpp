@@ -192,11 +192,9 @@ string command_include(std::vector<string>& input) {
     }
     return out;
 }
-string command_sections(std::vector<string>& input) {
-    string inp = combineArgs(input);
+string command_sections_internal(const string& inp, string tabbing) {
     using sec = Expression::Section;
     string out;
-    if(input.size() == 1) input.push_back("");
     ParseCtx ctx;
     std::vector<std::pair<string, sec>> sections = Expression::getSections(inp, ctx);
     for(int i = 0;i < sections.size();i++) {
@@ -206,9 +204,9 @@ string command_sections(std::vector<string>& input) {
         if(type == sec::function) bracket = '(';
         else if(type == sec::parenthesis) bracket = '(';
         else if(type == sec::lambda) {
-            out += input[1] + str.substr(0, Expression::findNext(str, 0, '>') + 1) + '\n';
-            std::vector<string> newInp{ str.substr(Expression::findNext(str,0,'>') + 1),input[0] + "  " };
-            out += command_sections(newInp);
+            out += tabbing + str.substr(0, Expression::findNext(str, 0, '>') + 1) + '\n';
+            out += command_sections_internal(str.substr(Expression::findNext(str, 0, '>') + 1), tabbing + "    ");
+            continue;
         }
         else if(type == sec::square) bracket = '[';
         else if(type == sec::squareUnit) bracket = '[';
@@ -218,25 +216,26 @@ string command_sections(std::vector<string>& input) {
             int start = Expression::findNext(str, 0, bracket);
             int end = Expression::matchBracket(str, start);
             if(end == -1) end = str.length();
-            out += input[1] + str.substr(0, start + 1) + '\n';
+            out += tabbing + str.substr(0, start + 1) + '\n';
             if(type == sec::vect || type == sec::curly || type == sec::function) {
                 std::vector<string> secs = Expression::splitBy(str, start, end, ',');
-                string newTabbing = input[1] + "  ";
                 for(int i = 0;i < secs.size();i++) {
-                    std::vector<string> inp{ secs[i],newTabbing };
-                    out += command_sections(inp);
-                    if(i != secs.size() - 1) out += newTabbing + ",\n";
+                    out += command_sections_internal(secs[i], tabbing + "    ");
+                    if(i != secs.size() - 1) out += tabbing + "    ,\n";
                 }
             }
             else {
-                std::vector<string> newInp{ str.substr(start + 1, end - start - 1), input[1] + "  " };
-                out += command_sections(newInp);
+                out += command_sections_internal(str.substr(start + 1, end - start - 1), tabbing + "    ");
             }
-            out += input[1] + str.substr(end) + '\n';
+            out += tabbing + str.substr(end) + '\n';
         }
-        else out += input[1] + str + '\n';
+        else out += tabbing + str + '\n';
     }
     return out;
+}
+string command_sections(std::vector<string>& input) {
+    string inp = combineArgs(input);
+    return command_sections_internal(inp, "");
 }
 
 string command_parse(vector<string>& input) {
@@ -277,8 +276,8 @@ string command_ls(vector<string>& input) {
 }
 string command_highlight(vector<string>& input) {
     string inp = combineArgs(input);
-    string colors(inp.length(),Expression::ColorType::hl_error);
-    Expression::color(inp,colors.begin(),Program::parseCtx);
+    string colors(inp.length(), Expression::ColorType::hl_error);
+    Expression::color(inp, colors.begin(), Program::parseCtx);
     return colors;
 }
 map<string, Command> Program::commandList = {
