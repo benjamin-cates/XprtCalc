@@ -487,7 +487,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("run", { "func","..." }, {}, {{D(lmb,all | opt,all | opt,all | opt),[](inp) {
         def(Lambda,func,0);
         ValList args(func->inputNames.size(),Value::zero);
-        for(int i = 0;i < input.size() - 1;i++) args[i] = input[i + 1];
+        for(int i = 0;i < std::min(input.size() - 1,args.size());i++) args[i] = input[i + 1];
         return (*func)(args,ctx);
     }}}),
     Function("apply",{"func","args"},{},{{D(lmb,vec_t),[](inp) {
