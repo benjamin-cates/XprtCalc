@@ -89,6 +89,12 @@ Page Page::fromLibrary(string n, string message, std::vector<string> aliases, st
     out.seeMore = more;
     return out;
 }
+Page Page::fromInfo(string n, string message, std::vector<string> aliases, string more) {
+    return Page(n, "", "guide", message, aliases, more);
+}
+Page Page::fromType(string n, int id, string symbol, string message, std::vector<string> aliases, string more) {
+    return Page(n, symbol, "type", message + " The ?typeof? function returns " + std::to_string(id) + "for this type.", aliases, more);
+}
 
 std::vector<Page> Help::pages = {
     #pragma region Introduction
@@ -96,26 +102,22 @@ std::vector<Page> Help::pages = {
     Page("Welcome","","guide","Welcome to XprtCalc, use the \"/query\" command to search the help pages, or type \"/help introduction\" to read about the basic functionality, info can be found in the page called ?info?.",{"help"}),
     #pragma endregion
     #pragma region Types
-    //Number
-    //Arb
-    //Vectors
-    //Lambdas
-    //Strings
-    //Maps
+    Page::fromType("Number",Value::num_t,"num","The number class has three components: a real decimal, and ?imaginary? decimal, and a ?unit?. These can be treated as a single package. Each of the two decimals is stored to `15` digits of precision. More precision can be stored in the ?arb? type. Examples: `2`, `-8i`, `2.5+4i[m]`, `2[kg]`, `inf-inf*i[mol]`.",{"floating","double"},"https://en.wikipedia.org/wiki/Floating-point_arithmetic"),
+    Page::fromType("Arb",Value::arb_t,"arb","The arb type is very similar to the ?number? type, except that the decimals are stored with arbitrary precision. Values can be casted to the arb type using the ?toarb? function, however it will be stuck at the default precision of 15. To cast from arb to a number, use the ?tonumber? function. They can also be created with the 'p' symbol in a decimal literal. Example: `1.5p20 = 1.50000000000000000000`. If the number of digits is more than 15 it will also store it with extra precision as in the previous example. When two arb types (or an arb and a number) are put together in a binary operation, the return value will have the highest precision of both. Example: `mult(1.5p20,2p5) = 3.0p20`. The 'p' symbol must come after the 'e' symbol for exponents. In the rare case that the application is compiled without arb support because it is not installed, the arb type does not exist.",{"p","precision","arbitrary","float"},"https://github.com/bluescarni/mppp"),
+    Page::fromType("Vector",Value::vec_t,"vec","The vector type stores an arbitrarily long list of values. The value elements can be of any type. They are created with the angle brackets `< and >` as is commonly used in linear algebra. Examples: `<1,2,3>`, `<1.5p20,x=>x+1>`. There are many different built in functions that handle vectors, and the complete list can be seen by running \"/query vector\". Some common ones are `get`, `fill`, `map`, `length`, `magnitude`, `normalize`, and `sort`. Vectors can be used to store Euclidian point positions, return multiple values from a function, or store a list. Vectors apply to many common functions like `sqrt`, `exp`, and every other elementary operation. Examples: `2+<4,8> = <6,10>`, `sqrt(<4,9>) = <2,3>`, `sin(<pi,pi/2>) = <0,1>`. See the pages for each function to see if they apply to vectors.",{"list","array","iterator","index"}),
+    Page::fromType("Lambda",Value::lmb_t,"lmb","The lambda type stores a nameless function that can have any number of arguments, and a single output. They use arrow notation similar to JavaScript. Example: `x=>x+1` should be read as \"x goes to x plus one\". For zero argument lambdas, use an underscore character `_=>rand`, for more than one, use a comma separated list enclosed in parenthesis `(x,t)=>x*t`. As long as they follow the ?variable? naming conventions. Lambdas can also be nested and are dynamic types: `run(x=>y=>x+y,2) = y=>2+y`. There are many different functions that take advantage of lambdas, common ones are: `run`, `apply`, `sum`, `product`, `fill`, `map`, and `sort`.",{"anonymous function","=>"}),
+    Page::fromType("String",Value::str_t,"str","The string type stores text (as a list of characters). Strings can be used to print information, create dynamic evaluations, or throw errors. They are enclosed by the double quotes \" (no other wrapping is available). Example: `\"Hello\"`. There are multiple different string methods, like: `eval`, `substr`, `lowercase`, `uppercase`, `error`, `print`, `indexof`, and `replace`. In order to prevent character conflict, double quotes within strings must be preceded by the \\ backslash character, backslashes must be escaped by another backslash. Example: `\"\\\\\"` -> \\. Other escaped characters are: `\"\\n\"` for a new line, and `\"\\t\"` for the tab character.",{"character","text","words"}),
+    Page::fromType("Map",Value::map_t,"map","The map type stores key-value mappings, it is currently not implemented yet."),
     #pragma endregion
     #pragma region Guides
-    //List of operators
-    //Units guide
-    //Base units explanation
-    //Metric prefixes
-    //Base conversion
-    //Commands
+    Page::fromInfo("List of operators","Operators are small character sequences that imply functions like add, subtract, etc. They can be binary (take two arguments) or unary (apply to one number). The binary operators are: \n`+ - add` (Addition) \n`- - sub` (Subtraction) \n`* - mult` (Multiplication) \n`/ - div` (Division) \n`^ - pow` (Exponentiation) \n`** - pow` (Exponentiation) \n`= - equal` \n`== - equal` \n`!= - not_equal` \n`> - gt` (Greater than) \n`>= - gt_equal` (Greater than or equal) \n`< - lt` (Less than) \n`<= - lt_equal` (Less than or equal) \nThe prefix unary operators (goes before expression) are:\n`- - neg` (Negative)\nThe suffix unary operators (goes after expression) are: \n`! - factorial`.\nExamples: `4*5!+2 = add(mult(4,factorial(5)),2)`."),
+    Page::fromInfo("Units","Units store types of units of measurement. They must be referenced inside the `[]` square brackets. An example of a unit is meters, which stores length. Six metric base units are supported, and the `dollar` and `bit` are additionally added. Units are stored as a list of base units with their powers. For example area is stored as m^2. All units are stored in terms of metric base units, however converion support will be added eventually. Units interact with certain operators, like with multiplication, their powers are added, with division the powers are subtracted, etc. However, with most functions, the units are left untouched. The base units are: `m` for Meter, `kg` for kilogram, `s` for second, `A` for Amp, `K` for Kelvin, `mol` for mole, `b` for bits, and `$` for dollars. If the power ever goes above `127` or below `-127`, an overflow error will occur.",{"measurement"},"https://www.mathsisfun.com/measure/unit.html"),
+    Page::fromInfo("Metric prefix","Metric prefixes are single character ?unit? modifiers that represent a change in magnitude. For example `[km]` translates to `1000` meters, the k means 1000, and the m means meters. Prefixes are supported on most metric units, but check each unit's help page to be sure.\nList of prefixes: \n n - nano `(10^-9)` \n u - micro `(10^-6)` \nm - milli `(0.001)`\nc - centi `(0.01)`\nk - kilo `(1000)`\nM - Mega `(1_000_000)`\nG - Giga `(10^9)`\nT - Tera `(10^12)`\nOther less common prefixes: \ny - yocto `(10^-24)`\nz - zempto `(10^-21)`\na - atto `(10^-18)`\nf - fempto `(10^-15)`\np - pico `(10^-12)`\nP - Peta `(10^15)`\nZ - Zetta `(10^18)`\nY - Yotta `(10^21)`\n",{},"https://www.nist.gov/pml/owm/metric-si-prefixes"),
+    Page::fromInfo("Base conversion","There are multiple ways that different bases can be parsed, however there is currently no way to print in a different base. The first is a prefix operator. Prefix operators start with a zero, followed by a character, then the number. Example: `0b101` is `101` in binary (equals five). The supported prefixes are: `0b` binary (2), `0t` ternary (3), `0o` octal (8), `0d` decimal (10), and `0x` hexadecimal (16). Note that the exponent character is also parsed in that base, so `0b11e101` is `3 * 2^5`. The other way to parse bases is using the square bracket underscore notation. This looks something like `[0A1]_16`. The base is the number after the underscore, which can be computed, but it must be constant. Note that, like in this example, all numbers must start with a number from 0-9, so hexadecimals must start with `0`. The maximum base is `36` and uses the characters `0-9` and then `A-Z` for `10-36` (characters must be uppercase). The minimum base is base 2. ",{},"https://en.wikipedia.org/wiki/Positional_notation#Base_of_the_numeral_system"),
+    Page::fromInfo("Command","Commands are functions that can access special parts of the program. Commands are prefixed by the '/' character. For a list of commands run the \"/query command\" command."),
     //Comments
-    //Applying vectors
-    //Lambda capturing
     //Variables
     //Preferences
-    //
     #pragma endregion
     #pragma region Functions
     #pragma region Elementary
@@ -283,9 +285,17 @@ std::vector<Page> Help::pages = {
     Page::fromUnit("yd","The yard is a non-metric unit of length, approximately equal to one ?meter?.",{"length","distance"},"https://en.wikipedia.org/wiki/Yard"),
     #pragma endregion
     #pragma endregion
-
-
-};
+    #pragma region Commands
+    Page("Define","/def","command","The def command defines a global variable. It can be used in two ways, as either `/def a 12` or as `/def a=12`. Def can also define a variable as a ?lambda? function, which can then be run like a built in function. See the ?include? command for something similar to this.",{"set"}),
+    Page("Include","/include","command","The include command includes functions from a predetermined list. Example: `/include mean`. Search for ?library functions? to see them all."),
+    Page("Parse","/parse","command","The parse command parses the expression to a tree and then returns it without computing. Example: `/parse add(1,2)` -> `1+2`."),
+    Page("Metadata","/meta","command","The meta command returns a list of metadata for the program like author name and version."),
+    Page("List","/ls","command","The ls command lists every ?variable? in the global scope. Variables can be defined with the ?def? command."),
+    Page("Highlight","/highlight","command","The highlight command takes in an expression and returns the coloring data for it"),
+    Page("Help","/help","command","The help command finds the most relevant help page to the search query and displays it."),
+    Page("Query","/query","command","The query command creates a list of help pages from the query sorted by relevance. It can be rerun with the index to display. Example: `/query log 2`."),
+    #pragma endregion
+        };
 std::map<uint64_t, std::vector<std::pair<int, int>>> Help::queryHash;
 void Help::stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, const string& str, int basePriority = 1) {
     //X represents the position within a word

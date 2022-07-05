@@ -120,6 +120,8 @@ namespace Help {
         static Page fromUnit(string n, string message, std::vector<string> aliases = {}, string more = "");
         static Page fromFunction(string n, string message, string sym, std::vector<string> aliases = {}, string more = "");
         static Page fromLibrary(string n, string message, std::vector<string> aliases = {}, string more = "");
+        static Page fromInfo(string n, string message, std::vector<string> aliases = {}, string more = "");
+        static Page fromType(string n, int id, string symbol, string message, std::vector<string> aliases = {}, string more = "");
     };
     extern std::map<uint64_t, std::vector<std::pair<int, int>>> queryHash;
     extern std::vector<Page> pages;
