@@ -23,7 +23,7 @@ int Program::getGlobal(const string& name) {
 
 #pragma region Preferences
 std::map<string, std::pair<ValPtr, void (*)(ValPtr)>> Preferences::pref = {
-    {"command_prefix",{std::make_shared<String>("-"),nullptr}}
+    {"command_prefix",{std::make_shared<String>("/"),nullptr}}
 };
 ValPtr Preferences::get(string name) {
     auto it = pref.find(name);
