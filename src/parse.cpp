@@ -754,6 +754,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             }
             //Add to list
             operators.resize(treeList.size());
+            if(treeList.size() == 0) throw "Missing expression before " + sect;
             operators[treeList.size() - 1] = op->second;
         }
     }
@@ -761,6 +762,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         treeList[i] = std::make_shared<Tree>(unaryOpFront[i], ValList{ treeList[i] });
     for(int i = 0;i < unaryOpBack.size();i++) if(unaryOpBack[i] != "")
         treeList[i] = std::make_shared<Tree>(unaryOpBack[i], ValList{ treeList[i] });
+    if(operators.size() == treeList.size()) throw "Missing expression after " + operators.back().first;
     operators.resize(treeList.size());
     //Multiply adjacents when there is no operator
     for(int i = 0;i < operators.size();i++)
