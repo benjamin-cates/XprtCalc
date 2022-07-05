@@ -525,7 +525,7 @@ public:
     ValPtr compute(ComputeCtx& ctx);
     double flatten()const;
     string toStr(ParseCtx& ctx)const;
-    double getR()const { return vec[0]->getR(); }
+    double getR()const { if(vec.empty()) return 0; return vec[0]->getR(); }
     int typeID()const { return Value::vec_t; }
 };
 //value.cpp
