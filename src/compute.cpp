@@ -463,8 +463,8 @@ std::vector<Function> Program::globalFunctions = {
     Constant("pi",3.14159265358979323),
     #define downscale {D(arb),D(dub)}
     #ifdef USE_ARB
-    Function("arb_pi",{"prec"},{},{{D(dub),[](inp) {ret(Arb)(mppp::real_pi(Arb::digitsToPrecision(input[0]->getR())));}}}),
-    Function("arb_e",{"prec"},{},{{D(dub),[](inp) {ret(Arb)(mppp::exp(mppp::real(1.0,Arb::digitsToPrecision(input[0]->getR()))));}}}),
+    Function("arb_pi",{"prec"},{},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(mppp::real_pi(Arb::digitsToPrecision(prec)));}}}),
+    Function("arb_e",{"prec"},{},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(mppp::exp(mppp::real(1.0,Arb::digitsToPrecision(prec))));}}}),
     //Function("arb_rand", [](vector<Value> input) {
     //    ret Value(0.0);
     //}),
@@ -504,6 +504,7 @@ std::vector<Function> Program::globalFunctions = {
         double begin = input[1]->getR(), end = input[2]->getR();
         double step = 1.0;
         if(input.size() == 4) step = input[3]->getR();
+        if(Program::smallCompute) if((end - begin) / step > 10.0) end = begin + step * 10.0;
         shared_ptr<Number> n = make_shared<Number>(0);
         ValList lambdaInput{n};
         ValPtr out = make_shared<Number>(0);
@@ -518,6 +519,7 @@ std::vector<Function> Program::globalFunctions = {
         double begin = input[1]->getR(), end = input[2]->getR();
         double step = 1.0;
         if(input.size() == 4) step = input[3]->getR();
+        if(Program::smallCompute) if((end - begin) / step > 10.0) end = begin + step * 10.0;
         shared_ptr<Number> n = make_shared<Number>(0);
         ValList lambdaInput{n};
         ValPtr out = make_shared<Number>(1);
@@ -573,6 +575,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("fill",{"func","count"},{},{{D(lmb,arb | dub),[](inp) {
         def(Lambda,func,0);
         int count = input[1]->getR();
+        if(Program::smallCompute) if(count > 10) count = 10;
         shared_ptr<Vector> out = make_shared<Vector>();
         shared_ptr<Number> index = make_shared<Number>(0);
         ValList lambdaInput = ValList{index};

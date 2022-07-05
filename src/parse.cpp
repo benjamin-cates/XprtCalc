@@ -123,6 +123,7 @@ ValPtr Expression::parseNumeral(const string& str, int base) {
         string prec = str.substr(pPos + 1);
         try { precision = std::stoll(prec, nullptr, base); }
         catch(const std::invalid_argument& ia) { throw "Invalid precision " + prec; }
+        if(Program::smallCompute) precision = std::min(precision, 20LL);
     }
     else pPos = str.length();
     //Parse exponent

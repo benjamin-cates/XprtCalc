@@ -11,6 +11,7 @@ void Program::cleanup() {
 }
 void (*Program::implementationStartup)() = 0;
 void (*Program::implementationCleanup)() = 0;
+bool Program::smallCompute = false;
 ValList Program::history;
 ComputeCtx Program::computeCtx;
 ParseCtx Program::parseCtx;

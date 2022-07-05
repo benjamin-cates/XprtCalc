@@ -17,7 +17,9 @@ namespace TestResult {
         return "";
     }
 };
-#define THROW_IF_FAIL catch(string message) {return TestResult::thrown(message,identifier,name);} catch(const char* c) {return TestResult::thrown(string(c),identifier,name);} catch(...) {return TestResult::thrown("unknown",identifier,name);}
+#define THROW_IF_FAIL_BASE(ident,n) catch(string message) {return TestResult::thrown(message,ident,n);} catch(const char* c) {return TestResult::thrown(string(c),ident,n);} catch(...) {return TestResult::thrown("unknown",ident,n);}
+#define THROW_IF_FAIL THROW_IF_FAIL_BASE(identifier,name)
+#define THROW_IF_FAIL_RANDOM THROW_IF_FAIL_BASE(identifier,name+ "["+std::to_string(index)+"]")
 namespace Generate {
     int fastrand_seed;
     inline int fastrand() {
@@ -305,8 +307,8 @@ namespace LibTest {
         const string& identifier = it->second.fullName;
         try {
             for(int i = 0;i < it->second.dependencies.size();i++) {
-                if(Library::functions.find(it->second.dependencies[i])==Library::functions.end())
-                    return TestResult::fail("Could not resolve dependency " + it->second.dependencies[i],name);
+                if(Library::functions.find(it->second.dependencies[i]) == Library::functions.end())
+                    return TestResult::fail("Could not resolve dependency " + it->second.dependencies[i], name);
                 Library::functions[it->second.dependencies[i]].include();
             }
             Tree::parseTree(it->second.inputs + "=>" + it->second.xpr, Program::parseCtx);
@@ -315,21 +317,34 @@ namespace LibTest {
             return "";
     }
 }
-namespace ParsingRand {
+namespace ParsingRandXpr {
     const string name = "rand_parse";
     string validate(int index) {
         string identifier = Generate::expression(3, Program::parseCtx);
         try {
             //Parse random expression
-            ValPtr tr=Tree::parseTree(identifier,Program::parseCtx);
+            ValPtr tr = Tree::parseTree(identifier, Program::parseCtx);
             //Test computation for segfault, other errors are ignored
             try {
                 tr->compute(Program::computeCtx);
-            } catch (...) {}
-            //Return success
+            }
+            catch(...) {}
+         //Return success
             return TestResult::success();
-        } THROW_IF_FAIL
+        } THROW_IF_FAIL_RANDOM
     }
+}
+namespace ParsingRandChar {
+    const string name = "rand_str_parse";
+    string validate(int index) {
+        string identifier = Generate::valid_str();
+        try {
+            Tree::parseTree(identifier, Program::parseCtx);
+        }
+        catch(...) {}
+        return TestResult::success();
+    }
+
 }
 //Highlighting tests
 //Help page tests
@@ -359,6 +374,7 @@ void doTestRandom(string(*validate)(int index), float timeSeconds = 3.0) {
 #define RunTestList(name) doTestList(name::tests.begin(),name::tests.end(),&name::validate)
 
 int main() {
+    Program::smallCompute = true;
     Program::startup();
     Generate::fastrand_seed = std::chrono::steady_clock::now().time_since_epoch().count();
     doTestList(MatchingXpr::tests.begin(), MatchingXpr::tests.end(), &MatchingXpr::validate);
@@ -366,5 +382,6 @@ int main() {
     doTestList(Library::functions.begin(), Library::functions.end(), &LibTest::validate);
     doTestList(Highlight::tests.begin(), Highlight::tests.end(), &Highlight::validate);
     doTestRandom(&RandomHighlight::validate);
-    doTestRandom(&ParsingRand::validate);
+    doTestRandom(&ParsingRandXpr::validate);
+    doTestRandom(&ParsingRandChar::validate);
 }

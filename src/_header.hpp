@@ -73,6 +73,8 @@ namespace Program {
     extern void (*implementationStartup)();
     //Holds a pointer to a function that will be run on program exit.
     extern void (*implementationCleanup)();
+    //Whether to hinder difficult calculations for sake of brevity
+    extern bool smallCompute;
 
     extern std::map<string, Command> commandList;
     //Runs command in str (containing whole name and prefix) and returns the output
