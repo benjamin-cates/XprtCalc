@@ -54,25 +54,33 @@ void Preferences::set(string name, ValPtr val) {
 #pragma endregion
 #pragma region Library
 using namespace Library;
-string LibFunc::include() {
-    if(Program::parseCtx.getVariable(name) != nullptr) return "";
-    string out;
+ColoredString LibFunc::include() {
+    if(Program::parseCtx.getVariable(name) != nullptr) return ColoredString("");
+    ColoredString out;
     //Resolve dependencies
     for(int i = 0;i < dependencies.size();i++) {
-        if(Library::functions.find(dependencies[i]) == Library::functions.end())
-            out += "Dependency " + dependencies[i] + " not found\n";
+        if(Library::functions.find(dependencies[i]) == Library::functions.end()) {
+            out.append({ "Dependency ",{dependencies[i],'v'}," not found\n" });
+        }
         else out += Library::functions[dependencies[i]].include();
     }
     ValPtr lambda;
     try {
         lambda = Tree::parseTree(inputs + "=>" + xpr, Program::parseCtx);
     }
-    catch(string mess) { return out + "Error in " + name + ": " + mess + '\n'; }
-    catch(const char* mess) { return out + "Error in " + name + ": " + mess + '\n'; }
-    catch(...) { return out + "Error in " + name + '\n'; }
+    catch(string mess) {
+        return out.append({ {"Error",'e'}," in ",{name,'v'},": ",mess,"\n" });
+    }
+    catch(const char* mess) {
+        return out.append({ {"Error",'e'}," in ",{name,'v'},": ",mess,"\n" });
+    }
+    catch(...) {
+        return out.append({ {"Error",'e'}," in ",{name,'v'},": unknown\n" });
+    }
     Program::parseCtx.pushVariable(name);
     Program::computeCtx.setVariable(name, lambda);
-    return out + name + " included\n";
+    out.append({ {name,'v'}," included\n" });
+    return out;
 }
 Library::LibFunc::LibFunc(string n, string in, string fullN, string expression, std::vector<string> dependants) {
     name = n;
@@ -155,7 +163,7 @@ string combineArgs(std::vector<string>& args) {
     out += args[i];
     return out;
 }
-string Program::runCommand(string call) {
+ColoredString Program::runCommand(string call) {
     size_t space = call.find(' ');
     if(space == string::npos) space = call.length();
     string name = call.substr(0, space);
@@ -175,12 +183,12 @@ string Program::runCommand(string call) {
         argsList.push_back(args.substr(pos, next - pos));
         pos = next + 1;
     }
-    string out = Program::commandList[name].run(argsList);
-    if(out.back() == '\n') out.resize(out.length() - 1);
+    ColoredString out = Program::commandList[name].run(argsList);
+    if(out.getStr().back() == '\n') out.splice(0, out.length() - 1);
     return out;
 }
-string command_include(std::vector<string>& input) {
-    string out;
+ColoredString command_include(std::vector<string>& input) {
+    ColoredString out;
     for(int i = 0;i < input.size();i++) {
         if(Library::categories.find(input[i]) != Library::categories.end()) {
             vector<string> libs = Library::categories[input[i]];
@@ -189,7 +197,7 @@ string command_include(std::vector<string>& input) {
         else if(Library::functions.find(input[i]) != Library::functions.end()) {
             out += Library::functions[input[i]].include();
         }
-        else out += input[i] + " not found\n";
+        else out.append({ {"Error: ",'e'},{input[i],'v'}," not found\n" });
     }
     return out;
 }
@@ -197,6 +205,8 @@ string command_sections_internal(const string& inp, string tabbing) {
     using sec = Expression::Section;
     string out;
     ParseCtx ctx;
+    string newTab = tabbing;
+    newTab += "    ";
     std::vector<std::pair<string, sec>> sections = Expression::getSections(inp, ctx);
     for(int i = 0;i < sections.size();i++) {
         sec type = sections[i].second;
@@ -206,7 +216,7 @@ string command_sections_internal(const string& inp, string tabbing) {
         else if(type == sec::parenthesis) bracket = '(';
         else if(type == sec::lambda) {
             out += tabbing + str.substr(0, Expression::findNext(str, 0, '>') + 1) + '\n';
-            out += command_sections_internal(str.substr(Expression::findNext(str, 0, '>') + 1), tabbing + "    ");
+            out += command_sections_internal(str.substr(Expression::findNext(str, 0, '>') + 1), newTab);
             continue;
         }
         else if(type == sec::square) bracket = '[';
@@ -226,7 +236,7 @@ string command_sections_internal(const string& inp, string tabbing) {
                 }
             }
             else {
-                out += command_sections_internal(str.substr(start + 1, end - start - 1), tabbing + "    ");
+                out += command_sections_internal(str.substr(start + 1, end - start - 1), newTab);
             }
             out += tabbing + str.substr(end) + '\n';
         }
@@ -234,25 +244,25 @@ string command_sections_internal(const string& inp, string tabbing) {
     }
     return out;
 }
-string command_sections(std::vector<string>& input) {
+ColoredString command_sections(std::vector<string>& input) {
     string inp = combineArgs(input);
-    return command_sections_internal(inp, "");
+    return ColoredString(command_sections_internal(inp, ""));
 }
 
-string command_parse(vector<string>& input) {
+ColoredString command_parse(vector<string>& input) {
     string inp = combineArgs(input);
     ParseCtx ctx;
     ValPtr tr = Tree::parseTree(inp, ctx);
-    return tr->toString();
+    return ColoredString::fromXpr(tr->toString());
 }
 
-string command_meta(vector<string>& input) {
+ColoredString command_meta(vector<string>& input) {
     string out;
     for(auto it = Metadata::info.begin();it != Metadata::info.end();it++)
         out += it->first + ": " + it->second + '\n';
-    return out;
+    return { out };
 }
-string command_def(vector<string>& input) {
+ColoredString command_def(vector<string>& input) {
     //If is in the form a=2
     char eq;
     if((eq = input[0].find('=')) != string::npos) {
@@ -265,23 +275,25 @@ string command_def(vector<string>& input) {
     //Push variable to respective contexts
     Program::parseCtx.pushVariable(input[0]);
     Program::computeCtx.setVariable(input[0], value);
-    return input[0] + "=" + value->toString();
+    ColoredString out(input[0], 'v');
+    out.append({ {"=","o"},ColoredString::fromXpr(value->toString()) });
+    return out;
 }
-string command_ls(vector<string>& input) {
+ColoredString command_ls(vector<string>& input) {
     auto& vars = Program::computeCtx.variables;
-    string out;
+    ColoredString out;
     for(auto it = vars.begin();it != vars.end();it++) {
-        out += it->first + " = " + it->second.back()->toString() + '\n';
+        out.append({ {it->first,'v'},{" = "," o "},ColoredString::fromXpr(it->second.back()->toString()),"\n" });
     }
     return out;
 }
-string command_highlight(vector<string>& input) {
+ColoredString command_highlight(vector<string>& input) {
     string inp = combineArgs(input);
     string colors(inp.length(), Expression::ColorType::hl_error);
     Expression::color(inp, colors.begin(), Program::parseCtx);
-    return colors;
+    return { colors };
 }
-string command_help(vector<string>& input) {
+ColoredString command_help(vector<string>& input) {
     string inp = combineArgs(input);
     if(inp.length() == 0) inp = "welcome";
     std::vector<Help::Page*> res = Help::search(inp, 1);
@@ -289,26 +301,27 @@ string command_help(vector<string>& input) {
     Help::Page& p = *res[0];
     return res[0]->toString();
 }
-string command_query(vector<string>& input) {
-    string out;
+ColoredString command_query(vector<string>& input) {
+    ColoredString out;
     string inp = input[0];
     //Print out results
     std::vector<Help::Page*> res = Help::search(inp, 10);
-    for(int i = 0;i < res.size();i++)
-        out += std::to_string(i) + ": " + res[i]->name + "\n";
+    for(int i = 0;i < res.size();i++) {
+        out.append({ {std::to_string(i),'n'},{": ","o "},{res[i]->name,'v'},"\n" });
+    }
     //Message to rerun with index
     if(input.size() == 1) {
         out += "Rerun query with search and index to print help page\n";
     }
     //If index is provided, print the page
     else {
-        int index=Expression::evaluate(input[1])->getR();
-        if(index<0||index>=res.size()) out += "Unable to print page, index out of bounds\n";
+        int index = Expression::evaluate(input[1])->getR();
+        if(index < 0 || index >= res.size()) out.append({ {"Error: ",'e'},"Unable to print page, index out of bounds\n" });
         else return res[index]->toString();
     }
     return out;
 }
-string command_debug_help(vector<string>& input) {
+ColoredString command_debug_help(vector<string>& input) {
     if(Help::queryHash.size() == 0) Help::generateQueryHash();
     string out;
     for(auto it = Help::queryHash.begin();it != Help::queryHash.end();it++) {
@@ -328,14 +341,14 @@ string command_debug_help(vector<string>& input) {
     return out;
 }
 map<string, Command> Program::commandList = {
-    {"include",{{"literal"},{"solvequad"},false,&command_include}},
-    {"sections",{{"expression"},{"xpr"},false,&command_sections}},
-    {"parse",{{"expression"},{"xpr"},true,&command_parse}},
-    {"meta",{{},{},false,&command_meta}},
-    {"def",{{"literal","expression"},{"name","xpr"},true,&command_def}},
-    {"ls",{{},{},true,&command_ls}},
-    {"highlight",{{"literal"},{"xpr"},false,&command_highlight}},
-    {"help",{{"literal"},{"query"},false,&command_help}},
-    {"query",{{"literal"},{"query"},false,&command_query}},
-    {"debug_help",{{},{},false,&command_debug_help} },
+    {"include",{&command_include}},
+    {"sections",{&command_sections}},
+    {"parse",{&command_parse}},
+    {"meta",{&command_meta}},
+    {"def",{&command_def}},
+    {"ls",{&command_ls}},
+    {"highlight",{&command_highlight}},
+    {"help",{&command_help}},
+    {"query",{&command_query}},
+    {"debug_help",{&command_debug_help} },
 };

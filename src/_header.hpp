@@ -34,9 +34,10 @@ struct Command;
 class Vector;
 class ComputeCtx;
 class ParseCtx;
+class ColoredString;
 typedef std::shared_ptr<Value> ValPtr;
 typedef std::vector<ValPtr> ValList;
-using string = std::string;
+using std::string;
 #pragma endregion
 #pragma region Program Information
 //This namespace holds runtime preferences that are deeply engrained into the system, or are particular to the implementation (like a dark mode on a web version). All implementation files are in program.cpp.
@@ -78,7 +79,7 @@ namespace Program {
 
     extern std::map<string, Command> commandList;
     //Runs command in str (containing whole name and prefix) and returns the output
-    string runCommand(string str);
+    ColoredString runCommand(string str);
 
     //Global variables
     //Contains every value in previous calculations
@@ -135,14 +136,8 @@ namespace Help {
 
 //program.cpp
 struct Command {
-    //arguments and types are related and should have the same length
-    std::vector<string> arguments;
-    // Takes "literal", "value", and "expression"
-    std::vector<string> types;
-    //Whether the output of the command is a highlightable expression
-    bool highlightOutput;
     //pointer to command
-    string(*run)(std::vector<string>& inputs);
+    ColoredString(*run)(std::vector<string>& inputs);
 };
 
 //Library functions are functions whose expressions are included via strings, but they are not compiled when the program starts, they can be added using the include command while the program is running. (program.cpp)
@@ -154,13 +149,11 @@ namespace Library {
         string xpr;
         std::vector<string> dependencies;
         //Compiles xpr and adds to variables, returns error message
-        string include();
+        ColoredString include();
         //LibrFunc constructor
         LibFunc(string n, string in, string fullN, string expression, std::vector<string> dependants);
         LibFunc() {}
     };
-    //Include all library functions of a certain type (library.cpp)
-    void includeAll(string type);
     //Map of function name to the function itself, allows for quick lookups
     extern std::map<string, LibFunc> functions;
     extern std::map<string, std::vector<string>> categories;
@@ -251,7 +244,7 @@ namespace Expression {
         operat
     };
     enum ColorType : char {
-        hl_null = 'a', hl_numeral = 'n', hl_function = 'f', hl_variable = 'v', hl_argument = 'a', hl_error = 'e', hl_bracket = 'b', hl_operator = 'o', hl_string = 's', hl_comment = 'c', hl_delimiter = 'd', hl_unit = 'u', hl_space = ' '
+        hl_null = 'a', hl_numeral = 'n', hl_function = 'f', hl_variable = 'v', hl_argument = 'a', hl_error = 'e', hl_bracket = 'b', hl_operator = 'o', hl_string = 's', hl_comment = 'c', hl_delimiter = 'd', hl_unit = 'u', hl_space = ' ', hl_text = 't'
     };
     //Sets string contained inside iterator to color data of str
     void color(string str, string::iterator output, ParseCtx& ctx);
@@ -282,6 +275,32 @@ namespace Expression {
     int findNext(const string& str, int index, char find);
     //Computes string without context
     ValPtr evaluate(const string& str);
+};
+class ColoredString {
+    string str;
+    string color;
+public:
+    const string& getStr()const;
+    const string& getColor()const;
+    void setStr(string&& s);
+    void setColor(string&& c);
+    void colorAsExpression();
+    size_t length();
+    void splice(int pos, int len);
+    ColoredString& operator+=(const ColoredString& rhs);
+    ColoredString& operator+=(char c);
+    ColoredString& operator+=(const char* c);
+    ColoredString operator+(ColoredString& rhs);
+    ColoredString(const char* s) { str = string(s);color = string(str.length(), 't'); }
+    ColoredString(string&& s) { str = std::move(s);color = string(str.length(), 't'); }
+    ColoredString(string&& s, string&& c) { str = std::move(s);color = std::move(c); }
+    ColoredString(string&& s, char t) { str = std::move(s);color = string(str.length(), t); }
+    ColoredString(const string& s) { str = s;color = string(s.length(), 't'); }
+    ColoredString(const string& s, const string& c) { str = s;color = c; }
+    ColoredString(const string& s, char t) { str = s;color = string(s.length(), t); }
+    ColoredString() {}
+    static ColoredString fromXpr(string&& str);
+    ColoredString& append(const std::vector<ColoredString>& args);
 };
 
 #pragma endregion

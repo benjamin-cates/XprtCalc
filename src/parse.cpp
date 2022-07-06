@@ -316,6 +316,56 @@ const std::unordered_map<char, int> Expression::bracs = {
 const std::unordered_map<char, bool> Expression::isStart = {
     {'(',true}, {')',false}, {'[',true}, {']',false}, {'{',true}, {'}',false}, {'<',true}, {'>',false}, {'\"',true}
 };
+const string& ColoredString::getStr()const { return str; }
+const string& ColoredString::getColor()const { return color; }
+void ColoredString::setStr(string&& s) {
+    str = std::forward<string>(s);
+    color.resize(s.size(), Expression::hl_text);
+}
+void ColoredString::setColor(string&& c) {
+    color = std::forward<string>(c);
+    if(color.size() < str.size()) color.resize(str.size(), Expression::hl_text);
+}
+ColoredString ColoredString::operator+(ColoredString& rhs) {
+    return ColoredString(str + rhs.getStr(), color + rhs.getColor());
+}
+ColoredString& ColoredString::operator+=(const ColoredString& rhs) {
+    str += rhs.getStr();
+    color += rhs.getColor();
+    return *this;
+}
+ColoredString& ColoredString::operator+=(char c) {
+    str += c;
+    color += Expression::hl_text;
+    return *this;
+}
+ColoredString& ColoredString::operator+=(const char* c) {
+    str += c;
+    color.resize(str.size(), Expression::hl_text);
+    return *this;
+}
+size_t ColoredString::length() {
+    return str.size();
+}
+void ColoredString::splice(int pos, int len) {
+    str.erase(pos + len);
+    str.erase(0, pos);
+    color.erase(pos + len);
+    color.erase(0, pos);
+}
+void ColoredString::colorAsExpression() {
+    color = string(str.size(), Expression::hl_error);
+    Expression::color(str, color.begin(), Program::parseCtx);
+}
+ColoredString ColoredString::fromXpr(string&& str) {
+    ColoredString out(std::forward<string>(str));
+    out.colorAsExpression();
+    return out;
+}
+ColoredString& ColoredString::append(const std::vector<ColoredString>& args) {
+    for(int i = 0;i < args.size();i++) (*this) += args[i];
+    return *this;
+}
 //Returns the index of the matching bracket or -1 if it is not found
 int Expression::matchBracket(const string& str, int start) {
     //Maps brackets to their unique match id
