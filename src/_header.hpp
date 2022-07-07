@@ -26,6 +26,7 @@
 #pragma endregion
 
 #pragma region Forward declarations
+class ValueBaseClass;
 class Value;
 class Tree;
 class Unit;
@@ -35,21 +36,20 @@ class Vector;
 class ComputeCtx;
 class ParseCtx;
 class ColoredString;
-typedef std::shared_ptr<Value> ValPtr;
-typedef std::vector<ValPtr> ValList;
+typedef std::vector<Value> ValList;
 using std::string;
 #pragma endregion
 #pragma region Program Information
 //This namespace holds runtime preferences that are deeply engrained into the system, or are particular to the implementation (like a dark mode on a web version). All implementation files are in program.cpp.
 namespace Preferences {
-    ValPtr get(string name);
+    Value get(string name);
     //Supported types are getAs<double> and getAs<string>
     template<typename T>
     T getAs(string name);
-    void set(string name, ValPtr val);
+    void set(string name, Value val);
 
     //Each preference has a value and an optional update function
-    extern std::map<string, std::pair<ValPtr, void (*)(ValPtr)>> pref;
+    extern std::map<string, std::pair<Value, void (*)(Value)>> pref;
 
 };
 
@@ -101,7 +101,7 @@ namespace Program {
     void buildFunctionNameMap();
 
     //Runs the global function of the specified name with the input list (compute.cpp)
-    ValPtr computeGlobal(string name, ValList input, ComputeCtx& ctx);
+    Value computeGlobal(string name, ValList input, ComputeCtx& ctx);
 };
 
 //Contains information that are in the help pages
@@ -196,7 +196,7 @@ public:
     //Adds local variable to current frame
     void pushLocal(const string& name);
     //Returns value with either Tree type with id OR Argument type with id. Returns nullptr if variable not found.
-    ValPtr getVariable(const string& name)const;
+    Value getVariable(const string& name)const;
     //Returns argument name at given index
     string getArgName(int index)const;
     //Get count of arguments
@@ -255,7 +255,7 @@ namespace Expression {
     //List of base prefixes e.g. 0b is base 2
     const extern std::unordered_map<char, int> basesPrefix;
     //Parses scalar from string into a value (number or arb if 0a prefix used)
-    ValPtr parseNumeral(const string& str, int defaultBase);
+    Value parseNumeral(const string& str, int defaultBase);
     //Returns a list of strings split by given delimiter (start and end not included in output)
     std::vector<string> splitBy(const string& str, int start, int end, char delimiter = ',');
     /**
@@ -274,7 +274,7 @@ namespace Expression {
     //Finds next instance of find ignoring brackets
     int findNext(const string& str, int index, char find);
     //Computes string without context
-    ValPtr evaluate(const string& str);
+    Value evaluate(const string& str);
 };
 class ColoredString {
     string str;
@@ -310,7 +310,7 @@ class Function {
 
 public:
     //std::function that takes in a list of values and a context and returns a value
-    typedef std::function<ValPtr(ValList, ComputeCtx&)> fobj;
+    typedef std::function<Value(ValList, ComputeCtx&)> fobj;
     struct Domain {
         //Contains binary data on support for first four arguments
         uint32_t sig;
@@ -345,7 +345,7 @@ public:
     Function(string argName, std::vector<string> inputs, std::map<Domain, Domain> domainMap, std::map<Domain, fobj> functions);
     Function(string argName, fobj func);
     //Run function with input list and context ctx
-    ValPtr operator()(ValList& input, ComputeCtx& ctx);
+    Value operator()(ValList& input, ComputeCtx& ctx);
     //Get name of function
     string getName()const;
     //Get input name from index
@@ -383,24 +383,24 @@ namespace Math {
 class ComputeCtx {
 public:
     //Map of variables to their values
-    std::map<string, std::vector<ValPtr>> variables;
+    std::map<string, std::vector<Value>> variables;
     //Indexed list of arguments
-    std::deque<ValPtr> argValue;
+    std::deque<Value> argValue;
 
     //Empty constructor
     ComputeCtx();
 
     //Sets variable that is highest on the stack
-    void setVariable(const string& n, ValPtr value);
+    void setVariable(const string& n, Value value);
     //Creates new definition of a variable
-    void defineVariable(const string& n, ValPtr value);
+    void defineVariable(const string& n, Value value);
     //Pops most recent definition of each variable
     void undefineVariables(const std::vector<string>& vars);
     //Get variable from name, nullptr if not found
-    ValPtr getVariable(const string& name);
+    Value getVariable(const string& name);
 
     //Get argument from id
-    ValPtr getArgument(int id)const;
+    Value getArgument(int id)const;
     //Push argument list in new context
     void pushArgs(const ValList& args);
     //Pop argument list at end of context
@@ -452,44 +452,75 @@ public:
     typedef std::tuple<Unit, double, bool, string> Builtin;
 };
 
-//Value is a base-class that uses polymorphism to implement different types. Usually it is wrapped in ValPtr which is a shared_ptr of this type. (value.cpp)
-class Value : public std::enable_shared_from_this<Value> {
+class Value {
+    std::shared_ptr<ValueBaseClass> ptr;
+public:
+    Value() { ptr = nullptr; }
+    Value(nullptr_t) { ptr = nullptr; }
+    template<typename T>
+    Value(std::shared_ptr<T>&& p) { ptr = std::move(p); }
+    template<typename T>
+    Value(const std::shared_ptr<T>& p) { ptr = p; }
+    ValueBaseClass* get()const { return ptr.get(); }
+    ValueBaseClass* operator->() {
+        if(ptr) return ptr.get();
+        throw "Nullptr dereference";
+    }
+    ValueBaseClass* operator->()const {
+        if(ptr) return ptr.get();
+        throw "Nullptr dereference";
+    }
+    ValueBaseClass& operator*() {
+        if(ptr) return *ptr;
+        throw "Nullptr dereference";
+    }
+    friend bool operator<(const Value& lhs, const Value& rhs);
+    bool operator==(std::nullptr_t n) { return ptr == nullptr; }
+    template<typename T>
+    bool operator!=(const T& x)const { return !((*this) == x); }
+    friend bool operator==(const Value& lhs, const Value& rhs);
+
+    operator std::shared_ptr<ValueBaseClass>() {
+        return ptr;
+    }
+    template<typename T>
+    std::shared_ptr<T> cast()const {
+        return std::dynamic_pointer_cast<T, ValueBaseClass>(ptr);
+    }
+    //Returns true only if type is num or arb and real=1 and imag=0 and unit=0
+    static bool isOne(const Value& x);
+    //Returns true only if type is num or arb and real, imag, and unit are zero
+    static bool isZero(const Value& x);
+    static Value zero;
+    //List of human-readable type names
+    static const std::vector<string> typeNames;
+    //Converts value into the return type with given type, throws error if incompatible
+    Value convertTo(int type);
+    enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, tre_t = 7, arg_t = 8, var_t = 9 };
+};
+//Stores the base class of the object storing type, since ValueBaseClass is a polymorphic type, use the wrapper Value for most cases
+class ValueBaseClass : public std::enable_shared_from_this<ValueBaseClass> {
 public:
     //Virtual functions
-    Value() {}
-    virtual ~Value() = default;
+    ValueBaseClass() {}
+    virtual ~ValueBaseClass() = default;
     string toString()const;
     virtual string toStr(ParseCtx& ctx)const { return "<error-type>"; }
     //Returns a uniqueish double for each value so they can be sorted without regard for type
     virtual double flatten()const { return 0; }
     //Returns id, see value type enum for type list
     virtual int typeID()const { return -1; }
-    enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, tre_t = 7, arg_t = 8, var_t = 9 };
     //Returns the real component, or the first value in a vector, useful for converting into an integer value
     virtual double getR()const { return 0; }
     //Flattens down to single value
-    virtual ValPtr compute(ComputeCtx& ctx) {
-        return shared_from_this();
+    virtual Value compute(ComputeCtx& ctx) {
+        return Value(shared_from_this());
     }
-    //Compare two values
-    bool operator==(ValPtr v);
-    bool operator!=(ValPtr v);
-    //Compares flatten() of each value
-    bool operator<(const Value& v)const;
-    //Returns true only if type is num or arb and real=1 and imag=0 and unit=0
-    static bool isOne(ValPtr x);
-    //Returns true only if type is num or arb and real, imag, and unit are zero
-    static bool isZero(ValPtr x);
-    static ValPtr zero;
-    //List of human-readable type names
-    static const std::vector<string> typeNames;
-    //Converts value into the return type with given type, throws error if incompatible
-    static ValPtr convert(ValPtr value, int type);
 };
 #pragma endregion
 #pragma region Value Types
 //value.cpp
-class Number : public Value {
+class Number : public ValueBaseClass {
 public:
     std::complex<double> num;
     Unit unit;
@@ -507,7 +538,7 @@ public:
 };
 #ifdef USE_ARB
 //value.cpp
-class Arb : public Value {
+class Arb : public ValueBaseClass {
 public:
     std::complex<mppp::real> num;
     Unit unit;
@@ -527,47 +558,47 @@ public:
 };
 #endif
 //value.cpp
-class Vector : public Value {
+class Vector : public ValueBaseClass {
 public:
     ValList vec;
     //Creates vector with singular value on left
-    Vector(ValPtr first);
+    Vector(Value first);
     //Creates vector with given size
     Vector(int size = 0);
     Vector(ValList&& v);
     int size()const;
     //Get ith value in vector
-    ValPtr get(unsigned int x);
+    Value get(unsigned int x);
     //Get ith value in vector
-    ValPtr operator[](unsigned int index);
+    Value operator[](unsigned int index);
     //Set ith value in vector to val
-    void set(int x, ValPtr val);
+    void set(int x, Value val);
     //Virtual functions
-    ValPtr compute(ComputeCtx& ctx);
+    Value compute(ComputeCtx& ctx);
     double flatten()const;
     string toStr(ParseCtx& ctx)const;
     double getR()const { if(vec.empty()) return 0; return vec[0]->getR(); }
     int typeID()const { return Value::vec_t; }
 };
 //value.cpp
-class Lambda : public Value {
+class Lambda : public ValueBaseClass {
 public:
     //List of input names
     std::vector<string> inputNames;
     //Pointer to compute tree
-    ValPtr func;
+    Value func;
     //Takes in input list and funcTree, then sets funcTree to nullptr for memory safety
-    Lambda(std::vector<string> inputs, ValPtr funcTree);
+    Lambda(std::vector<string> inputs, Value funcTree);
     //Computes with argument list
-    ValPtr operator()(ValList inputs, ComputeCtx& ctx);
+    Value operator()(ValList inputs, ComputeCtx& ctx);
     //Virtual functions
-    ValPtr compute(ComputeCtx& ctx);
+    Value compute(ComputeCtx& ctx);
     double flatten()const;
     string toStr(ParseCtx& ctx)const;
     int typeID()const { return Value::lmb_t; }
 };
 //value.cpp
-class String : public Value {
+class String : public ValueBaseClass {
 public:
     string str;
     String(string argStr) { str = argStr; }
@@ -579,25 +610,17 @@ public:
     int typeID()const { return Value::str_t; }
 };
 //value.cpp
-class Map : public Value {
-    //Cache of leafKey.flatten()
-    double flatKey;
+class Map : public ValueBaseClass {
+    std::map<Value, Value> mapObj;
 public:
-    //Implemented as a binary search tree
-    std::shared_ptr<Map> left;
-    std::shared_ptr<Map> right;
-    ValPtr leaf;
-    ValPtr leafKey;
     Map() {};
-    ValPtr find(ValPtr key, double flat = 0);
-    void append(ValPtr key, ValPtr val, double flat = 0);
     //Virtual functions
     double flatten()const;
     string toStr(ParseCtx& ctx)const;
     int typeID()const { return Value::map_t; }
 };
 //tree.cpp
-class Tree : public Value {
+class Tree : public ValueBaseClass {
 public:
     //Operator id in Program::globalFunctions
     int op;
@@ -606,20 +629,20 @@ public:
     Tree(int opId, ValList&& branchList);
     Tree(string opStr, ValList&& branchList);
     //Create binary tree from global function name and two trees
-    Tree(string opStr, ValPtr one, ValPtr two);
+    Tree(string opStr, Value one, Value two);
     //Creates leafless, branchless, variable tree from type and id
     Tree(int id);
     //Parses expression using ctx and creates tree
-    static ValPtr parseTree(const string& str, ParseCtx& ctx);
+    static Value parseTree(const string& str, ParseCtx& ctx);
 
     bool operator==(const Tree& a)const;
     //Returns the ith branch
-    ValPtr operator[](int index);
+    Value operator[](int index);
 
     //Computes the tree using the compute context
-    ValPtr compute(ComputeCtx& ctx);
+    Value compute(ComputeCtx& ctx);
     //Returns the derivative of this
-    ValPtr derivative();
+    Value derivative();
     //Returns a webgl script that computes the tree given function inputs
     string toWebGL();
     //Simplifies tree for readability
@@ -639,22 +662,22 @@ public:
     double flatten()const;
     int typeID()const { return Value::tre_t; }
 };
-class Argument : public Value {
+class Argument : public ValueBaseClass {
 public:
     int id;
     Argument(int i) { id = i; }
     //Virtual functions
     string toStr(ParseCtx& ctx)const;
-    ValPtr compute(ComputeCtx& ctx);
+    Value compute(ComputeCtx& ctx);
     int typeID()const { return Value::arg_t; }
 };
-class Variable : public Value {
+class Variable : public ValueBaseClass {
 public:
     string name;
     Variable(const string& n) { name = n; }
     //Virtual functions
     string toStr(ParseCtx& ctx)const { return name; }
-    ValPtr compute(ComputeCtx& ctx) { return ctx.getVariable(name); }
+    Value compute(ComputeCtx& ctx) { return ctx.getVariable(name); }
     int typeID()const { return Value::var_t; }
 };
 #pragma endregion

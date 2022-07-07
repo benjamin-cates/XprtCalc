@@ -54,12 +54,12 @@ namespace Math {
 ComputeCtx::ComputeCtx() {
 
 }
-ValPtr ComputeCtx::getArgument(int id)const { return *(argValue.begin() + id); }
+Value ComputeCtx::getArgument(int id)const { return *(argValue.begin() + id); }
 void ComputeCtx::pushArgs(const ValList& args) {
     //Replace self referential replacement args with proper pointer
     for(auto it = argValue.begin();it != argValue.end();it++) {
         if((*it)->typeID() == Value::arg_t) {
-            std::static_pointer_cast<Argument>(*it)->id += args.size();
+            it->cast<Argument>()->id += args.size();
         }
     }
     for(int i = args.size() - 1;i >= 0;i--)
@@ -69,13 +69,13 @@ void ComputeCtx::popArgs(const ValList& args) {
     for(int i = 0;i < args.size();i++)
         argValue.pop_front();
 }
-void ComputeCtx::setVariable(const string& n, ValPtr value) {
-    std::map<string, std::vector<ValPtr>>::iterator it = variables.find(n);
+void ComputeCtx::setVariable(const string& n, Value value) {
+    std::map<string, std::vector<Value>>::iterator it = variables.find(n);
     if(it == variables.end()) variables[n] = { value };
     else it->second.back() = value;
 }
-void ComputeCtx::defineVariable(const string& n, ValPtr value) {
-    std::map<string, std::vector<ValPtr>>::iterator it = variables.find(n);
+void ComputeCtx::defineVariable(const string& n, Value value) {
+    std::map<string, std::vector<Value>>::iterator it = variables.find(n);
     if(it == variables.end()) {
         variables[n] = { value };
     }
@@ -89,7 +89,7 @@ void ComputeCtx::undefineVariables(const std::vector<string>& vars) {
         else it->second.pop_back();
     }
 }
-ValPtr ComputeCtx::getVariable(const string& name) {
+Value ComputeCtx::getVariable(const string& name) {
     auto it = variables.find(name);
     if(it == variables.end()) return nullptr;
     return it->second.back();
@@ -109,7 +109,7 @@ Function::Function(string argName, fobj func) {
     name = argName;
     funcs = std::map<Domain, fobj>{ {Domain(0),func } };
 }
-ValPtr Function::operator()(ValList& input, ComputeCtx& ctx) {
+Value Function::operator()(ValList& input, ComputeCtx& ctx) {
     Domain cur(input);
     if(cur.sig == -1) {
         return std::make_shared<Tree>(Program::globalFunctionMap[name], std::forward<ValList>(input));
@@ -124,7 +124,7 @@ ValPtr Function::operator()(ValList& input, ComputeCtx& ctx) {
         //Find new map and create converted input
         Domain newMap = domainMap[cur];
         for(int i = 0;i < input.size();i++)
-            convertedInput[i] = Value::convert(input[i], newMap.get(i));
+            convertedInput[i] = input[i].convertTo(newMap.get(i));
         //return function result
         return funcs[newMap](convertedInput, ctx);
     }
@@ -227,14 +227,14 @@ string Function::Domain::toString()const {
 #define inp ValList input,ComputeCtx& ctx
 
 #pragma endregion
-ValPtr Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
+Value Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
     int index = globalFunctionMap[name];
     if(index == 0) throw "function " + name + " not found";
     return Program::globalFunctions[index](input, ctx);
 }
 
-#define def(type,name,index) std::shared_ptr<type> name = std::dynamic_pointer_cast<type>(input[index])
-#define getV(type,index) std::dynamic_pointer_cast<type>(input[index])
+#define def(type,name,index) std::shared_ptr<type> name = input[index].cast<type>()
+#define getV(type,index) input[index].cast<type>()
 #define ret(type) return std::make_shared<type>
 
 #define getN(index) getV(Number,index)->num
@@ -376,7 +376,7 @@ std::vector<Function> Program::globalFunctions = {
     UnaryWithUnit("getu",std::complex<T>(1.0,0.0),unit),
     Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,Apply2VecMax("max"),{D(vec_t),[](inp) {
         def(Vector,v,0);
-        ValPtr max = Value::zero;
+        Value max = Value::zero;
         for(int i = 0;i < v->vec.size();i++) {
             if(v->vec[i]->typeID() == Value::num_t || v->vec[i]->typeID() == Value::arb_t)
                 if(max->getR() < v->vec[i]->getR())
@@ -386,7 +386,7 @@ std::vector<Function> Program::globalFunctions = {
     }}),
     Binary("min","a","b",num1.real() > num2.real() ? num2 : num1,Apply2VecMax("min"),{D(vec_t),[](inp) {
         def(Vector,v,0);
-        ValPtr min = make_shared<Number>(INFINITY);
+        Value min = make_shared<Number>(INFINITY);
         for(int i = 0;i < v->vec.size();i++) {
             if(v->vec[i]->typeID() == Value::num_t || v->vec[i]->typeID() == Value::arb_t)
                 if(min->getR() > v->vec[i]->getR())
@@ -402,9 +402,9 @@ std::vector<Function> Program::globalFunctions = {
     Binary("dist","a","b",hypot(num1.real() - num2.real(),num1.imag() - num2.imag()),{vv,[](inp) {
         //running total = d1^2 + d2^2 + d3^2 ....
         def(Vector,v1,0);def(Vector,v2,1);
-        ValPtr runningTotal = std::make_shared<Number>(0);
+        Value runningTotal = std::make_shared<Number>(0);
         for(int i = 0;i < std::max(v1->size(),v2->size());i++) {
-            ValPtr diff = CptBin("sub",v1->get(i),v2->get(i));
+            Value diff = CptBin("sub",v1->get(i),v2->get(i));
             runningTotal = CptBin("add",runningTotal,CptBin("mult",diff,diff));
         }
         return Program::computeGlobal("sqrt",ValList{runningTotal},ctx);
@@ -428,11 +428,11 @@ std::vector<Function> Program::globalFunctions = {
     #pragma endregion
 #pragma region Binary logic
     Function("equal",{"a","b"},{},{{D(all,all),[](inp) {
-        if(*(input[0]) == input[1]) ret(Number)(1);
+        if(input[0] == input[1]) ret(Number)(1);
         else ret(Number)(0);
     }}}),
     Function("not_equal",{"a","b"},{},{{D(all,all),[](inp) {
-        if(*(input[0]) == input[1]) ret(Number)(0);
+        if(input[0] == input[1]) ret(Number)(0);
         else ret(Number)(1);
     }}}),
     Binary("lt", "a","b", num1.real() < num2.real() ? T(1) : T(0)),
@@ -494,7 +494,7 @@ std::vector<Function> Program::globalFunctions = {
         def(Vector,v,1);
         ValList toRun = ValList{input[0]};
         for(int i = 0;i < v->size();i++) toRun.push_back(v->vec[i]);
-        ValPtr out = Program::computeGlobal("run",toRun,ctx);
+        Value out = Program::computeGlobal("run",toRun,ctx);
         return out;
     }},{D(str_t,vec_t),[](inp) {
         return Program::computeGlobal(getV(String,0)->str,getV(Vector,1)->vec,ctx);
@@ -507,7 +507,7 @@ std::vector<Function> Program::globalFunctions = {
         if(Program::smallCompute) if((end - begin) / step > 10.0) end = begin + step * 10.0;
         shared_ptr<Number> n = make_shared<Number>(0);
         ValList lambdaInput{n};
-        ValPtr out = make_shared<Number>(0);
+        Value out = make_shared<Number>(0);
         for(double index = begin;index <= end;index += step) {
             n->num = {index,0.0};
             out = Program::computeGlobal("add",ValList{out,(*func)(lambdaInput,ctx)},ctx);
@@ -522,7 +522,7 @@ std::vector<Function> Program::globalFunctions = {
         if(Program::smallCompute) if((end - begin) / step > 10.0) end = begin + step * 10.0;
         shared_ptr<Number> n = make_shared<Number>(0);
         ValList lambdaInput{n};
-        ValPtr out = make_shared<Number>(1);
+        Value out = make_shared<Number>(1);
         for(double index = begin;index <= end;index += step) {
             n->num = {index,0.0};
             out = Program::computeGlobal("mult",ValList{out,(*func)(lambdaInput,ctx)},ctx);
@@ -556,8 +556,8 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     Function("magnitude",{"vec"},{}, {{D(vec_t),[](inp) {
         def(Vector,v,0);
-        ValPtr out = make_shared<Number>(0);
-        ValPtr two = make_shared<Number>(2);
+        Value out = make_shared<Number>(0);
+        Value two = make_shared<Number>(2);
         for(int i = 0;i < v->size();i++) {
             out = Program::computeGlobal("add",ValList{out,Program::computeGlobal("pow",ValList{v->vec[i],two},ctx)},ctx);
         }
@@ -569,7 +569,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("get",{"map","key"},{},{{D(vec_t,dub | arb),[](inp) {
         def(Vector,v,0);
         int index = input[1]->getR();
-        if(index < 0 || index >= v->size()) return ValPtr(make_shared<Number>(0));
+        if(index < 0 || index >= v->size()) return Value(make_shared<Number>(0));
         return v->vec[index];
     }}}),
     Function("fill",{"func","count"},{},{{D(lmb,arb | dub),[](inp) {
@@ -602,11 +602,11 @@ std::vector<Function> Program::globalFunctions = {
         shared_ptr<Vector> out = make_shared<Vector>();
         for(int i = 0;i < a->size();i++) out->vec.push_back(a->vec[i]);
         for(int i = 0;i < b->size();i++) out->vec.push_back(b->vec[i]);
-        return ValPtr(out);
+        return Value(out);
     }}}),
     Function("sort",{"vec","comp"},{},{{D(vec_t),[](inp) {
         def(Vector,v,0);
-        auto compare = [&ctx = ctx](ValPtr a,ValPtr b) {
+        auto compare = [&ctx = ctx](Value a,Value b) {
             return Program::computeGlobal("lt",ValList{a,b},ctx)->getR();
         };
         shared_ptr<Vector> out = make_shared<Vector>(std::forward<ValList>(v->vec));
@@ -614,7 +614,7 @@ std::vector<Function> Program::globalFunctions = {
         return out;
     }},{D(vec_t,lmb),[](inp) {
         def(Vector,v,0); def(Lambda,func,1);
-        auto compare = [&ctx = ctx,func = func](ValPtr a,ValPtr b) {
+        auto compare = [&ctx = ctx,func = func](Value a,Value b) {
             return (*func)(ValList{a,b},ctx)->getR();
         };
         shared_ptr<Vector> out = make_shared<Vector>(std::forward<ValList>(v->vec));
@@ -700,12 +700,12 @@ std::vector<Function> Program::globalFunctions = {
 #undef vec_t
 #undef map_t
 #undef str_t
-    Function("tonumber",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::num_t);}}}),
-    Function("toarb",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::arb_t);}}}),
-    Function("tovec",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::vec_t);}}}),
-    Function("tomap",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::map_t);}}}),
-    Function("tostring",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::str_t);}}}),
-    Function("tolambda",{"val"},{},{{D(all),[](inp) {return Value::convert(input[0],Value::lmb_t);}}}),
+    Function("tonumber",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::num_t);}}}),
+    Function("toarb",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::arb_t);}}}),
+    Function("tovec",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::vec_t);}}}),
+    Function("tomap",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::map_t);}}}),
+    Function("tostring",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::str_t);}}}),
+    Function("tolambda",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::lmb_t);}}}),
     Function("typeof",{"val"},{},{{D(all),[](inp) {return make_shared<Number>(input[0]->typeID());}}}),
 #pragma endregion
 

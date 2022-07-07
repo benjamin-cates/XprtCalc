@@ -15,7 +15,7 @@ bool Program::smallCompute = false;
 ValList Program::history;
 ComputeCtx Program::computeCtx;
 ParseCtx Program::parseCtx;
-ValPtr Value::zero;
+Value Value::zero;
 std::unordered_map<string, int> Program::globalFunctionMap;
 int Program::getGlobal(const string& name) {
     if(globalFunctionMap.find(name) == globalFunctionMap.end()) return -1;
@@ -23,28 +23,28 @@ int Program::getGlobal(const string& name) {
 }
 
 #pragma region Preferences
-std::map<string, std::pair<ValPtr, void (*)(ValPtr)>> Preferences::pref = {
+std::map<string, std::pair<Value, void (*)(Value)>> Preferences::pref = {
     {"command_prefix",{std::make_shared<String>("/"),nullptr}}
 };
-ValPtr Preferences::get(string name) {
+Value Preferences::get(string name) {
     auto it = pref.find(name);
     if(it == pref.end()) throw "Preference " + name + " not found";
     else return it->second.first;
 }
 template<>
 double Preferences::getAs<double>(string name) {
-    ValPtr val = get(name);
+    Value val = get(name);
     return val->getR();
 }
 template<>
 string Preferences::getAs<string>(string name) {
-    ValPtr val = get(name);
+    Value val = get(name);
     if(val->typeID() == Value::str_t) {
-        return std::static_pointer_cast<String>(val)->str;
+        return val.cast<String>()->str;
     }
     else return val->toString();
 }
-void Preferences::set(string name, ValPtr val) {
+void Preferences::set(string name, Value val) {
     //Run set command if it exists
     if(pref[name].second != nullptr) {
         (pref[name].second)(val);
@@ -64,7 +64,7 @@ ColoredString LibFunc::include() {
         }
         else out += Library::functions[dependencies[i]].include();
     }
-    ValPtr lambda;
+    Value lambda;
     try {
         lambda = Tree::parseTree(inputs + "=>" + xpr, Program::parseCtx);
     }
@@ -252,7 +252,7 @@ ColoredString command_sections(std::vector<string>& input) {
 ColoredString command_parse(vector<string>& input) {
     string inp = combineArgs(input);
     ParseCtx ctx;
-    ValPtr tr = Tree::parseTree(inp, ctx);
+    Value tr = Tree::parseTree(inp, ctx);
     return ColoredString::fromXpr(tr->toString());
 }
 
@@ -271,7 +271,7 @@ ColoredString command_def(vector<string>& input) {
         input[0] = input[0].substr(0, eq);
     }
     //Push variable to compute context
-    ValPtr value = Expression::evaluate(input[1]);
+    Value value = Expression::evaluate(input[1]);
     //Push variable to respective contexts
     Program::parseCtx.pushVariable(input[0]);
     Program::computeCtx.setVariable(input[0], value);

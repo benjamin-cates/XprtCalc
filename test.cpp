@@ -212,9 +212,9 @@ namespace MatchingXpr {
     string validate(std::map<string, string>::iterator it) {
         const string& identifier = it->first;
         try {
-            ValPtr first = Expression::evaluate(it->first);
-            ValPtr second = Expression::evaluate(it->second);
-            if(*first != second) {
+            Value first = Expression::evaluate(it->first);
+            Value second = Expression::evaluate(it->second);
+            if(first != second) {
                 if(first->toString() != second->toString())
                     return TestResult::fail(it->first + " does not match " + it->second + " (computed as " + first->toString() + " and " + second->toString() + ")", name);
             }
@@ -323,7 +323,7 @@ namespace ParsingRandXpr {
         string identifier = Generate::expression(3, Program::parseCtx);
         try {
             //Parse random expression
-            ValPtr tr = Tree::parseTree(identifier, Program::parseCtx);
+            Value tr = Tree::parseTree(identifier, Program::parseCtx);
             //Test computation for segfault, other errors are ignored
             try {
                 tr->compute(Program::computeCtx);

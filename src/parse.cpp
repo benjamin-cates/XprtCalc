@@ -60,7 +60,7 @@ bool ParseCtx::variableExists(const string& name)const {
     if(it == variables.end()) return false;
     return it->second > 0;
 }
-ValPtr ParseCtx::getVariable(const string& name)const {
+Value ParseCtx::getVariable(const string& name)const {
     for(auto it = argStack.begin();it != argStack.end();it++) {
         if(name == *it) return std::make_shared<Argument>(std::distance(argStack.begin(), it));
     }
@@ -106,7 +106,7 @@ std::unordered_set<char> Expression::operatorChars = {
 const std::unordered_map<char, int> Expression::basesPrefix = {
     {'b',2},{'t',3},{'o',8},{'d',10},{'x',16}
 };
-ValPtr Expression::parseNumeral(const string& str, int base) {
+Value Expression::parseNumeral(const string& str, int base) {
     //Parse base
     int start = 0;
     if(str[0] == '0') {
@@ -463,8 +463,8 @@ std::vector<string> Expression::splitBy(const string& str, int start, int end, c
         return std::vector<string>(0);
     return out;
 }
-ValPtr Expression::evaluate(const string& str) {
-    ValPtr tr = Tree::parseTree(str, Program::parseCtx);
+Value Expression::evaluate(const string& str) {
+    Value tr = Tree::parseTree(str, Program::parseCtx);
     return tr->compute(Program::computeCtx);
 }
 void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
@@ -514,9 +514,9 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             double base = -1;
             try {
                 ParseCtx pctx;
-                ValPtr tr = Tree::parseTree(sec.substr(underscore + 1), ctx);
+                Value tr = Tree::parseTree(sec.substr(underscore + 1), ctx);
                 ComputeCtx cctx;
-                ValPtr v = tr->compute(cctx);
+                Value v = tr->compute(cctx);
                 if(v != nullptr) base = v->getR();
             }
             catch(...) {}
@@ -545,7 +545,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
         else if(type == Section::variable) {
             int len = sec.length();
             sec = Expression::removeSpaces(sec);
-            ValPtr a = ctx.getVariable(sec);
+            Value a = ctx.getVariable(sec);
             ColorType type;
             if(a == nullptr) type = ColorType::hl_error;
             else if(a->typeID() == Value::tre_t) type = ColorType::hl_function;
@@ -560,7 +560,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             string name = sec.substr(0, bracket);
             int nameLen = name.length();
             name = Expression::removeSpaces(name);
-            ValPtr func = ctx.getVariable(name);
+            Value func = ctx.getVariable(name);
             ColorType nameType;
             if(func == nullptr) nameType = ColorType::hl_error;
             else if(func->typeID() == Value::tre_t) nameType = ColorType::hl_function;
@@ -647,7 +647,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
 //
 //
 //
-ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
+Value Tree::parseTree(const string& str, ParseCtx& ctx) {
     if(str.length() == 0) return Value::zero;
     std::vector<std::pair<string, Expression::Section>> sections = Expression::getSections(str, ctx);
     ValList treeList;
@@ -677,7 +677,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
                 vectorComponents.push_back(Tree::parseTree(comp[i], ctx));
             }
             treeList.push_back(std::make_shared<Vector>(0));
-            std::static_pointer_cast<Vector>(treeList.back())->vec = std::move(vectorComponents);
+            treeList.back().cast<Vector>()->vec = std::move(vectorComponents);
         }
         //Strings ""
         else if(type == Expression::quote) {
@@ -716,10 +716,10 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
         //Variables
         else if(type == Expression::variable) {
             sect = Expression::removeSpaces(sect);
-            ValPtr op = ctx.getVariable(sect);
+            Value op = ctx.getVariable(sect);
             if(op.get() == nullptr) throw "Variable " + sect + " not found";
             if(op->typeID() == Value::tre_t) {
-                int id = std::static_pointer_cast<Tree>(op)->op;
+                int id = op.cast<Tree>()->op;
                 if(Program::assertArgCount(id, 0) != true)
                     throw "Variable " + str + " cannot run without arguments";
                 treeList.push_back(op);
@@ -735,14 +735,14 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
             int endBrace = Expression::matchBracket(sect, startBrace);
             string name = sect.substr(0, startBrace);
             name = Expression::removeSpaces(name);
-            ValPtr op = ctx.getVariable(name);
+            Value op = ctx.getVariable(name);
             if(op.get() == nullptr) throw "Function " + name + " not found";
             std::vector<string> argsStr = Expression::splitBy(sect, startBrace, endBrace, ',');
             ValList arguments;
             for(int i = 0;i < argsStr.size();i++)
                 arguments.push_back(Tree::parseTree(argsStr[i], ctx));
             if(op->typeID() == Value::tre_t) {
-                std::shared_ptr<Tree> tr = std::static_pointer_cast<Tree>(op);
+                std::shared_ptr<Tree> tr = op.cast<Tree>();
                 if(Program::assertArgCount(tr->op, argsStr.size()) != true)
                     throw "Function '" + name + "' cannot run with " + std::to_string(argsStr.size()) + " arguments";
                 tr->branches = std::move(arguments);
@@ -771,7 +771,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
                 arguments.push_back(Expression::removeSpaces(sect.substr(0, arrow - 1)));
             }
             ctx.push(arguments);
-            ValPtr tr;
+            Value tr;
             try { tr = Tree::parseTree(str.substr(arrow + 1), ctx); }
             catch(...) { ctx.pop(); throw; }
             ctx.pop();
@@ -819,7 +819,7 @@ ValPtr Tree::parseTree(const string& str, ParseCtx& ctx) {
     for(int i = 0;i < operators.size();i++)
         if(operators[i].first == "") operators[i] = std::pair<string, int>("mult", 2);
     //Combine operators and values into singular list
-    typedef std::pair<ValPtr, std::pair<string, int>*> valOp;
+    typedef std::pair<Value, std::pair<string, int>*> valOp;
     //Push all but final value to data list
     std::list<valOp> data;
     for(int i = 0;i < treeList.size();i++)

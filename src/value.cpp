@@ -36,7 +36,7 @@ int Arb::precisionToDigits(mpfr_prec_t prec) {
 Vector::Vector(ValList&& v) {
     vec = std::forward<ValList>(v);
 }
-Vector::Vector(ValPtr topLeft) {
+Vector::Vector(Value topLeft) {
     vec.resize(1);
     vec[0] = topLeft;
 }
@@ -46,16 +46,16 @@ Vector::Vector(int x) {
 int Vector::size()const {
     return vec.size();
 }
-ValPtr Vector::get(unsigned int x) {
+Value Vector::get(unsigned int x) {
     if(x >= vec.size()) {
         return std::make_shared<Number>(0);
     }
     return vec[x];
 }
-ValPtr Vector::operator[](unsigned int x) {
+Value Vector::operator[](unsigned int x) {
     return vec[x];
 }
-void Vector::set(int x, ValPtr val) {
+void Vector::set(int x, Value val) {
     if(x >= vec.size()) {
         vec.resize(x + 1);
     }
@@ -63,15 +63,15 @@ void Vector::set(int x, ValPtr val) {
 }
 #pragma endregion
 #pragma region Lambda
-Lambda::Lambda(std::vector<string> inputs, ValPtr funcTree) {
+Lambda::Lambda(std::vector<string> inputs, Value funcTree) {
     inputNames = inputs;
     func = funcTree;
 }
-ValPtr Lambda::operator()(ValList inputs, ComputeCtx& ctx) {
+Value Lambda::operator()(ValList inputs, ComputeCtx& ctx) {
     if(inputs.size() < inputNames.size()) throw "not enough arguments for lambda";
     if(inputs.size() != inputNames.size()) inputs.resize(inputNames.size());
     ctx.pushArgs(inputs);
-    ValPtr out;
+    Value out;
     try {
         out = func->compute(ctx);
     }
@@ -97,56 +97,15 @@ string String::safeBackspaces(const string& str) {
     return out;
 }
 #pragma endregion
-#pragma region Map
-ValPtr Map::find(ValPtr key, double flat) {
-    if(*key == leafKey) return leaf;
-    if(flat == 0) flat = key->flatten();
-    if(flat < flatKey) {
-        if(left) return left->find(key);
-        else return nullptr;
-    }
-    else {
-        if(right) return right->find(key);
-        else return nullptr;
-    }
-    return nullptr;
-}
-void Map::append(ValPtr key, ValPtr val, double flat) {
-    if(*key == leafKey) {
-        leaf = val;
-        return;
-    }
-    if(flat == 0) flat = key->flatten();
-    if(flat < flatKey) {
-        if(left) return left->append(key, val);
-        else {
-            left = std::make_shared<Map>();
-            left->leaf = val;
-            left->leafKey = key;
-            left->flatKey = flat;
-        }
-    }
-    else {
-        if(right) return right->append(key, val);
-        else {
-            right = std::make_shared<Map>();
-            right->leaf = val;
-            right->leafKey = key;
-            right->flatKey = flat;
-        }
-    }
-}
-#pragma endregion
 #pragma endregion
 
 
 
 #pragma region Value comparison
-bool Value::operator==(ValPtr comp) {
-    ValPtr sharedThis = shared_from_this();
-    if(comp == nullptr) return false;
-    if(typeID() != comp->typeID()) return false;
-    #define cast(type,name1,name2) name1=std::static_pointer_cast<type>(sharedThis);name2=std::static_pointer_cast<type>(comp);
+bool operator==(const Value& lhs, const Value& rhs) {
+    if(lhs.get() == nullptr || rhs.get() == nullptr) return false;
+    if(lhs->typeID() != rhs->typeID()) return false;
+    #define cast(type,name1,name2) name1=lhs.cast<type>();name2=rhs.cast<type>();
     std::shared_ptr<Number> n1, n2;
     #ifdef USE_ARB
     std::shared_ptr<Arb> a1, a2;
@@ -155,7 +114,7 @@ bool Value::operator==(ValPtr comp) {
     std::shared_ptr<Lambda> l1, l2;
     std::shared_ptr<String> s1, s2;
     std::shared_ptr<Map> m1, m2;
-    switch(typeID()) {
+    switch(lhs->typeID()) {
     case Value::num_t:
         cast(Number, n1, n2)
             if(!(n1->unit == n2->unit)) return false;
@@ -171,53 +130,45 @@ bool Value::operator==(ValPtr comp) {
     case Value::vec_t:
         cast(Vector, v1, v2)
             if(v1->size() != v2->size()) return false;
-        for(int i = 0;i < v1->size();i++) if(*(v1->vec[i]) != v2->vec[i]) return false;
+        for(int i = 0;i < v1->size();i++) if(!(v1->vec[i] == v2->vec[i])) return false;
         return true;
     case Value::lmb_t:
         cast(Lambda, l1, l2)
             if(l1->inputNames.size() != l2->inputNames.size()) return false;
-        if(*l1->func == l2->func) return true;
+        if(l1->func == l2->func) return true;
         return false;
     case Value::str_t:
         cast(String, s1, s2)
             if(s1->str == s2->str) return true;
         return false;
     case Value::map_t:
-        cast(Map, m1, m2)
-            if(*m1->leaf != m2->leaf) return false;
-        if((m1->right == nullptr) ^ (m2->right == nullptr)) return false;
-        if((m1->left == nullptr) ^ (m2->left == nullptr)) return false;
-        if(m1->right) if(*m1->right != m2->right) return false;
-        if(m1->left) if(*m1->left != m2->left) return false;
         return true;
     default:
         return false;
     }
     return false;
 }
-bool Value::operator!=(ValPtr comp) { return !(*this == comp); }
-bool Value::operator<(const Value& comp)const { return flatten() < comp.flatten(); }
+bool operator<(Value lhs, Value rhs) {
+    return lhs->flatten() < rhs->flatten();
+}
 #pragma endregion
 #pragma region Value conversion
-ValPtr Value::convert(ValPtr value, int type) {
-    int curType = value->typeID();
-    if(type == curType) return value;
-
-    #define def(type,name) std::shared_ptr<type> name=std::static_pointer_cast<type>(value)
-    if(curType == vec_t && type != map_t) { def(Vector, v); return Value::convert(v->get(0), type); }
+Value Value::convertTo(int type) {
+    int curType = ptr->typeID();
+    if(type == curType) return *this;
     if(type == num_t) {
         #ifdef USE_ARB
-        if(curType == arb_t) { def(Arb, a); return std::make_shared<Number>(double(a->num.real()), double(a->num.imag()), a->unit); }
+        if(curType == arb_t) { std::shared_ptr<Arb> a = cast<Arb>(); return std::make_shared<Number>(double(a->num.real()), double(a->num.imag()), a->unit); }
         #endif
         if(curType == lmb_t) throw "Cannot convert lambda to number";
-        else if(curType == str_t) { def(String, s);return Expression::parseNumeral(s->str, 10); }
+        else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str, 10);
         else if(curType == map_t) throw "Cannot convert map to number";
     }
     #ifdef USE_ARB
     else if(type == arb_t) {
-        if(curType == num_t) { def(Number, n); return std::make_shared<Arb>(n->num.real(), n->num.imag(), n->unit); }
+        if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(n->num.real(), n->num.imag(), n->unit); }
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
-        else if(curType == str_t) { def(String, s);return Expression::parseNumeral("0a" + s->str, 10); }
+        else if(curType == str_t) return Expression::parseNumeral("0a" + cast<String>()->str, 10);
         else if(curType == map_t) throw "Cannot convert map to arb";
     }
     #endif
@@ -228,23 +179,24 @@ ValPtr Value::convert(ValPtr value, int type) {
     }
     //To lambda
     else if(type == lmb_t) {
-        return std::make_shared<Lambda>(std::vector<string>(), value);
+        return std::make_shared<Lambda>(std::vector<string>(), *this);
     }
     //To string
     else if(type == str_t) {
-        return std::make_shared<String>(value->toString());
+        return std::make_shared<String>(ptr->toString());
     }
     //To map
     else if(type == map_t) {
         std::shared_ptr<Map> out = std::make_shared<Map>();
         if(curType == vec_t) {
-            def(Vector, v);
-            for(unsigned int i = 0;i < v->size();i++)
-                out->append(std::make_shared<Number>(i), v->get(i));
+            //def(Vector, v);
+            //for(unsigned int i = 0;i < v->size();i++)
+                //out->append(std::make_shared<Number>(i), v->get(i));
         }
-        else out->append(std::make_shared<Number>(0), value);
+        //else out->append(std::make_shared<Number>(0), value);
         return out;
     }
+    if(curType == vec_t) return cast<Vector>()->get(0).convertTo(type);
     return std::make_shared<Number>(0);
 }
 #pragma endregion
@@ -270,12 +222,12 @@ double String::flatten()const {
     return hash;
 }
 double Map::flatten()const {
-    double hash = 0;
-    if(left) hash += left->flatten() * 2.098058329;
-    if(right) hash += right->flatten() * 3.209804;
-    hash += leafKey->flatten() * 4.012485;
-    hash += leaf->flatten() * 1.02305093;
-    return hash;
+    //double hash = 0;
+    //if(left) hash += left->flatten() * 2.098058329;
+    //if(right) hash += right->flatten() * 3.209804;
+    //hash += leafKey->flatten() * 4.012485;
+    //hash += leaf->flatten() * 1.02305093;
+    //return hash;
 }
 double Tree::flatten()const {
     double out = 0.0;
@@ -284,14 +236,14 @@ double Tree::flatten()const {
 }
 #pragma endregion
 #pragma region compute
-ValPtr Vector::compute(ComputeCtx& ctx) {
+Value Vector::compute(ComputeCtx& ctx) {
     ValList a(vec.size());
     for(int i = 0;i < vec.size();i++) {
         a[i] = vec[i]->compute(ctx);
     }
     return std::make_shared<Vector>(std::move(a));
 }
-ValPtr Lambda::compute(ComputeCtx& ctx) {
+Value Lambda::compute(ComputeCtx& ctx) {
     if(ctx.argValue.size() == 0) return shared_from_this();
     ValList unreplacedArgs;
     for(int i = 0;i < inputNames.size();i++) {
@@ -300,33 +252,31 @@ ValPtr Lambda::compute(ComputeCtx& ctx) {
     //Move previous unreplaced args
     for(int i = 0;i < ctx.argValue.size();i++)
         if(ctx.getArgument(i)->typeID() == Value::arg_t)
-            std::static_pointer_cast<Argument>(ctx.getArgument(i))->id = i + inputNames.size();
+            ctx.getArgument(i).cast<Argument>()->id = i + inputNames.size();
     //Push arguments to stack
     ctx.pushArgs(unreplacedArgs);
-    ValPtr newLambda;
+    Value newLambda;
     try { newLambda = func->compute(ctx); }
     catch(...) { ctx.popArgs(unreplacedArgs);throw; }
     ctx.popArgs(unreplacedArgs);
     return std::make_shared<Lambda>(inputNames, newLambda);
 }
-ValPtr Tree::compute(ComputeCtx& ctx) {
+Value Tree::compute(ComputeCtx& ctx) {
     ValList computed(branches.size());
     bool computable = true;
     for(int i = 0;i < branches.size();i++) {
-        if(branches[i] == nullptr) branches[i] = Value::zero;
         computed[i] = branches[i]->compute(ctx);
-        if(computed[i] == nullptr) throw "Argument " + std::to_string(i) + " in " + Program::globalFunctions[op].getName() + " return nullptr";
         if(computed[i]->typeID() >= Value::tre_t) computable = false;
     }
     if(computable) return Program::globalFunctions[op](computed, ctx);
     else return std::make_shared<Tree>(op, std::forward<ValList>(computed));
 }
-ValPtr Argument::compute(ComputeCtx& ctx) {
+Value Argument::compute(ComputeCtx& ctx) {
     return ctx.getArgument(id);
 }
 #pragma endregion
 #pragma region toString
-string Value::toString()const { return this->toStr(Program::parseCtx); }
+string ValueBaseClass::toString()const { return this->toStr(Program::parseCtx); }
 string Number::componentToString(double x, int base) {
     std::stringstream s;
     s << x;
@@ -423,23 +373,23 @@ string Argument::toStr(ParseCtx& ctx)const {
     return out;
 }
 #pragma endregion
-bool Value::isOne(ValPtr x) {
-    if(std::shared_ptr<Number> n = std::dynamic_pointer_cast<Number>(x)) {
+bool Value::isOne(const Value& x) {
+    if(std::shared_ptr<Number> n = x.cast<Number>()) {
         if(n->num == std::complex<double>(1)) return true;
     }
     #ifdef USE_ARB
-    else if(std::shared_ptr<Arb> n = std::dynamic_pointer_cast<Arb>(x)) {
+    else if(std::shared_ptr<Arb> n = x.cast<Arb>()) {
         if(n->num == std::complex<mppp::real>(1)) return true;
     }
     #endif
     return false;
 }
-bool Value::isZero(ValPtr x) {
-    if(std::shared_ptr<Number> n = std::dynamic_pointer_cast<Number>(x)) {
+bool Value::isZero(const Value& x) {
+    if(std::shared_ptr<Number> n = x.cast<Number>()) {
         if(n->num == std::complex<double>(0)) return true;
     }
     #ifdef USE_ARB
-    else if(std::shared_ptr<Arb> n = std::dynamic_pointer_cast<Arb>(x)) {
+    else if(std::shared_ptr<Arb> n = x.cast<Arb>()) {
         if(n->num == std::complex<mppp::real>(0)) return true;
     }
     #endif

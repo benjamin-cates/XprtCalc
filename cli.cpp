@@ -44,8 +44,8 @@ int main(int argc, char** argv) {
                 continue;
             }
             //Parse and compute tree
-            ValPtr tr = Tree::parseTree(input, Program::parseCtx);
-            ValPtr a = tr->compute(Program::computeCtx);
+            Value tr = Tree::parseTree(input, Program::parseCtx);
+            Value a = tr->compute(Program::computeCtx);
             ColoredString toPrint("$" + std::to_string(i), Expression::hl_variable);
             toPrint += ColoredString(" = ", Expression::hl_operator);
             toPrint += ColoredString::fromXpr(a->toString());
