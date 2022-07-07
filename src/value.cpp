@@ -103,6 +103,7 @@ string String::safeBackspaces(const string& str) {
 
 #pragma region Value comparison
 bool operator==(const Value& lhs, const Value& rhs) {
+    if(lhs.get() == rhs.get()) return true;
     if(lhs.get() == nullptr || rhs.get() == nullptr) return false;
     if(lhs->typeID() != rhs->typeID()) return false;
     #define cast(type,name1,name2) name1=lhs.cast<type>();name2=rhs.cast<type>();
