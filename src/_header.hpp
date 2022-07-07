@@ -234,7 +234,7 @@ namespace Expression {
         // ""
         quote = 5,
         // []_b
-        squareUnit,
+        squareWithBase,
         numeral,
         variable,
         function,

@@ -205,7 +205,7 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
         else if(match != -2) {
             // [ABC]_16 base notation
             if(ch == '[' && str[match + 1] == '_') {
-                if(type) *type = Section::squareUnit;
+                if(type) *type = Section::squareWithBase;
                 return nextSection(str, match + 2, nullptr, ctx);
             }
             //(a,b)=> lambda notation
@@ -508,7 +508,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             Expression::color(sec.substr(1, sec.length() - 2), out + 1, ctx);
             ctx.pop();
         }
-        else if(type == Section::squareUnit) {
+        else if(type == Section::squareWithBase) {
             int endB = matchBracket(sec, 0);
             int underscore = endB + 1;
             double base = -1;
@@ -698,10 +698,10 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             treeList.push_back(std::make_shared<String>(out));
         }
         //Square bracket with unit [0A]_12
-        else if(type == Expression::squareUnit) {
-            int endBracket = Expression::matchBracket(str, 0);
+        else if(type == Expression::squareWithBase) {
+            int endBracket = Expression::matchBracket(sect, 0);
             int underscore = Expression::findNext(sect, endBracket, '_');
-            int base = Expression::evaluate(str.substr(underscore + 1))->getR();
+            int base = Expression::evaluate(sect.substr(underscore + 1))->getR();
             if(base >= 36) throw "base cannot be over 36";
             if(base <= 1) throw "base cannot be under 2";
             ctx.push(base, true);

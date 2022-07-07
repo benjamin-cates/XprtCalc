@@ -220,7 +220,7 @@ string command_sections_internal(const string& inp, string tabbing) {
             continue;
         }
         else if(type == sec::square) bracket = '[';
-        else if(type == sec::squareUnit) bracket = '[';
+        else if(type == sec::squareWithBase) bracket = '[';
         else if(type == sec::vect) bracket = '<';
         else if(type == sec::curly) bracket = '{';
         if(bracket) {
