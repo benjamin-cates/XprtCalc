@@ -1,14 +1,6 @@
 #include "_header.hpp"
 
-bool Program::assertArgCount(int id, int count) {
-    return Program::globalFunctions[id].assertArgCount(count);
-}
-void Program::buildFunctionNameMap() {
-//Cache global functions in a map
-    for(int i = 0;i < Program::globalFunctions.size();i++)
-        Program::globalFunctionMap[Program::globalFunctions[i].getName()] = i;
-
-}
+#pragma region namespace Math
 namespace Math {
     //Returns vector of integer factors
     std::vector<int> getFactors(long n);
@@ -50,6 +42,7 @@ namespace Math {
     mppp::real Inf(int accu, bool negative) { mppp::real r("0.0", Arb::digitsToPrecision(accu));set_inf(r, negative); return r; }
     #endif
 };
+#pragma endregion
 #pragma region ComputeCtx
 ComputeCtx::ComputeCtx() {
 
@@ -147,6 +140,14 @@ string Function::debugStr() {
     for(auto& d : funcs) out += d.first.toString();
     return out + "\n";
 }
+bool Program::assertArgCount(int id, int count) {
+    return Program::globalFunctions[id].assertArgCount(count);
+}
+void Program::buildFunctionNameMap() {
+//Cache global functions in a map
+    for(int i = 0;i < Program::globalFunctions.size();i++)
+        Program::globalFunctionMap[Program::globalFunctions[i].getName()] = i;
+}
 #pragma endregion
 #pragma region Function::Domain
 
@@ -225,14 +226,6 @@ string Function::Domain::toString()const {
 #define dd D(dub,dub)
 #define vv D(vec_t,vec_t)
 #define inp ValList input,ComputeCtx& ctx
-
-#pragma endregion
-Value Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
-    int index = globalFunctionMap[name];
-    if(index == 0) throw "function " + name + " not found";
-    return Program::globalFunctions[index](input, ctx);
-}
-
 #define def(type,name,index) std::shared_ptr<type> name = input[index].cast<type>()
 #define getV(type,index) input[index].cast<type>()
 #define ret(type) return std::make_shared<type>
@@ -249,7 +242,8 @@ Value Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
 #define Apply2VecMax(name) {vv,applyBinVec(name,[](int a,int b){return std::max(a,b);})}
 #define Apply2VecMin(name) {vv,applyBinVec(name,[](int a,int b){return std::min(a,b);})}
 #define UnaryVecApply(name) {D(vec_t),applyToVector(name)}
-class Function;
+
+#pragma endregion
 #pragma region Apply to vector lambdas
 Function::fobj applyToVector(string name) {
     return [name = name](inp) {
@@ -301,7 +295,11 @@ Function::fobj applyBinVec(string name, std::function<int(int, int)> maxormin) {
     };
 }
 #pragma endregion
-
+Value Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
+    int index = globalFunctionMap[name];
+    if(index == 0) throw "function " + name + " not found";
+    return Program::globalFunctions[index](input, ctx);
+}
 using namespace std;
 std::vector<Function> Program::globalFunctions = {
     #define Constant(name,...) Function(name,{},{},{{D(),[](inp) {return std::make_shared<Number>(__VA_ARGS__);}}})
@@ -335,9 +333,9 @@ std::vector<Function> Program::globalFunctions = {
     Unary("neg",-num),
     Binary("add","a","b",num1 + num2,{D(str_t,str_t),[](inp) {ret(String)(getS(0) + getS(1));}}),
     Binary("sub","a","b",num1 - num2),
-    BinaryWithUnit("mult","a","b",num1 * num2,unit1 * unit2),
+    BinaryWithUnit("mult","a","b",num1* num2,unit1* unit2),
     BinaryWithUnit("div","a","b",num1 / num2,unit1 / unit2),
-    BinaryWithUnit("pow","a","b",pow(num1,num2),unit1 ^ double(num2.real())),
+    BinaryWithUnit("pow","a","b",pow(num1,num2),unit1^ double(num2.real())),
     Binary("mod","a","b",fmod(num1.real(),num2.real())),
 
     UnaryWithUnit("sqrt",sqrt(num),unit ^ 0.5),

@@ -78,6 +78,7 @@ Value ParseCtx::getVariable(const string& name)const {
     return nullptr;
 }
 #pragma endregion
+#pragma region Expression constants
 const std::map<string, std::pair<string, int>> Expression::operatorList = {
     {"+",{"add",3}},
     {"-",{"sub",3}},
@@ -106,6 +107,116 @@ std::unordered_set<char> Expression::operatorChars = {
 const std::unordered_map<char, int> Expression::basesPrefix = {
     {'b',2},{'t',3},{'o',8},{'d',10},{'x',16}
 };
+const std::unordered_map<char, int> Expression::bracs = {
+    {'(',1}, {')',1}, {'[',2}, {']',2}, {'{',3}, {'}',3}, {'<',4}, {'>',4}, {'\"',5}
+};
+const std::unordered_map<char, bool> Expression::isStart = {
+    {'(',true}, {')',false}, {'[',true}, {']',false}, {'{',true}, {'}',false}, {'<',true}, {'>',false}, {'\"',true}
+};
+#pragma endregion
+#pragma region Basic parsing
+//Returns the index of the matching bracket or -1 if it is not found
+int Expression::matchBracket(const string& str, int start) {
+    //Maps brackets to their unique match id
+    //Brack stack stores the list of brackets types in order
+    std::deque<int> bracStack{ bracs.at(str[start]) };
+    //If trying to match quote marks
+    if(bracStack.front() == 5) {
+        for(int i = start + 1;i < str.length();i++) {
+            if(str[i] == '"') return i;
+            if(str[i] == '\\') i++;
+        }
+    }
+    for(int i = start + 1;i < str.length();i++) {
+        char ch = str[i];
+        auto typeIt = bracs.find(ch);
+        if(typeIt != bracs.end()) {
+            int type = typeIt->second;
+            //Prevent >=, <=, and => from tripping the angle brackets up
+            if(type == 4) {
+                if(str[i + 1] == '=') continue;
+                if(str[i] == '>' && i != 0 && str[i - 1] == '=') continue;
+            }
+            //Quote marks treated differently
+            if(type == 5) {
+                //Iterate to end of string and continue program, this is to prevent  ("   ) " breaking the string because the first ending one has priority
+                int j = i + 1;
+                for(;j < str.length();j++) {
+                    if(str[j] == '"') break;
+                    if(str[j] == '\\') j++;
+                }
+                i = j;
+                continue;
+            }
+            if(isStart.at(ch)) bracStack.push_back(type);
+            else {
+                //Ignore less than and greater than signs
+                if(type == 4 && bracStack.back() != 4) continue;
+                //Iterate backwards until matching type is found, for example if stack is [<{<( and type is }, it will iterate backwards to { and destroy the <( sequence from the list
+                int destroyCount = 1;
+                for(auto it = bracStack.rbegin();it != bracStack.rend();it++, destroyCount++)
+                    if((*it) == type) break;
+                //Return if they match
+                if(destroyCount == bracStack.size()) return i;
+                //Return not found if a closing bracket cuts it off
+                if(destroyCount > bracStack.size()) return -1;
+                //remove destroyed brackets
+                for(int i = 0;i < destroyCount;i++) bracStack.pop_back();
+            }
+        }
+    }
+    //Return -1 when not found
+    return -1;
+}
+//Find index of "find" withing "str" starting at index. Ignores within brackets and quotes
+int Expression::findNext(const string& str, int index, char find) {
+    for(int i = index;i < str.length();i++) {
+        if(str[i] == find) return i;
+        if(str[i] == '(' || str[i] == '[' || str[i] == '{' || (str[i] == '<' && str[i + 1] != '=') || str[i] == '"') {
+            i = matchBracket(str, i);
+            if(i == -1) return -1;
+        }
+    }
+    return -1;
+}
+//Removes spaces from a string
+string Expression::removeSpaces(const string& str) {
+    int offset = 0;
+    string out(str.length(), 0);
+    for(int i = 0;i < str.length();i++) {
+        if(str[i] == ' ') {
+            offset++;
+            continue;
+        }
+        out[i - offset] = str[i];
+    }
+    out.resize(str.size() - offset);
+    return out;
+}
+//Get a list of positions of delimiter, including start and end
+std::vector<int> getDelimiterList(const string& str, int start, int end, char delimiter) {
+    //Get positions
+    std::vector<int> out = { start };
+    while(out.back() != -1)
+        out.push_back(Expression::findNext(str, out.back() + 1, delimiter));
+    //Add end and return
+    out.back() = end;
+    return out;
+}
+std::vector<string> Expression::splitBy(const string& str, int start, int end, char delimiter) {
+    std::vector<int> indicies = getDelimiterList(str, start, end, delimiter);
+    //Turn to string vector
+    std::vector<string> out;
+    for(int i = 0;i < indicies.size() - 1;i++) {
+        out.push_back(str.substr(indicies[i] + 1, indicies[i + 1] - indicies[i] - 1));
+    }
+    //Prevent () from returning one argument
+    if(out.size() == 1 && Expression::removeSpaces(out[0]) == "")
+        return std::vector<string>(0);
+    return out;
+}
+#pragma endregion
+#pragma region Complicated parsing
 Value Expression::parseNumeral(const string& str, int base) {
     //Parse base
     int start = 0;
@@ -310,12 +421,12 @@ std::vector<std::pair<string, Expression::Section>> Expression::getSections(cons
     }
     return out;
 }
-const std::unordered_map<char, int> Expression::bracs = {
-    {'(',1}, {')',1}, {'[',2}, {']',2}, {'{',3}, {'}',3}, {'<',4}, {'>',4}, {'\"',5}
-};
-const std::unordered_map<char, bool> Expression::isStart = {
-    {'(',true}, {')',false}, {'[',true}, {']',false}, {'{',true}, {'}',false}, {'<',true}, {'>',false}, {'\"',true}
-};
+Value Expression::evaluate(const string& str) {
+    Value tr = Tree::parseTree(str, Program::parseCtx);
+    return tr->compute(Program::computeCtx);
+}
+#pragma endregion
+#pragma region ColoredString
 const string& ColoredString::getStr()const { return str; }
 const string& ColoredString::getColor()const { return color; }
 void ColoredString::setStr(string&& s) {
@@ -365,107 +476,6 @@ ColoredString ColoredString::fromXpr(string&& str) {
 ColoredString& ColoredString::append(const std::vector<ColoredString>& args) {
     for(int i = 0;i < args.size();i++) (*this) += args[i];
     return *this;
-}
-//Returns the index of the matching bracket or -1 if it is not found
-int Expression::matchBracket(const string& str, int start) {
-    //Maps brackets to their unique match id
-    //Brack stack stores the list of brackets types in order
-    std::deque<int> bracStack{ bracs.at(str[start]) };
-    //If trying to match quote marks
-    if(bracStack.front() == 5) {
-        for(int i = start + 1;i < str.length();i++) {
-            if(str[i] == '"') return i;
-            if(str[i] == '\\') i++;
-        }
-    }
-    for(int i = start + 1;i < str.length();i++) {
-        char ch = str[i];
-        auto typeIt = bracs.find(ch);
-        if(typeIt != bracs.end()) {
-            int type = typeIt->second;
-            //Prevent >=, <=, and => from tripping the angle brackets up
-            if(type == 4) {
-                if(str[i + 1] == '=') continue;
-                if(str[i] == '>' && i != 0 && str[i - 1] == '=') continue;
-            }
-            //Quote marks treated differently
-            if(type == 5) {
-                //Iterate to end of string and continue program, this is to prevent  ("   ) " breaking the string because the first ending one has priority
-                int j = i + 1;
-                for(;j < str.length();j++) {
-                    if(str[j] == '"') break;
-                    if(str[j] == '\\') j++;
-                }
-                i = j;
-                continue;
-            }
-            if(isStart.at(ch)) bracStack.push_back(type);
-            else {
-                //Ignore less than and greater than signs
-                if(type == 4 && bracStack.back() != 4) continue;
-                //Iterate backwards until matching type is found, for example if stack is [<{<( and type is }, it will iterate backwards to { and destroy the <( sequence from the list
-                int destroyCount = 1;
-                for(auto it = bracStack.rbegin();it != bracStack.rend();it++, destroyCount++)
-                    if((*it) == type) break;
-                //Return if they match
-                if(destroyCount == bracStack.size()) return i;
-                //Return not found if a closing bracket cuts it off
-                if(destroyCount > bracStack.size()) return -1;
-                //remove destroyed brackets
-                for(int i = 0;i < destroyCount;i++) bracStack.pop_back();
-            }
-        }
-    }
-    //Return -1 when not found
-    return -1;
-}
-int Expression::findNext(const string& str, int index, char find) {
-    for(int i = index;i < str.length();i++) {
-        if(str[i] == find) return i;
-        if(str[i] == '(' || str[i] == '[' || str[i] == '{' || (str[i] == '<' && str[i + 1] != '=') || str[i] == '"') {
-            i = matchBracket(str, i);
-            if(i == -1) return -1;
-        }
-    }
-    return -1;
-}
-string Expression::removeSpaces(const string& str) {
-    int offset = 0;
-    string out(str.length(), 0);
-    for(int i = 0;i < str.length();i++) {
-        if(str[i] == ' ') {
-            offset++;
-            continue;
-        }
-        out[i - offset] = str[i];
-    }
-    out.resize(str.size() - offset);
-    return out;
-}
-std::vector<int> getDelimiterList(const string& str, int start, int end, char delimiter) {
-    //Get positions
-    std::vector<int> out = { start };
-    while(out.back() != -1)
-        out.push_back(Expression::findNext(str, out.back() + 1, delimiter));
-    //Add end and return
-    out.back() = end;
-    return out;
-}
-std::vector<string> Expression::splitBy(const string& str, int start, int end, char delimiter) {
-    std::vector<int> indicies = getDelimiterList(str, start, end, delimiter);
-    //Turn to string vector
-    std::vector<string> out;
-    for(int i = 0;i < indicies.size() - 1;i++) {
-        out.push_back(str.substr(indicies[i] + 1, indicies[i + 1] - indicies[i] - 1));
-    }
-    //Prevent () from returning one argument
-    if(out.size() == 1 && Expression::removeSpaces(out[0]) == "")
-        return std::vector<string>(0);
-    return out;
-}
-Value Expression::evaluate(const string& str) {
-    Value tr = Tree::parseTree(str, Program::parseCtx);
-    return tr->compute(Program::computeCtx);
 }
 void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
     if(str.length() == 0) return;
@@ -641,6 +651,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
         }
     }
 }
+#pragma endregion
 //THE TREE PARSER
 //
 //

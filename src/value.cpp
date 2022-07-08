@@ -97,10 +97,6 @@ string String::safeBackspaces(const string& str) {
     return out;
 }
 #pragma endregion
-#pragma endregion
-
-
-
 #pragma region Value comparison
 bool operator==(const Value& lhs, const Value& rhs) {
     if(lhs.get() == rhs.get()) return true;
@@ -148,9 +144,6 @@ bool operator==(const Value& lhs, const Value& rhs) {
         return false;
     }
     return false;
-}
-bool operator<(Value lhs, Value rhs) {
-    return lhs->flatten() < rhs->flatten();
 }
 #pragma endregion
 #pragma region Value conversion
@@ -201,9 +194,6 @@ Value Value::convertTo(int type) {
     return std::make_shared<Number>(0);
 }
 #pragma endregion
-
-
-
 #pragma region flatten
 double Number::flatten()const { return num.real() * 4.59141 + num.imag() * 2.12941 + double(unit.getBits()); }
 #ifdef USE_ARB
@@ -234,6 +224,9 @@ double Tree::flatten()const {
     double out = 0.0;
     for(int i = 0;i < branches.size();i++) out += (i * 0.890532 + 1.98235) * branches[i]->flatten();
     return out + op * 1.15241312;
+}
+bool operator<(Value lhs, Value rhs) {
+    return lhs->flatten() < rhs->flatten();
 }
 #pragma endregion
 #pragma region compute

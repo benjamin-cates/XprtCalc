@@ -17,9 +17,7 @@ namespace TestResult {
         return "";
     }
 };
-#define THROW_IF_FAIL_BASE(ident,n) catch(string message) {return TestResult::thrown(message,ident,n);} catch(const char* c) {return TestResult::thrown(string(c),ident,n);} catch(...) {return TestResult::thrown("unknown",ident,n);}
-#define THROW_IF_FAIL THROW_IF_FAIL_BASE(identifier,name)
-#define THROW_IF_FAIL_RANDOM THROW_IF_FAIL_BASE(identifier,name+ "["+std::to_string(index)+"]")
+#pragma region Random generation
 namespace Generate {
     int fastrand_seed;
     inline int fastrand() {
@@ -173,6 +171,11 @@ namespace Generate {
         else return "(" + variable_name() + "," + variable_name() + "," + variable_name() + ")";
     }
 }
+#pragma endregion
+#pragma region Tests
+#define THROW_IF_FAIL_BASE(ident,n) catch(string message) {return TestResult::thrown(message,ident,n);} catch(const char* c) {return TestResult::thrown(string(c),ident,n);} catch(...) {return TestResult::thrown("unknown",ident,n);}
+#define THROW_IF_FAIL THROW_IF_FAIL_BASE(identifier,name)
+#define THROW_IF_FAIL_RANDOM THROW_IF_FAIL_BASE(identifier,name+ "["+std::to_string(index)+"]")
 namespace MatchingXpr {
     const string name = "matching xpr";
     std::map<string, string> tests = {
@@ -350,6 +353,7 @@ namespace ParsingRandChar {
 //Help page tests
 //Random highlight
 //Random compute
+#pragma endregion
 template<typename T>
 void doTestList(T begin, T end, string(*validate)(T)) {
     auto startTime = std::chrono::steady_clock::now();

@@ -1,5 +1,5 @@
 #include "_header.hpp"
-
+#pragma region Startup and cleanup
 void Program::startup() {
     buildFunctionNameMap();
     Value::zero = std::make_shared<Number>(0);
@@ -7,10 +7,11 @@ void Program::startup() {
 }
 void Program::cleanup() {
     if(implementationCleanup) implementationCleanup();
-
 }
 void (*Program::implementationStartup)() = 0;
 void (*Program::implementationCleanup)() = 0;
+#pragma endregion
+#pragma region Global variables
 bool Program::smallCompute = false;
 ValList Program::history;
 ComputeCtx Program::computeCtx;
@@ -21,7 +22,7 @@ int Program::getGlobal(const string& name) {
     if(globalFunctionMap.find(name) == globalFunctionMap.end()) return -1;
     else return globalFunctionMap.at(name);
 }
-
+#pragma endregion
 #pragma region Preferences
 std::map<string, std::pair<Value, void (*)(Value)>> Preferences::pref = {
     {"command_prefix",{std::make_shared<String>("/"),nullptr}}
@@ -248,14 +249,12 @@ ColoredString command_sections(std::vector<string>& input) {
     string inp = combineArgs(input);
     return ColoredString(command_sections_internal(inp, ""));
 }
-
 ColoredString command_parse(vector<string>& input) {
     string inp = combineArgs(input);
     ParseCtx ctx;
     Value tr = Tree::parseTree(inp, ctx);
     return ColoredString::fromXpr(tr->toString());
 }
-
 ColoredString command_meta(vector<string>& input) {
     string out;
     for(auto it = Metadata::info.begin();it != Metadata::info.end();it++)
@@ -352,3 +351,4 @@ map<string, Command> Program::commandList = {
     {"query",{&command_query}},
     {"debug_help",{&command_debug_help} },
 };
+#pragma endregion

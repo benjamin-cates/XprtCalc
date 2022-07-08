@@ -1,5 +1,6 @@
 #include "_header.hpp"
 using namespace Help;
+#pragma region Exporter functions
 string Page::toPlainText() {
     string out(content.length(), ' ');
     int offset = 0;
@@ -27,6 +28,8 @@ string Page::toJSON() {
     alias += ']';
     return "{name:\"" + name + "\", symbol: \"" + String::safeBackspaces(symbol) + "\", type: \"" + type + "\", aliases:" + alias + ", content: \"" + String::safeBackspaces(content) + "\"}";
 }
+#pragma endregion
+#pragma region Page generator functions
 Page Page::fromUnit(string n, string message, std::vector<string> aliases, string more) {
     Page out;
     auto it = Unit::listOfUnits.find(n);
@@ -95,7 +98,7 @@ Page Page::fromInfo(string n, string message, std::vector<string> aliases, strin
 Page Page::fromType(string n, int id, string symbol, string message, std::vector<string> aliases, string more) {
     return Page(n, symbol, "type", message + " The ?typeof? function returns " + std::to_string(id) + "for this type.", aliases, more);
 }
-
+#pragma endregion
 std::vector<Page> Help::pages = {
     #pragma region Introduction
     //Info
@@ -296,6 +299,7 @@ std::vector<Page> Help::pages = {
     Page("Query","/query","command","The query command creates a list of help pages from the query sorted by relevance. It can be rerun with the index to display. Example: `/query log 2`."),
     #pragma endregion
         };
+#pragma region Searching
 std::map<uint64_t, std::vector<std::pair<int, int>>> Help::queryHash;
 void Help::stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, const string& str, int basePriority = 1) {
     //X represents the position within a word
@@ -378,3 +382,4 @@ std::vector<Page*> Help::search(const string& query, int maxResults) {
     }
     return out;
 }
+#pragma endregion

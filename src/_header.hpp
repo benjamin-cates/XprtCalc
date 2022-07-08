@@ -204,7 +204,6 @@ public:
     //Get list of variables
     std::map<string, int>& getVariableList() { return variables; }
 };
-
 //All of this is stored in parse.cpp
 namespace Expression {
     //Maps brackets to their types
@@ -276,6 +275,7 @@ namespace Expression {
     //Computes string without context
     Value evaluate(const string& str);
 };
+//Contains a string and it's color data simultaneosly
 class ColoredString {
     string str;
     string color;
@@ -302,7 +302,6 @@ public:
     static ColoredString fromXpr(string&& str);
     ColoredString& append(const std::vector<ColoredString>& args);
 };
-
 #pragma endregion
 #pragma region Computation
 //Contains data relating to builtin function
@@ -517,8 +516,6 @@ public:
         return Value(shared_from_this());
     }
 };
-#pragma endregion
-#pragma region Value Types
 //value.cpp
 class Number : public ValueBaseClass {
 public:
