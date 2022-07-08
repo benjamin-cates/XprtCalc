@@ -82,7 +82,7 @@ Value ParseCtx::getVariable(const string& name)const {
 const std::map<string, std::pair<string, int>> Expression::operatorList = {
     {"+",{"add",3}},
     {"-",{"sub",3}},
-    {"*",{"mult",2}},
+    {"*",{"mul",2}},
     {"/",{"div",2}},
     {"%",{"mod",2}},
     {"**",{"pow",1}},
@@ -828,7 +828,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
     operators.resize(treeList.size());
     //Multiply adjacents when there is no operator
     for(int i = 0;i < operators.size();i++)
-        if(operators[i].first == "") operators[i] = std::pair<string, int>("mult", 2);
+        if(operators[i].first == "") operators[i] = std::pair<string, int>("mul", 2);
     //Combine operators and values into singular list
     typedef std::pair<Value, std::pair<string, int>*> valOp;
     //Push all but final value to data list

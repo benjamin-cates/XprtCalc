@@ -333,7 +333,7 @@ std::vector<Function> Program::globalFunctions = {
     Unary("neg",-num),
     Binary("add","a","b",num1 + num2,{D(str_t,str_t),[](inp) {ret(String)(getS(0) + getS(1));}}),
     Binary("sub","a","b",num1 - num2),
-    BinaryWithUnit("mult","a","b",num1* num2,unit1* unit2),
+    BinaryWithUnit("mul","a","b",num1* num2,unit1* unit2),
     BinaryWithUnit("div","a","b",num1 / num2,unit1 / unit2),
     BinaryWithUnit("pow","a","b",pow(num1,num2),unit1^ double(num2.real())),
     Binary("mod","a","b",fmod(num1.real(),num2.real())),
@@ -395,7 +395,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("lerp",{"a","b","x"},{},{{D(dub | arb | vec_t,dub | arb | vec_t,dub | arb | vec_t),[](inp) {
         //return  (a*(1-f)) + (b*f)
         #define CptBin(name,input0,input1) Program::computeGlobal(name,ValList{input0,input1},ctx)
-        return CptBin("add",CptBin("mult",input[0],CptBin("sub",std::make_shared<Number>(1),input[2])),CptBin("mult",input[1],input[2]));
+        return CptBin("add",CptBin("mul",input[0],CptBin("sub",std::make_shared<Number>(1),input[2])),CptBin("mul",input[1],input[2]));
     }}}),
     Binary("dist","a","b",hypot(num1.real() - num2.real(),num1.imag() - num2.imag()),{vv,[](inp) {
         //running total = d1^2 + d2^2 + d3^2 ....
@@ -403,7 +403,7 @@ std::vector<Function> Program::globalFunctions = {
         Value runningTotal = std::make_shared<Number>(0);
         for(int i = 0;i < std::max(v1->size(),v2->size());i++) {
             Value diff = CptBin("sub",v1->get(i),v2->get(i));
-            runningTotal = CptBin("add",runningTotal,CptBin("mult",diff,diff));
+            runningTotal = CptBin("add",runningTotal,CptBin("lt",diff,diff));
         }
         return Program::computeGlobal("sqrt",ValList{runningTotal},ctx);
     }}),
@@ -525,7 +525,7 @@ std::vector<Function> Program::globalFunctions = {
         Value out = make_shared<Number>(1);
         for(double index = begin;index <= end;index += step) {
             n->num = {index,0.0};
-            out = Program::computeGlobal("mult",ValList{out,(*func)(lambdaInput,ctx)},ctx);
+            out = Program::computeGlobal("mul",ValList{out,(*func)(lambdaInput,ctx)},ctx);
         }
         return out;
     }}}),
