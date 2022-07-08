@@ -182,6 +182,8 @@ std::vector<Page> Help::pages = {
     Page::fromFunction("Less than or equal","lt_equal","Returns `1` if `a` is ?less than? or ?equal? to `b`, else returns `0`. It is aliased by the `<=` operator. ?Imaginary? components are ignored",{"comparison","<="}),
     #pragma endregion
     #pragma region Constants
+    Page::fromFunction("True","true","Constant that returns 1. It is used for boolean logic because comparison operators return `1` on success. The `false` constant is the opposite of `true`.",{"binary","boolean"}),
+    Page::fromFunction("False","false","Constant that returns `0`. It is used for boolean logic because comparison operators return `0` on failure. The `true` constant is the opposite of `false`.",{"binary","boolean"}),
     Page::fromFunction("Imaginary number","i","Constant that returns the imaginary number `i`. `i^2` is equal to `-1`, and it is used a lot in higher level math and algebra.",{"constant"},"https://en.wikipedia.org/wiki/Imaginary_number"),
     Page::fromFunction("Pi","pi","Constant that retuns the number pi. Pi is the ratio between the circumference ofa circle and it's diameter. Pi is used a lot in ?trigonometry?. Pi returns a double precision float, see `arb_pi` for a more accurate calculation.",{"constant"},"https://en.wikipedia.org/wiki/Pi"),
     Page::fromFunction("Euler's number","e","Constant that retuns euler's number, which is the base of natural logarithms. `e` is used a lot in math past algebra. `e` returns a double precision float, see `arb_e` for a more accurate calculation.",{"constant"},"https://en.wikipedia.org/wiki/E_(mathematical_constant)"),

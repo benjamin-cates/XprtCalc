@@ -457,6 +457,8 @@ std::vector<Function> Program::globalFunctions = {
 //    }),
 #pragma endregion
 #pragma region Constants
+    Constant("true",1),
+    Constant("false",0),
     Constant("i",0,1.0),
     Constant("pi",3.14159265358979323),
     #define downscale {D(arb),D(dub)}
