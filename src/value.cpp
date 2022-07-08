@@ -97,6 +97,19 @@ string String::safeBackspaces(const string& str) {
     return out;
 }
 #pragma endregion
+#pragma region Map
+Value& Map::operator[](const Value& idx) {
+    if(has(idx)) return mapObj[idx];
+    else return Value::zero;
+}
+bool Map::has(const Value& idx) {
+    return mapObj.find(idx) != mapObj.end();
+}
+void Map::append(const Value& key, const Value& val) {
+    mapObj[key] = val;
+}
+int Map::size()const { return mapObj.size(); }
+#pragma endregion
 #pragma region Value comparison
 bool operator==(const Value& lhs, const Value& rhs) {
     if(lhs.get() == rhs.get()) return true;
@@ -168,8 +181,18 @@ Value Value::convertTo(int type) {
     #endif
     else if(type == vec_t) {
         if(curType == map_t) {
-            throw "Map to vector conversion not supported yet";
+            std::map<Value, Value>& m = cast<Map>()->getMapObj();
+            std::shared_ptr<Vector> out = std::make_shared<Vector>();
+            for(auto p : m) {
+                if(p.first->typeID() == num_t) {
+                    double idx = p.first->getR();
+                    if(idx == floor(idx) && idx <= 1000 && idx >= 0)
+                        out->set(int(idx), p.second);
+                }
+            }
+            return out;
         }
+        return std::make_shared<Vector>(*this);
     }
     //To lambda
     else if(type == lmb_t) {
@@ -183,11 +206,11 @@ Value Value::convertTo(int type) {
     else if(type == map_t) {
         std::shared_ptr<Map> out = std::make_shared<Map>();
         if(curType == vec_t) {
-            //def(Vector, v);
-            //for(unsigned int i = 0;i < v->size();i++)
-                //out->append(std::make_shared<Number>(i), v->get(i));
+            std::shared_ptr<Vector> v = cast<Vector>();
+            for(unsigned int i = 0;i < v->size();i++)
+                out->append(std::make_shared<Number>(i), v->get(i));
         }
-        //else out->append(std::make_shared<Number>(0), value);
+        else out->append(Value::zero, *this);
         return out;
     }
     if(curType == vec_t) return cast<Vector>()->get(0).convertTo(type);
@@ -213,19 +236,21 @@ double String::flatten()const {
     return hash;
 }
 double Map::flatten()const {
-    //double hash = 0;
-    //if(left) hash += left->flatten() * 2.098058329;
-    //if(right) hash += right->flatten() * 3.209804;
-    //hash += leafKey->flatten() * 4.012485;
-    //hash += leaf->flatten() * 1.02305093;
-    //return hash;
+    double out = 0;
+    int i = 0;
+    for(auto p : mapObj) {
+        out += p.first->flatten() * 5.6 + 4.2 * i + 3.99;
+        out += p.second->flatten() * 84.6 + 8.2 * i + 9.99;
+        i++;
+    }
+    return out;
 }
 double Tree::flatten()const {
     double out = 0.0;
     for(int i = 0;i < branches.size();i++) out += (i * 0.890532 + 1.98235) * branches[i]->flatten();
     return out + op * 1.15241312;
 }
-bool operator<(Value lhs, Value rhs) {
+bool operator<(const Value& lhs, const Value& rhs) {
     return lhs->flatten() < rhs->flatten();
 }
 #pragma endregion
@@ -254,6 +279,13 @@ Value Lambda::compute(ComputeCtx& ctx) {
     catch(...) { ctx.popArgs(unreplacedArgs);throw; }
     ctx.popArgs(unreplacedArgs);
     return std::make_shared<Lambda>(inputNames, newLambda);
+}
+Value Map::compute(ComputeCtx& ctx) {
+    std::map<Value, Value> newMap;
+    for(auto p : mapObj) {
+        newMap.insert({p.first->compute(ctx),p.second->compute(ctx)});
+    }
+    return std::make_shared<Map>(std::move(newMap));
 }
 Value Tree::compute(ComputeCtx& ctx) {
     ValList computed(branches.size());
@@ -349,7 +381,18 @@ string Lambda::toStr(ParseCtx& ctx)const {
     return out;
 }
 string Map::toStr(ParseCtx& ctx)const {
-    return "{map object}";
+    string out = "{";
+    //Add each element individually
+    for(auto p : mapObj) {
+        out += p.first->toStr(ctx);
+        out += ":";
+        out += p.second->toStr(ctx);
+        out += ",";
+    }
+    //Delete trailing comma
+    if(out.back() == ',') out.erase(out.size() - 1);
+    out += "}";
+    return out;
 }
 string Tree::toStr(ParseCtx& ctx)const {
     string out = Program::globalFunctions[op].getName();

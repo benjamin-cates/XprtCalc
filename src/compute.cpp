@@ -553,6 +553,8 @@ std::vector<Function> Program::globalFunctions = {
         def(Vector,v,0); ret(Number)(v->size());
     }},{D(str_t),[](inp) {
         def(String,s,0); ret(Number)(s->str.length());
+    }},{D(map_t),[](inp) {
+        ret(Number)(input[0].cast<Map>()->size());
     }}}),
     Function("magnitude",{"vec"},{}, {{D(vec_t),[](inp) {
         def(Vector,v,0);
@@ -571,6 +573,9 @@ std::vector<Function> Program::globalFunctions = {
         int index = input[1]->getR();
         if(index < 0 || index >= v->size()) return Value(make_shared<Number>(0));
         return v->vec[index];
+    }},{D(map_t,all),[](inp) {
+        def(Map,m,0);
+        return (*m)[input[1]];
     }}}),
     Function("fill",{"func","count"},{},{{D(lmb,arb | dub),[](inp) {
         def(Lambda,func,0);
@@ -585,7 +590,7 @@ std::vector<Function> Program::globalFunctions = {
         }
         return out;
     }}}),
-    Function("map",{"map","func"},{},{{D(vec_t,lmb),[](inp) {
+    Function("map_vector",{"map","func"},{},{{D(vec_t,lmb),[](inp) {
         def(Vector,v,0);def(Lambda,func,1);
         shared_ptr<Vector> out = make_shared<Vector>();
         shared_ptr<Number> index = make_shared<Number>(0);
@@ -603,6 +608,12 @@ std::vector<Function> Program::globalFunctions = {
         for(int i = 0;i < a->size();i++) out->vec.push_back(a->vec[i]);
         for(int i = 0;i < b->size();i++) out->vec.push_back(b->vec[i]);
         return Value(out);
+    }},{D(map_t,map_t),[](inp) {
+        def(Map,a,0);def(Map,b,1);
+        shared_ptr<Map> out = make_shared<Map>();
+        for(auto p : a->getMapObj()) out->append(p.first,p.second);
+        for(auto p : b->getMapObj()) out->append(p.first,p.second);
+        return out;
     }}}),
     Function("sort",{"vec","comp"},{},{{D(vec_t),[](inp) {
         def(Vector,v,0);

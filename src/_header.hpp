@@ -611,8 +611,16 @@ class Map : public ValueBaseClass {
     std::map<Value, Value> mapObj;
 public:
     Map() {};
+    Map(std::map<Value, Value>&& map) { mapObj = std::move(map); }
+    Map(const std::map<Value, Value>& map) { mapObj = map; }
+    std::map<Value, Value>& getMapObj() { return mapObj; }
+    Value& operator[](const Value& idx);
+    bool has(const Value& idx);
+    void append(const Value& key, const Value& val);
+    int size()const;
     //Virtual functions
     double flatten()const;
+    Value compute(ComputeCtx& ctx);
     string toStr(ParseCtx& ctx)const;
     int typeID()const { return Value::map_t; }
 };

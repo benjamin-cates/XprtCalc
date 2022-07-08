@@ -639,6 +639,31 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             Expression::color(sec.substr(equal + 2), out + equal + 2, ctx);
             ctx.pop();
         }
+        else if(type == Section::curly) {
+            int endB = matchBracket(sec, 0);
+            std::vector<int> commas = getDelimiterList(sec, 0, endB, ',');
+            for(int i = 0;i < commas.size() - 1;i++) {
+                *(out + commas[i]) = ColorType::hl_delimiter;
+                int colon = findNext(sec, commas[i] + 1, ':');
+                if(colon > commas[i + 1] || colon == -1)
+                    Expression::color(sec.substr(commas[i] + 1, commas[i + 1] - commas[i] - 1), out + commas[i] + 1, ctx);
+                else {
+                    *(out + colon) = ColorType::hl_operator;
+                    Expression::color(sec.substr(commas[i] + 1, colon - commas[i] - 1), out + commas[i] + 1, ctx);
+                    Expression::color(sec.substr(colon + 1, commas[i + 1] - colon - 1), out + colon + 1, ctx);
+                }
+            }
+            //Color brackets
+            if(sec[endB] != '}')
+                *out = ColorType::hl_error;
+            else {
+                *out = ColorType::hl_bracket;
+                *(out + endB) = ColorType::hl_bracket;
+
+            }
+
+
+        }
         else if(type == Section::operat) {
             std::fill(out, out + sec.length(), ColorType::hl_operator);
         }
@@ -773,7 +798,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             int arrow;
             if(str[0] == '(') {
                 int endBrace = Expression::matchBracket(sect, 0);
-                arguments = Expression::splitBy(str, 0, endBrace, ',');
+                arguments = Expression::splitBy(sect, 0, endBrace, ',');
                 for(int i = 0;i < arguments.size();i++) arguments[i] = Expression::removeSpaces(arguments[i]);
                 arrow = str.find('>', endBrace + 1);
             }
@@ -787,6 +812,22 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             catch(...) { ctx.pop(); throw; }
             ctx.pop();
             treeList.push_back(std::make_shared<Lambda>(arguments, tr));
+        }
+        //Maps {"a":1, "b":2 }
+        else if(type == Expression::curly) {
+            int endB = Expression::matchBracket(sect, 0);
+            std::vector<string> pairs = Expression::splitBy(sect, 0, endB, ',');
+            std::shared_ptr<Map> map = std::make_shared<Map>();
+            for(int i = 0;i < pairs.size();i++) {
+                //Find colon
+                int colon = Expression::findNext(pairs[i], 0, ':');
+                if(colon == -1) throw "':' not found in map pair";
+                //Parse key and value
+                Value first = Tree::parseTree(pairs[i].substr(0, colon), ctx);
+                Value second = Tree::parseTree(pairs[i].substr(colon + 1), ctx);
+                map->append(first, second);
+            }
+            treeList.push_back(map);
         }
         //Operators +-
         else if(type == Expression::operat) {
