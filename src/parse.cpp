@@ -484,6 +484,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
         *(output + pos) = ColorType::hl_space;
         pos++;
     }
+    Section previousSec = undefined;
     //Loop through sections
     for(int i = 0;i < secs.size();i++) {
         string& sec = secs[i].first;
@@ -505,16 +506,20 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             Expression::color(sec.substr(1, sec.length() - 2), out + 1, ctx);
         }
         else if(type == Section::square) {
-            ctx.push(0, true);
             //Color brackets
             if(sec.back() != ']') *out = ColorType::hl_error;
             else {
                 *out = ColorType::hl_bracket;
                 *(out + sec.length() - 1) = ColorType::hl_bracket;
             }
-            //Color innards
-            Expression::color(sec.substr(1, sec.length() - 2), out + 1, ctx);
-            ctx.pop();
+            //Color as an accessor
+            if(previousSec == variable || previousSec == parenthesis || previousSec == vect || previousSec == curly || previousSec == quote || previousSec == function)
+                Expression::color(sec.substr(1, sec.length() - 2), out + 1, ctx);
+            //Color as a unit
+            else {
+                ctx.push(0, true);
+                ctx.pop();
+            }
         }
         else if(type == Section::squareWithBase) {
             int endB = matchBracket(sec, 0);
@@ -672,6 +677,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             *(output + pos) = ColorType::hl_space;
             pos++;
         }
+        previousSec = type;
     }
 }
 #pragma endregion
@@ -689,6 +695,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
     std::vector<std::pair<string, int>> operators;
     std::vector<string> unaryOpFront;
     std::vector<string> unaryOpBack;
+    Section prevSec = undefined;
     //Parse each section individually
     for(int j = 0;j < sections.size();j++) {
         Section type = sections[j].second;
@@ -696,12 +703,20 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
         //Parenthesis ()
         if(type == parenthesis)
             treeList.push_back(Tree::parseTree(sect.substr(1, sect.length() - 2), ctx));
-        //Square brackets for units []
+        //Square brackets for accessor or units
         else if(type == square) {
-            ctx.push(0, true);
-            try { treeList.push_back(Tree::parseTree(sect.substr(1, sect.length() - 2), ctx)); }
-            catch(...) { ctx.pop();throw; }
-            ctx.pop();
+            //Accessor notation
+            if(prevSec == variable || prevSec == parenthesis || prevSec == vect || prevSec == curly || prevSec == quote || prevSec == function) {
+                Value index = Tree::parseTree(sect.substr(1, sect.length() - 2), ctx);
+                treeList.back() = std::make_shared<Tree>("get", ValList{ treeList.back(),index });
+            }
+            //Unit notation
+            else {
+                ctx.push(0, true);
+                try { treeList.push_back(Tree::parseTree(sect.substr(1, sect.length() - 2), ctx)); }
+                catch(...) { ctx.pop();throw; }
+                ctx.pop();
+            }
         }
         //Vectors <>
         else if(type == vect) {
@@ -858,6 +873,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             if(treeList.size() == 0) throw "Missing expression before " + sect;
             operators[treeList.size() - 1] = op->second;
         }
+        prevSec = type;
     }
     if(treeList.size() == 0) throw "Unable to parse " + str;
     for(int i = 0;i < unaryOpFront.size();i++) if(unaryOpFront[i] != "")
