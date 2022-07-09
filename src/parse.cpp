@@ -682,30 +682,31 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
 //
 //
 Value Tree::parseTree(const string& str, ParseCtx& ctx) {
+    using namespace Expression;
     if(str.length() == 0) return Value::zero;
-    std::vector<std::pair<string, Expression::Section>> sections = Expression::getSections(str, ctx);
+    std::vector<std::pair<string, Section>> sections = getSections(str, ctx);
     ValList treeList;
     std::vector<std::pair<string, int>> operators;
     std::vector<string> unaryOpFront;
     std::vector<string> unaryOpBack;
     //Parse each section individually
     for(int j = 0;j < sections.size();j++) {
-        Expression::Section type = sections[j].second;
+        Section type = sections[j].second;
         string& sect = sections[j].first;
         //Parenthesis ()
-        if(type == Expression::parenthesis)
+        if(type == parenthesis)
             treeList.push_back(Tree::parseTree(sect.substr(1, sect.length() - 2), ctx));
         //Square brackets for units []
-        else if(type == Expression::square) {
+        else if(type == square) {
             ctx.push(0, true);
             try { treeList.push_back(Tree::parseTree(sect.substr(1, sect.length() - 2), ctx)); }
             catch(...) { ctx.pop();throw; }
             ctx.pop();
         }
         //Vectors <>
-        else if(type == Expression::vect) {
+        else if(type == vect) {
             //Split elements by commas
-            std::vector<string> comp = Expression::splitBy(sect, 0, sect.length() - 1, ',');
+            std::vector<string> comp = splitBy(sect, 0, sect.length() - 1, ',');
             ValList vectorComponents;
             for(int i = 0;i < comp.size();i++) {
                 vectorComponents.push_back(Tree::parseTree(comp[i], ctx));
@@ -714,7 +715,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             treeList.back().cast<Vector>()->vec = std::move(vectorComponents);
         }
         //Strings ""
-        else if(type == Expression::quote) {
+        else if(type == quote) {
             string out;
             int offset = 1;
             for(int i = 1;i < sect.size() - 1;i++) {
@@ -732,7 +733,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             treeList.push_back(std::make_shared<String>(out));
         }
         //Square bracket with unit [0A]_12
-        else if(type == Expression::squareWithBase) {
+        else if(type == squareWithBase) {
             int endBracket = Expression::matchBracket(sect, 0);
             int underscore = Expression::findNext(sect, endBracket, '_');
             int base = Expression::evaluate(sect.substr(underscore + 1))->getR();
@@ -744,12 +745,12 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             ctx.pop();
         }
         //Numeral 0.442e1
-        else if(type == Expression::numeral) {
-            treeList.push_back(Expression::parseNumeral(sect, ctx.getBase()));
+        else if(type == numeral) {
+            treeList.push_back(parseNumeral(sect, ctx.getBase()));
         }
         //Variables
-        else if(type == Expression::variable) {
-            sect = Expression::removeSpaces(sect);
+        else if(type == variable) {
+            sect = removeSpaces(sect);
             Value op = ctx.getVariable(sect);
             if(op.get() == nullptr) throw "Variable " + sect + " not found";
             if(op->typeID() == Value::tre_t) {
@@ -764,14 +765,14 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             else { throw "Variable " + sect + " not found"; }
         }
         //Functions func(a)
-        else if(type == Expression::function) {
-            int startBrace = Expression::findNext(sect, 0, '(');
-            int endBrace = Expression::matchBracket(sect, startBrace);
+        else if(type == function) {
+            int startBrace = findNext(sect, 0, '(');
+            int endBrace = matchBracket(sect, startBrace);
             string name = sect.substr(0, startBrace);
-            name = Expression::removeSpaces(name);
+            name = removeSpaces(name);
             Value op = ctx.getVariable(name);
             if(op.get() == nullptr) throw "Function " + name + " not found";
-            std::vector<string> argsStr = Expression::splitBy(sect, startBrace, endBrace, ',');
+            std::vector<string> argsStr = splitBy(sect, startBrace, endBrace, ',');
             ValList arguments;
             for(int i = 0;i < argsStr.size();i++)
                 arguments.push_back(Tree::parseTree(argsStr[i], ctx));
@@ -791,13 +792,13 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             }
         }
         //Lambda a=>a^2
-        else if(type == Expression::lambda) {
+        else if(type == lambda) {
             std::vector<string> arguments;
             int arrow;
             if(str[0] == '(') {
-                int endBrace = Expression::matchBracket(sect, 0);
-                arguments = Expression::splitBy(sect, 0, endBrace, ',');
-                for(int i = 0;i < arguments.size();i++) arguments[i] = Expression::removeSpaces(arguments[i]);
+                int endBrace = matchBracket(sect, 0);
+                arguments = splitBy(sect, 0, endBrace, ',');
+                for(int i = 0;i < arguments.size();i++) arguments[i] = removeSpaces(arguments[i]);
                 arrow = str.find('>', endBrace + 1);
             }
             else {
@@ -812,13 +813,13 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             treeList.push_back(std::make_shared<Lambda>(arguments, tr));
         }
         //Maps {"a":1, "b":2 }
-        else if(type == Expression::curly) {
-            int endB = Expression::matchBracket(sect, 0);
-            std::vector<string> pairs = Expression::splitBy(sect, 0, endB, ',');
+        else if(type == curly) {
+            int endB = matchBracket(sect, 0);
+            std::vector<string> pairs = splitBy(sect, 0, endB, ',');
             std::shared_ptr<Map> map = std::make_shared<Map>();
             for(int i = 0;i < pairs.size();i++) {
                 //Find colon
-                int colon = Expression::findNext(pairs[i], 0, ':');
+                int colon = findNext(pairs[i], 0, ':');
                 if(colon == -1) throw "':' not found in map pair";
                 //Parse key and value
                 Value first = Tree::parseTree(pairs[i].substr(0, colon), ctx);
@@ -828,28 +829,28 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             treeList.push_back(map);
         }
         //Operators +-
-        else if(type == Expression::operat) {
-            sect = Expression::removeSpaces(sect);
+        else if(type == operat) {
+            sect = removeSpaces(sect);
             //Prefix operators
-            if(Expression::prefixOperators.find(sect.back()) != Expression::prefixOperators.end()) {
+            if(prefixOperators.find(sect.back()) != prefixOperators.end()) {
                 unaryOpFront.resize(treeList.size() + 1);
                 if(sect.back() == '-' && j != 0 && sect.length() == 1); //Ignore if a subtraction
                 else {
-                    unaryOpFront[treeList.size()] = Expression::prefixOperators.find(sect.back())->second;
+                    unaryOpFront[treeList.size()] = prefixOperators.find(sect.back())->second;
                     if(sect.length() == 1) continue;
                     sect = sect.substr(0, sect.length() - 1);
                 }
             }
             //Suffix operators
-            if(Expression::suffixOperators.find(sect.front()) != Expression::suffixOperators.end() && sect != "!=") {
+            if(suffixOperators.find(sect.front()) != suffixOperators.end() && sect != "!=") {
                 unaryOpBack.resize(treeList.size() + 1);
-                unaryOpBack[treeList.size() - 1] = Expression::suffixOperators.find(sect.front())->second;
+                unaryOpBack[treeList.size() - 1] = suffixOperators.find(sect.front())->second;
                 if(sect.length() == 1) continue;
                 sect = sect.substr(1);
             }
             //Find operator name
-            auto op = Expression::operatorList.find(sect);
-            if(op == Expression::operatorList.end()) {
+            auto op = operatorList.find(sect);
+            if(op == operatorList.end()) {
                 throw "Operator " + sect + " not found";
             }
             //Add to list
