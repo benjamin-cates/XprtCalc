@@ -117,6 +117,7 @@ namespace Help {
         std::vector<string> aliases;
         string toPlainText();
         string toString();
+        ColoredString toColoredString();
         string toJSON();
         Page() {}
         Page(string n, string s, string t, string cont, std::vector<string> alias = {}, string more = "") { name = n; symbol = s; type = t; content = cont; aliases = alias;seeMore = more; }
@@ -280,8 +281,8 @@ class ColoredString {
     string str;
     string color;
 public:
-    const string& getStr()const;
-    const string& getColor()const;
+    const string& getStr()const { return str; }
+    const string& getColor()const { return color; }
     void setStr(string&& s);
     void setColor(string&& c);
     void colorAsExpression();

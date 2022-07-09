@@ -298,7 +298,7 @@ ColoredString command_help(vector<string>& input) {
     std::vector<Help::Page*> res = Help::search(inp, 1);
     if(res.size() == 0) throw "Help page not found";
     Help::Page& p = *res[0];
-    return res[0]->toString();
+    return res[0]->toColoredString();
 }
 ColoredString command_query(vector<string>& input) {
     ColoredString out;
@@ -316,7 +316,7 @@ ColoredString command_query(vector<string>& input) {
     else {
         int index = Expression::evaluate(input[1])->getR();
         if(index < 0 || index >= res.size()) out.append({ {"Error: ",'e'},"Unable to print page, index out of bounds\n" });
-        else return res[index]->toString();
+        else return res[index]->toColoredString();
     }
     return out;
 }

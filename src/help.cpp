@@ -28,6 +28,35 @@ string Page::toJSON() {
     alias += ']';
     return "{name:\"" + name + "\", symbol: \"" + String::safeBackspaces(symbol) + "\", type: \"" + type + "\", aliases:" + alias + ", content: \"" + String::safeBackspaces(content) + "\"}";
 }
+ColoredString Page::toColoredString() {
+    ColoredString out;
+    int lastSection = 0;
+    for(int i = 0;i < content.length();i++) {
+        //Colored part
+        if(content[i] == '`') {
+            //Add string before colored
+            out += content.substr(lastSection, i - lastSection);
+            //Add colored part
+            int end = Expression::findNext(content, i + 1, '`');
+            ColoredString str = ColoredString::fromXpr(content.substr(i + 1, end - i - 1));
+            //Replace unfound variable errors with an argument
+            string col = str.getColor();
+            for(int i = 0;i < col.length();i++)
+                if(col[i] == Expression::hl_error) col[i] = Expression::hl_argument;
+            str.setColor(std::move(col));
+            out += str;
+            //Iterate to end
+            lastSection = end + 1;
+            i = end;
+        }
+        //Help page link (ignore because links are not supported in ColoredString)
+        else if(content[i] == '?') {
+            out += content.substr(lastSection, i - lastSection);
+            lastSection = i + 1;
+        }
+    }
+    return out;
+}
 #pragma endregion
 #pragma region Page generator functions
 Page Page::fromUnit(string n, string message, std::vector<string> aliases, string more) {
@@ -300,7 +329,7 @@ std::vector<Page> Help::pages = {
     Page("Help","/help","command","The help command finds the most relevant help page to the search query and displays it."),
     Page("Query","/query","command","The query command creates a list of help pages from the query sorted by relevance. It can be rerun with the index to display. Example: `/query log 2`."),
     #pragma endregion
-        };
+};
 #pragma region Searching
 std::map<uint64_t, std::vector<std::pair<int, int>>> Help::queryHash;
 void Help::stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, const string& str, int basePriority = 1) {

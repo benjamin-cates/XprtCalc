@@ -427,8 +427,6 @@ Value Expression::evaluate(const string& str) {
 }
 #pragma endregion
 #pragma region ColoredString
-const string& ColoredString::getStr()const { return str; }
-const string& ColoredString::getColor()const { return color; }
 void ColoredString::setStr(string&& s) {
     str = std::forward<string>(s);
     color.resize(s.size(), Expression::hl_text);
