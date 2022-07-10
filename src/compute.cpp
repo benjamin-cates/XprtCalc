@@ -55,12 +55,20 @@ void ComputeCtx::pushArgs(const ValList& args) {
             it->cast<Argument>()->id += args.size();
         }
     }
+    //Push args to front
     for(int i = args.size() - 1;i >= 0;i--)
         argValue.push_front(args[i]);
 }
 void ComputeCtx::popArgs(const ValList& args) {
+    //Delete front args
     for(int i = 0;i < args.size();i++)
         argValue.pop_front();
+    //Replace self referential args with proper pointer
+    for(auto it = argValue.begin();it != argValue.end();it++) {
+        if((*it)->typeID() == Value::arg_t) {
+            it->cast<Argument>()->id -= args.size();
+        }
+    }
 }
 void ComputeCtx::setVariable(const string& n, Value value) {
     std::map<string, std::vector<Value>>::iterator it = variables.find(n);
@@ -333,9 +341,9 @@ std::vector<Function> Program::globalFunctions = {
     Unary("neg",-num),
     Binary("add","a","b",num1 + num2,{D(str_t,str_t),[](inp) {ret(String)(getS(0) + getS(1));}}),
     Binary("sub","a","b",num1 - num2),
-    BinaryWithUnit("mul","a","b",num1* num2,unit1* unit2),
+    BinaryWithUnit("mul","a","b",num1 * num2,unit1 * unit2),
     BinaryWithUnit("div","a","b",num1 / num2,unit1 / unit2),
-    BinaryWithUnit("pow","a","b",pow(num1,num2),unit1^ double(num2.real())),
+    BinaryWithUnit("pow","a","b",pow(num1,num2),unit1 ^ double(num2.real())),
     Binary("mod","a","b",fmod(num1.real(),num2.real())),
 
     UnaryWithUnit("sqrt",sqrt(num),unit ^ 0.5),

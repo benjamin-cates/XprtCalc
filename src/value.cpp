@@ -68,6 +68,7 @@ Lambda::Lambda(std::vector<string> inputs, Value funcTree) {
     func = funcTree;
 }
 Value Lambda::operator()(ValList inputs, ComputeCtx& ctx) {
+    for(int i = 0;i < inputs.size();i++) if(inputs[i] == nullptr) throw "err";
     if(inputs.size() < inputNames.size()) throw "not enough arguments for lambda";
     if(inputs.size() != inputNames.size()) inputs.resize(inputNames.size());
     ctx.pushArgs(inputs);
@@ -268,10 +269,6 @@ Value Lambda::compute(ComputeCtx& ctx) {
     for(int i = 0;i < inputNames.size();i++) {
         unreplacedArgs.push_back(std::make_shared<Argument>(i));
     }
-    //Move previous unreplaced args
-    for(int i = 0;i < ctx.argValue.size();i++)
-        if(ctx.getArgument(i)->typeID() == Value::arg_t)
-            ctx.getArgument(i).cast<Argument>()->id = i + inputNames.size();
     //Push arguments to stack
     ctx.pushArgs(unreplacedArgs);
     Value newLambda;
@@ -283,7 +280,7 @@ Value Lambda::compute(ComputeCtx& ctx) {
 Value Map::compute(ComputeCtx& ctx) {
     std::map<Value, Value> newMap;
     for(auto p : mapObj) {
-        newMap.insert({p.first->compute(ctx),p.second->compute(ctx)});
+        newMap.insert({ p.first->compute(ctx),p.second->compute(ctx) });
     }
     return std::make_shared<Map>(std::move(newMap));
 }
