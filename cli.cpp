@@ -30,7 +30,6 @@ void printColoredString(const ColoredString& str) {
 
 int main(int argc, char** argv) {
     Program::startup();
-    std::cout << "Hello world" << std::endl;
     int i = 0;
     string commandPrefix = Preferences::getAs<string>("command_prefix");
     while(true) {
