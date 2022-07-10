@@ -48,6 +48,7 @@ int main(int argc, char** argv) {
             ColoredString toPrint("$" + std::to_string(i), Expression::hl_variable);
             toPrint += ColoredString(" = ", Expression::hl_operator);
             toPrint += ColoredString::fromXpr(a->toString());
+            Program::history.push_back(a);
             printColoredString(toPrint);
             std::cout << std::endl;
             i++;
