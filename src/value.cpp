@@ -217,6 +217,81 @@ Value Value::convertTo(int type) {
     if(curType == vec_t) return cast<Vector>()->get(0).convertTo(type);
     return std::make_shared<Number>(0);
 }
+Value Value::deepCopy()const {
+    int type = ptr->typeID();
+    if(type == num_t)
+        return std::make_shared<Number>(cast<Number>()->num, cast<Number>()->unit);
+    #ifdef USE_ARB
+    else if(type == arb_t)
+        return std::make_shared<Arb>(cast<Arb>()->num, cast<Arb>()->unit);
+    #endif
+    else if(type == vec_t) {
+        int size = cast<Vector>()->vec.size();
+        std::shared_ptr<Vector> out = std::make_shared<Vector>(size);
+        for(int i = 0;i < size;i++) {
+            out->vec[i] = cast<Vector>()->vec[i].deepCopy();
+        }
+        return out;
+    }
+    else if(type == map_t) {
+        std::shared_ptr<Map> out = std::make_shared<Map>();
+        std::map<Value, Value>& cur = cast<Map>()->getMapObj();
+        for(auto p : cur)
+            out->append(p.first.deepCopy(), p.second.deepCopy());
+        return out;
+    }
+    else if(type == lmb_t)
+        return std::make_shared<Lambda>(cast<Lambda>()->inputNames, cast<Lambda>()->func.deepCopy());
+    else if(type == tre_t) {
+        std::shared_ptr<Tree> out = std::make_shared<Tree>(cast<Tree>()->op);
+        int count = cast<Tree>()->branches.size();
+        out->branches.resize(count);
+        for(int i = 0;i < count;i++)
+            out->branches[i] = cast<Tree>()->branches[i].deepCopy();
+        return out;
+    }
+    else if(type == str_t)
+        return std::make_shared<String>(cast<String>()->str);
+    else if(type == var_t)
+        return std::make_shared<Variable>(cast<Variable>()->name);
+    else if(type == arg_t)
+        return std::make_shared<Argument>(cast<Argument>()->id);
+    return std::make_shared<Number>(0);
+}
+void Value::set(Value& val, ValList indicies, Value setTo) {
+    Value* head = &val;
+    for(int i = 0;i < indicies.size();i++) {
+        Value& idx = indicies[i];
+        int type = (*head)->typeID();
+        bool isInteger = idx->typeID() == num_t && idx->getR() == std::floor(idx->getR()) && idx->getR() >= 0 && idx->getR() < 100000;
+        //Assign to string
+        if(type == str_t && isInteger) {
+            if(i != indicies.size() - 1) throw "Character type cannot be indexed";
+            int index = idx->getR();
+            if(index > head->cast<String>()->str.length()) throw "Index out of bounds of string";
+            if(setTo->typeID() != str_t) throw "Cannot assign non-string to string index";
+            head->cast<String>()->str[index] = setTo.cast<String>()->str[0];
+            return;
+        }
+        //Convert to map or vector if type is not right
+        if(type != map_t && (type != vec_t || !isInteger)) {
+            if(isInteger) *head = head->deepCopy().convertTo(vec_t);
+            else *head = head->deepCopy().convertTo(map_t);
+            type = (*head)->typeID();
+        }
+        //Assign to map
+        if(type == map_t)
+            head = &head->cast<Map>()->getMapObj()[idx];
+        //Assign to vector
+        else if(type == vec_t && isInteger) {
+            int index = idx->getR();
+            //Resize if too small
+            if(head->cast<Vector>()->vec.size() <= index) head->cast<Vector>()->vec.resize(index + 1, Value::zero);
+            head = &head->cast<Vector>()->vec[index];
+        }
+    }
+    (*head) = setTo;
+}
 #pragma endregion
 #pragma region flatten
 double Number::flatten()const { return num.real() * 4.59141 + num.imag() * 2.12941 + double(unit.getBits()); }

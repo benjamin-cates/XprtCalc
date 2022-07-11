@@ -72,15 +72,15 @@ void ComputeCtx::popArgs(const ValList& args) {
 }
 void ComputeCtx::setVariable(const string& n, Value value) {
     std::map<string, std::vector<Value>>::iterator it = variables.find(n);
-    if(it == variables.end()) variables[n] = { value };
-    else it->second.back() = value;
+    if(it == variables.end()) variables[n] = { value.deepCopy() };
+    else it->second.back() = value.deepCopy();
 }
 void ComputeCtx::defineVariable(const string& n, Value value) {
     std::map<string, std::vector<Value>>::iterator it = variables.find(n);
     if(it == variables.end()) {
-        variables[n] = { value };
+        variables[n] = { value.deepCopy() };
     }
-    else it->second.push_back(value);
+    else it->second.push_back(value.deepCopy());
 }
 //Erases all variables in the list
 void ComputeCtx::undefineVariables(const std::vector<string>& vars) {

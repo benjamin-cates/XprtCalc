@@ -80,6 +80,8 @@ namespace Program {
     extern std::map<string, Command> commandList;
     //Runs command in str (containing whole name and prefix) and returns the output
     ColoredString runCommand(string str);
+    //Runs as a command, assignable variable
+    ColoredString runLine(string str);
 
     //Global variables
     //Contains every value in previous calculations
@@ -487,11 +489,13 @@ public:
     std::shared_ptr<T> cast()const {
         return std::dynamic_pointer_cast<T, ValueBaseClass>(ptr);
     }
+    Value deepCopy()const;
     //Returns true only if type is num or arb and real=1 and imag=0 and unit=0
     static bool isOne(const Value& x);
     //Returns true only if type is num or arb and real, imag, and unit are zero
     static bool isZero(const Value& x);
     static Value zero;
+    static void set(Value& val, ValList indicies, Value setTo);
     //List of human-readable type names
     static const std::vector<string> typeNames;
     //Converts value into the return type with given type, throws error if incompatible

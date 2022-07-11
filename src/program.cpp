@@ -191,6 +191,88 @@ ColoredString Program::runCommand(string call) {
     if(out.getStr().back() == '\n') out.splice(0, out.length() - 1);
     return out;
 }
+ColoredString Program::runLine(string str) {
+    string commandPrefix = Preferences::getAs<string>("command_prefix");
+    try {
+        //Commands
+        if(str.substr(0, commandPrefix.size()) == commandPrefix) {
+            return Program::runCommand(str.substr(commandPrefix.size()));
+        }
+        //Parsing assignment statements
+        if(str[0] < '0' || str[0] >= '9') for(int i = 0;i < str.length();i++) {
+            if(str[i] >= 'A' && str[i] <= 'Z') continue;
+            else if(str[i] >= 'a' && str[i] <= 'z') continue;
+            else if(str[i] >= '0' && str[i] <= '9') continue;
+            else if(str[i] == '_' || str[i] == ' ') continue;
+            else if(str[i] == '=') {
+                string name = str.substr(0, i);
+                Expression::removeSpaces(name);
+                Value val = Expression::evaluate(str.substr(i + 1));
+                Program::parseCtx.pushVariable(name);
+                Program::computeCtx.defineVariable(name, val);
+                ColoredString str(name, Expression::hl_variable);
+                str += ColoredString(" = ", " o ");
+                str += ColoredString::fromXpr(val->toString());
+                return str;
+            }
+            //Index assignment
+            else if(str[i] == '[') {
+                string name = str.substr(0, i);
+                int bracketDepth = 0;
+                vector<int> startingBrackets;
+                vector<int> endingBrackets;
+                while(str[i] == '[') {
+                    startingBrackets.push_back(i);
+                    i = Expression::matchBracket(str, i) + 1;
+                    endingBrackets.push_back(i);
+                    while(str[i] == ' ') i++;
+                    bracketDepth++;
+                }
+                if(str[i] == '=') {
+                    Expression::removeSpaces(name);
+                    ValList indicies(bracketDepth);
+                    for(int x = 0;x < bracketDepth;x++) {
+                        indicies[x] = Expression::evaluate(str.substr(startingBrackets[x] + 1, endingBrackets[x] - startingBrackets[x] - 2));
+                    }
+                    if(Program::computeCtx.getVariable(name) == nullptr) {
+                        Program::parseCtx.pushVariable(name);
+                        Program::computeCtx.defineVariable(name, std::make_shared<Number>(0));
+                    }
+                    Value& ref = Program::computeCtx.variables[name].back();
+                    Value set = Expression::evaluate(str.substr(i + 1));
+                    Value::set(ref, indicies, set);
+                    ColoredString str(name, Expression::hl_variable);
+                    str += ColoredString(" = ", " o ");
+                    str += ColoredString::fromXpr(ref->toString());
+                    return str;
+                }
+                else break;
+            }
+            else break;
+        }
+        //Parse and compute tree
+        Value tr = Tree::parseTree(str, Program::parseCtx);
+        Value a = tr->compute(Program::computeCtx);
+        ColoredString toPrint("$" + std::to_string(history.size()), Expression::hl_variable);
+        toPrint += ColoredString(" = ", Expression::hl_operator);
+        toPrint += ColoredString::fromXpr(a->toString());
+        Program::history.push_back(a);
+        return toPrint;
+    }
+    catch(string e) {
+        ColoredString out("Error: ", Expression::hl_error); out += e; return out;
+    }
+    catch(const char* e) {
+        ColoredString out("Error: ", Expression::hl_error); out += e; return out;
+    }
+    catch(ColoredString e) {
+        ColoredString out("Error: ", Expression::hl_error); out += e; return out;
+    }
+    catch(...) {
+        ColoredString out("Error: ", Expression::hl_error); out += "unknown error"; return out;
+    }
+
+}
 ColoredString command_include(std::vector<string>& input) {
     ColoredString out;
     for(int i = 0;i < input.size();i++) {

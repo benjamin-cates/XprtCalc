@@ -33,38 +33,12 @@ int main(int argc, char** argv) {
     int i = 0;
     string commandPrefix = Preferences::getAs<string>("command_prefix");
     while(true) {
-        try {
-            string input;
-            std::getline(std::cin, input);
-            //Commands
-            if(input.substr(0, commandPrefix.size()) == commandPrefix) {
-                printColoredString(Program::runCommand(input.substr(commandPrefix.size())));
-                std::cout << std::endl;
-                continue;
-            }
-            //Parse and compute tree
-            Value tr = Tree::parseTree(input, Program::parseCtx);
-            Value a = tr->compute(Program::computeCtx);
-            ColoredString toPrint("$" + std::to_string(i), Expression::hl_variable);
-            toPrint += ColoredString(" = ", Expression::hl_operator);
-            toPrint += ColoredString::fromXpr(a->toString());
-            Program::history.push_back(a);
-            printColoredString(toPrint);
-            std::cout << std::endl;
-            i++;
-        }
-        catch(string e) {
-            printColoredString(ColoredString("Error: ", Expression::hl_error));
-            std::cout << e << std::endl;
-        }
-        catch(const char* e) {
-            printColoredString(ColoredString("Error: ", Expression::hl_error));
-            std::cout << e << std::endl;
-        }
-        catch(...) {
-            std::cout << "Unknown error type" << std::endl;
-            throw;
-        }
+        string input;
+        std::getline(std::cin, input);
+        ColoredString output = Program::runLine(input);
+        printColoredString(output);
+        std::cout << std::endl;
+        i++;
     }
     return 0;
 }
