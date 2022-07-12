@@ -310,20 +310,29 @@ ColoredString command_meta(vector<string>& input) {
     return { out };
 }
 ColoredString command_def(vector<string>& input) {
-    //If is in the form a=2
-    char eq;
-    if((eq = input[0].find('=')) != string::npos) {
-        input.resize(2);
-        input[1] = input[0].substr(eq + 1);
-        input[0] = input[0].substr(0, eq);
+    string inp = combineArgs(input);
+    std::tuple<string, ValList, Value> assign = Expression::parseAssignment(inp);
+    if(std::get<0>(assign) == "") throw "not an assignment";
+    return Program::runLine(inp);
+}
+ColoredString command_pref(vector<string>& input) {
+    string inp = combineArgs(input);
+    std::tuple<string, ValList, Value> assign = Expression::parseAssignment(inp);
+    string& name = std::get<0>(assign);
+    //Just display
+    if(name == "") {
+        name = inp;
+        Expression::removeSpaces(name);
+        if(Preferences::pref.find(name) == Preferences::pref.end()) throw "preference " + name + " not found";
     }
-    //Push variable to compute context
-    Value value = Expression::evaluate(input[1]);
-    //Push variable to respective contexts
-    Program::parseCtx.pushVariable(input[0]);
-    Program::computeCtx.setVariable(input[0], value);
-    ColoredString out(input[0], 'v');
-    out.append({ {"=","o"},ColoredString::fromXpr(value->toString()) });
+    else {
+        if(Preferences::pref.find(name) == Preferences::pref.end()) throw "preference " + name + " not found";
+        Value& val = Preferences::pref[name].first;
+        Value::set(val, std::get<1>(assign), std::get<2>(assign));
+        if(Preferences::pref[name].second) Preferences::pref[name].second(Preferences::pref[name].first);
+    }
+    ColoredString out(name, Expression::hl_function);
+    out.append({ {" = "," o "},ColoredString::fromXpr(Preferences::pref[name].first->toString()) });
     return out;
 }
 ColoredString command_ls(vector<string>& input) {
@@ -397,6 +406,7 @@ map<string, Command> Program::commandList = {
     {"highlight",{&command_highlight}},
     {"help",{&command_help}},
     {"query",{&command_query}},
-    {"debug_help",{&command_debug_help} },
+    {"debug_help",{&command_debug_help}},
+    {"pref",{&command_pref}},
 };
 #pragma endregion
