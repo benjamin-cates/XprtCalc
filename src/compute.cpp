@@ -431,7 +431,26 @@ std::vector<Function> Program::globalFunctions = {
         }
         #endif
         return Value::zero;
-    }}),
+    } }),
+    Function("gcd",{"a","b"},{{D(dub | arb,dub | arb),D(dub,dub)}},{{D(dub,dub),[](inp) {
+        uint64_t a = std::abs(input[0]->getR());
+        uint64_t b = std::abs(input[1]->getR());
+        //Euclidian algorithm for gcd
+        while(b != 0) {
+            std::swap(a,b);
+            b = b % a;
+        }
+        return std::make_shared<Number>(a);
+    }}}),
+    Function("lcm",{"a","b"},{{D(dub | arb,dub | arb),D(dub,dub)}},{{D(dub,dub),[](inp) {
+        uint64_t a = std::abs(input[0]->getR());
+        uint64_t b = std::abs(input[1]->getR());
+        uint64_t max = std::max(a,b);
+        uint64_t min = std::min(a,b);
+        uint64_t cur = max;
+        while(cur % min != 0) cur += max;
+        return std::make_shared<Number>(cur);
+    }}}),
     #pragma endregion
 #pragma region Binary logic
     Function("equal",{"a","b"},{},{{D(all,all),[](inp) {
