@@ -3,6 +3,7 @@
 void Program::startup() {
     buildFunctionNameMap();
     Value::zero = std::make_shared<Number>(0);
+    Value::one = std::make_shared<Number>(1);
     if(implementationStartup) implementationStartup();
 }
 void Program::cleanup() {
@@ -17,6 +18,7 @@ ValList Program::history;
 ComputeCtx Program::computeCtx;
 ParseCtx Program::parseCtx;
 Value Value::zero;
+Value Value::one;
 std::unordered_map<string, int> Program::globalFunctionMap;
 int Program::getGlobal(const string& name) {
     if(globalFunctionMap.find(name) == globalFunctionMap.end()) return -1;

@@ -497,6 +497,7 @@ public:
     //Returns true only if type is num or arb and real, imag, and unit are zero
     static bool isZero(const Value& x);
     static Value zero;
+    static Value one;
     static void set(Value& val, ValList indicies, Value setTo);
     //List of human-readable type names
     static const std::vector<string> typeNames;
