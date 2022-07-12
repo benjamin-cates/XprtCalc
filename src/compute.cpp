@@ -433,8 +433,8 @@ std::vector<Function> Program::globalFunctions = {
         return Value::zero;
     } }),
     Function("gcd",{"a","b"},{{D(dub | arb,dub | arb),D(dub,dub)}},{{D(dub,dub),[](inp) {
-        uint64_t a = std::abs(input[0]->getR());
-        uint64_t b = std::abs(input[1]->getR());
+        uint64_t a = std::abs(input[0]->getR()) + 0.5;
+        uint64_t b = std::abs(input[1]->getR()) + 0.5;
         //Euclidian algorithm for gcd
         while(b != 0) {
             std::swap(a,b);
@@ -443,13 +443,44 @@ std::vector<Function> Program::globalFunctions = {
         return std::make_shared<Number>(a);
     }}}),
     Function("lcm",{"a","b"},{{D(dub | arb,dub | arb),D(dub,dub)}},{{D(dub,dub),[](inp) {
-        uint64_t a = std::abs(input[0]->getR());
-        uint64_t b = std::abs(input[1]->getR());
+        uint64_t a = std::abs(input[0]->getR()) + 0.5;
+        uint64_t b = std::abs(input[1]->getR()) + 0.5;
         uint64_t max = std::max(a,b);
         uint64_t min = std::min(a,b);
         uint64_t cur = max;
         while(cur % min != 0) cur += max;
         return std::make_shared<Number>(cur);
+    }}}),
+    Function("factors", {"x"}, {{D(arb),D(dub)}}, {{D(dub),[](inp) {
+        uint64_t a = std::abs(input[0]->getR()) + 0.5;
+        if(a == 0) return std::make_shared<Vector>(Value::zero);
+        std::shared_ptr<Vector> out = std::make_shared<Vector>();
+        Value two,three;
+        while(a % 2 == 0) {
+            if(two == nullptr) two = make_shared<Number>(2);
+            out->vec.push_back(two);
+            a /= 2;
+        }
+        while(a % 3 == 0) {
+            if(three == nullptr) three = make_shared<Number>(3);
+            out->vec.push_back(three);
+            a /= 3;
+        }
+        //Prime factors other than 2 and 3 can be written as either 6n-1 or 6n+1
+        for(uint64_t n6 = 6;a != 1;n6 += 6) {
+            Value n6m1,n6p1;
+            while(a % (n6 - 1) == 0) {
+                if(n6m1 == nullptr) n6m1 = std::make_shared<Number>(n6 - 1);
+                out->vec.push_back(n6m1);
+                a /= n6 - 1;
+            }
+            while(a % (n6 + 1) == 0) {
+                if(n6p1 == nullptr) n6p1 = std::make_shared<Number>(n6 + 1);
+                out->vec.push_back(n6p1);
+                a /= n6 + 1;
+            }
+        }
+        return out;
     }}}),
     #pragma endregion
 #pragma region Binary logic
