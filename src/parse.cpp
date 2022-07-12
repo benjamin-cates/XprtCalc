@@ -462,6 +462,17 @@ std::tuple<string, ValList, Value> Expression::parseAssignment(string str) {
             }
             else break;
         }
+        else if(str[i] == '(') {
+            string name = str.substr(0, i);
+            int endB = matchBracket(str, i);
+            if(endB == str.length()) break;
+            int eq = endB + 1;
+            while(str[eq] == ' ') eq++;
+            if(str[eq] != '=') break;
+            string function = str.substr(i, endB - i + 1) + "=>" + str.substr(eq + 1);
+            Value set = evaluate(function);
+            return std::tuple<string, ValList, Value>(name, {}, set);
+        }
         else break;
     }
     return std::tuple<string, ValList, Value>();
