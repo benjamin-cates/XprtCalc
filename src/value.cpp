@@ -41,7 +41,7 @@ Vector::Vector(Value topLeft) {
     vec[0] = topLeft;
 }
 Vector::Vector(int x) {
-    vec.resize(x);
+    vec.resize(x, Value::zero);
 }
 int Vector::size()const {
     return vec.size();
@@ -57,7 +57,7 @@ Value Vector::operator[](unsigned int x) {
 }
 void Vector::set(int x, Value val) {
     if(x >= vec.size()) {
-        vec.resize(x + 1);
+        vec.resize(x + 1, Value::zero);
     }
     vec[x] = val;
 }

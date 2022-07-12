@@ -297,7 +297,7 @@ Function::fobj applyBinVec(string name, std::function<int(int, int)> maxormin) {
         else if(b.unique()) out = b;
         else out = std::make_shared<Vector>();
         int size = maxormin(a->size(), b->size());
-        out->vec.resize(size);
+        out->vec.resize(size, Value::zero);
         for(int i = 0;i < size;i++) out->vec[i] = Program::computeGlobal(name, ValList{ a->vec[i], b->vec[i] }, ctx);
         return out;
     };
@@ -311,7 +311,7 @@ Value Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
 using namespace std;
 std::vector<Function> Program::globalFunctions = {
     #define Constant(name,...) Function(name,{},{},{{D(),[](inp) {return std::make_shared<Number>(__VA_ARGS__);}}})
-    #define default(id,value) if(input.size()<=id) {input.resize(id);input[id]=value;}
+    #define default(id,value) if(input.size()<=id) {input.resize(id,Value::zero);input[id]=value;}
 
     #ifdef USE_ARB
     #define ConstantArb(name,...) Function("name",{},{},{{D(dub),[](inp) {return ret(Arb)(__VA_ARGS__);}}})
