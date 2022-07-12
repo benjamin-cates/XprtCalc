@@ -521,6 +521,12 @@ std::vector<Function> Program::globalFunctions = {
             out = Program::computeGlobal("add",ValList{out,(*func)(lambdaInput,ctx)},ctx);
         }
         return out;
+    }},{D(vec_t),[](inp) {
+        def(Vector,vec,0);
+        Value out = Value::zero;
+        for(int i = 0;i < vec->vec.size();i++)
+            out = Program::computeGlobal("add",ValList{out,vec->vec[i]},ctx);
+        return out;
     }}}),
     Function("product",{"func","begin","end","step"},{},{{D(lmb,arb | dub,arb | dub,arb | dub | opt), [](inp) {
         def(Lambda,func,0);
@@ -535,6 +541,12 @@ std::vector<Function> Program::globalFunctions = {
             n->num = {index,0.0};
             out = Program::computeGlobal("mul",ValList{out,(*func)(lambdaInput,ctx)},ctx);
         }
+        return out;
+    }},{D(vec_t),[](inp) {
+        def(Vector,vec,0);
+        Value out = std::make_shared<Number>(1);
+        for(int i = 0;i < vec->vec.size();i++)
+            out = Program::computeGlobal("mul",ValList{out,vec->vec[i]},ctx);
         return out;
     }}}),
 //    Function("infinite_sum", { "func" }, TypeDomain(lbm), [](vector<Value> input) {
