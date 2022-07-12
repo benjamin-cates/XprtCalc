@@ -425,6 +425,47 @@ Value Expression::evaluate(const string& str) {
     Value tr = Tree::parseTree(str, Program::parseCtx);
     return tr->compute(Program::computeCtx);
 }
+std::tuple<string, ValList, Value> Expression::parseAssignment(string str) {
+    if(str[0] >= '0' && str[0] <= '9') return std::tuple<string, ValList, Value>();
+    for(int i = 0;i < str.length();i++) {
+        if(str[i] >= 'A' && str[i] <= 'Z') continue;
+        else if(str[i] >= 'a' && str[i] <= 'z') continue;
+        else if(str[i] >= '0' && str[i] <= '9') continue;
+        else if(str[i] == '_' || str[i] == ' ') continue;
+        else if(str[i] == '=') {
+            string name = str.substr(0, i);
+            removeSpaces(name);
+            Value val = evaluate(str.substr(i + 1));
+            return std::tuple<string, ValList, Value>(name, {}, val);
+        }
+        //Index assignment
+        else if(str[i] == '[') {
+            string name = str.substr(0, i);
+            int bracketDepth = 0;
+            std::vector<int> startingBrackets;
+            std::vector<int> endingBrackets;
+            while(str[i] == '[') {
+                startingBrackets.push_back(i);
+                i = matchBracket(str, i) + 1;
+                endingBrackets.push_back(i);
+                while(str[i] == ' ') i++;
+                bracketDepth++;
+            }
+            if(str[i] == '=') {
+                removeSpaces(name);
+                ValList indicies(bracketDepth);
+                for(int x = 0;x < bracketDepth;x++) {
+                    indicies[x] = evaluate(str.substr(startingBrackets[x] + 1, endingBrackets[x] - startingBrackets[x] - 2));
+                }
+                Value set = evaluate(str.substr(i + 1));
+                return std::tuple<string, ValList, Value>(name, indicies, set);
+            }
+            else break;
+        }
+        else break;
+    }
+    return std::tuple<string, ValList, Value>();
+}
 #pragma endregion
 #pragma region ColoredString
 void ColoredString::setStr(string&& s) {

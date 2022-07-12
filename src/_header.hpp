@@ -277,6 +277,8 @@ namespace Expression {
     int findNext(const string& str, int index, char find);
     //Computes string without context
     Value evaluate(const string& str);
+    //Parse assignment operator. Eg. a[1]=45. Returns a tuple of the name, indicies, and value to set to.
+    std::tuple<string,ValList,Value> parseAssignment(string str);
 };
 //Contains a string and it's color data simultaneosly
 class ColoredString {
