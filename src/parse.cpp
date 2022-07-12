@@ -513,11 +513,12 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
                 *(out + sec.length() - 1) = ColorType::hl_bracket;
             }
             //Color as an accessor
-            if(previousSec == variable || previousSec == parenthesis || previousSec == vect || previousSec == curly || previousSec == quote || previousSec == function)
+            if(previousSec == variable || previousSec == parenthesis || previousSec == vect || previousSec == curly || previousSec == quote || previousSec == function || previousSec == square)
                 Expression::color(sec.substr(1, sec.length() - 2), out + 1, ctx);
             //Color as a unit
             else {
                 ctx.push(0, true);
+                Expression::color(sec.substr(1, sec.length() - 2), out + 1, ctx);
                 ctx.pop();
             }
         }
@@ -706,7 +707,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
         //Square brackets for accessor or units
         else if(type == square) {
             //Accessor notation
-            if(prevSec == variable || prevSec == parenthesis || prevSec == vect || prevSec == curly || prevSec == quote || prevSec == function) {
+            if(prevSec == variable || prevSec == parenthesis || prevSec == vect || prevSec == curly || prevSec == quote || prevSec == function || prevSec == square) {
                 Value index = Tree::parseTree(sect.substr(1, sect.length() - 2), ctx);
                 treeList.back() = std::make_shared<Tree>("get", ValList{ treeList.back(),index });
             }
