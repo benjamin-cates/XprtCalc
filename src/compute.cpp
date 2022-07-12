@@ -622,6 +622,13 @@ std::vector<Function> Program::globalFunctions = {
         }
         return out;
     }}}),
+    Function("every",{"vec","func"},{},{{D(vec_t,lmb),[](inp) {
+        def(Vector,v,0);def(Lambda,func,1);
+        for(int i = 0;i < v->vec.size();i++) {
+            if((*func)(ValList{v->vec[i]},ctx) == Value::zero) return Value::zero;
+        }
+        return Value::one;
+    }}}),
     Function("concat",{"a","b"},{},{{D(vec_t,vec_t),[](inp) {
         def(Vector,a,0);def(Vector,b,1);
         shared_ptr<Vector> out = make_shared<Vector>();
