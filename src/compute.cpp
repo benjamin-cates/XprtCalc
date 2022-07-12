@@ -320,19 +320,20 @@ std::vector<Function> Program::globalFunctions = {
         {D(arb),[](inp) {using T=mppp::real;std::complex<T> num = getArbN(0);Unit unit=getArbU(0);ret(Arb)(formula,unitF);}},\
         UnaryVecApply(name),__VA_ARGS__})
     #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},{D(arb),[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num=getArbN(0);Unit unit=getArbU(0);formula;}},UnaryVecApply(name),__VA_ARGS__})
-    #define BinaryWithUnit(name,arg1,arg2,formula,unit,...) Function(name,{arg1,arg2},{samePrecision}, {\
-        {dd,[](inp) {using T=double;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);ret(Number)(formula, unit);}},\
-        {aa,[](inp) {using T=mppp::real;std::complex<T> num1=getArbN(0);std::complex<T> num2=getArbN(1);Unit unit1=getArbU(0);Unit unit2=getArbU(1);ret(Arb)(formula, unit);}},BinVecApply(name),__VA_ARGS__})
+    #define BinaryBaseTemplate(name,arg1,arg2,returnType,...) Function(name,{arg1,arg2},{samePrecision}, {\
+        {dd,[](inp) {using T=double;using R=Number;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);return returnType;}},\
+        {aa,[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num1=getArbN(0);std::complex<T> num2=getArbN(1);Unit unit1=getArbU(0);Unit unit2=getArbU(1);return returnType;}},BinVecApply(name),__VA_ARGS__})
     #else
     #define UnaryWithUnit(name,formula,unitF,...) Function(name,{"x"},{}, {\
         {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);ret(Number)(formula,unitF);}},\
         UnaryVecApply(name),__VA_ARGS__})
     #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},UnaryVecApply(name),__VA_ARGS__})
-    #define BinaryWithUnit(name,arg1,arg2,formula,unit,...) Function(name,{arg1,arg2},{samePrecision}, {\
-        {dd,[](inp) {using T=double;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);ret(Number)(formula, unit);}},BinVecApply(name),__VA_ARGS__})
+    #define BinaryBaseTemplate(name,arg1,arg2,returnType,...) Function(name,{arg1,arg2},{samePrecision}, {\
+        {dd,[](inp) {using T=double;using R=Number;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);return returnType;}}})
     #endif
 
 
+    #define BinaryWithUnit(name,arg1,arg2,formula,unit,...) BinaryBaseTemplate(name,arg1,arg2,std::make_shared<R>(formula,unit),__VA_ARGS__)
     #define Binary(name,arg1,arg2,formula,...) BinaryWithUnit(name,arg1,arg2,formula,unit1+unit2,__VA_ARGS__)
     #define Unary(name,formula,...) UnaryWithUnit(name,formula,unit,__VA_ARGS__)
     #define Unary3(name,real,imag,unitF,...) UnaryWithUnit(name,std::complex(real,imag),unitF,__VA_ARGS__)
@@ -403,7 +404,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("lerp",{"a","b","x"},{},{{D(dub | arb | vec_t,dub | arb | vec_t,dub | arb | vec_t),[](inp) {
         //return  (a*(1-f)) + (b*f)
         #define CptBin(name,input0,input1) Program::computeGlobal(name,ValList{input0,input1},ctx)
-        return CptBin("add",CptBin("mul",input[0],CptBin("sub",std::make_shared<Number>(1),input[2])),CptBin("mul",input[1],input[2]));
+        return CptBin("add",CptBin("mul",input[0],CptBin("sub",Value::one,input[2])),CptBin("mul",input[1],input[2]));
     }}}),
     Binary("dist","a","b",hypot(num1.real() - num2.real(),num1.imag() - num2.imag()),{vv,[](inp) {
         //running total = d1^2 + d2^2 + d3^2 ....
@@ -434,17 +435,17 @@ std::vector<Function> Program::globalFunctions = {
     #pragma endregion
 #pragma region Binary logic
     Function("equal",{"a","b"},{},{{D(all,all),[](inp) {
-        if(input[0] == input[1]) ret(Number)(1);
-        else ret(Number)(0);
+        if(input[0] == input[1]) return Value::one;
+        else return Value::zero;
     }}}),
     Function("not_equal",{"a","b"},{},{{D(all,all),[](inp) {
-        if(input[0] == input[1]) ret(Number)(0);
-        else ret(Number)(1);
+        if(input[0] == input[1]) return Value::zero;
+        else return Value::one;
     }}}),
-    Binary("lt", "a","b", num1.real() < num2.real() ? T(1) : T(0)),
-    Binary("gt", "a","b", num1.real() > num2.real() ? T(1) : T(0)),
-    Binary("lt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? T(1) : T(0)),
-    Binary("gt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? T(1) : T(0)),
+    BinaryBaseTemplate("lt", "a","b", num1.real() < num2.real() ? Value::one : Value::zero),
+    BinaryBaseTemplate("gt", "a","b", num1.real() > num2.real() ? Value::one : Value::zero),
+    BinaryBaseTemplate("lt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
+    BinaryBaseTemplate("gt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
 //    Function("not", { "x" }, TypeDomain(nmr | set), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
@@ -591,7 +592,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("get",{"map","key"},{},{{D(vec_t,dub | arb),[](inp) {
         def(Vector,v,0);
         int index = input[1]->getR();
-        if(index < 0 || index >= v->size()) return Value(make_shared<Number>(0));
+        if(index < 0 || index >= v->size()) return Value::zero;
         return v->vec[index];
     }},{D(map_t,all),[](inp) {
         def(Map,m,0);
@@ -668,7 +669,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("error",{"str"},{},{{D(str_t),[](inp) {
         def(String,str,0);
         throw str;
-        return make_shared<Number>(0);
+        return Value::zero;
     }}}),
     Function("substr",{"str","begin","len"},{},{{D(str_t,dub | arb,dub | arb | opt),[](inp) {
         def(String,str,0);
