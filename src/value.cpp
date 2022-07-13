@@ -449,7 +449,54 @@ string Number::toStr(ParseCtx& ctx)const {
 }
 #ifdef USE_ARB
 string Arb::componentToString(mppp::real x, int base) {
-    return x.to_string(base);
+    string str = x.to_string(10);
+    int e = 0;
+    for(int i = 0;i < str.length();i++) {
+        //Find exponent
+        if((str[i] == 'e' || str[i] == '@') && (str[i + 1] == '+' || str[i + 1] == '-')) {
+            str[i] = 'e';
+            e = i;
+        }
+        //Set characters to uppercase
+        else if(str[i] >= 'a' && str[i] <= 'z') {
+            str[i] = str[i] + 'A' - 'a';
+        }
+    }
+    //Move decimal point if exponent is close to zero
+    int exp;
+    if(e == 0) exp = 0, e = str.length();
+    else exp = stoi(str.substr(e + 1));
+    if(exp < 8 && exp > 0) {
+        str.erase(str.begin() + e, str.end());
+        str.erase(str.begin() + 1);
+        str.insert(str.begin() + exp + 1, '.');
+    }
+    if(exp > -8 && exp < 0) {
+        str.erase(str.begin() + e, str.end());
+        str.erase(str.begin() + 1);
+        str = "0." + string(-exp - 1, '0') + str;
+    }
+    //Round up trailing characters
+    const static string baseChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    int i = e - 2;
+    while(str[i] >= baseChars[base / 2]) {
+        str[i] = 0;
+        if(i == 0) str = "1" + str;
+        else {
+            if(str[i - 1] == '.') i--;
+            str[i - 1] = baseChars[baseChars.find(str[i - 1]) + 1];
+        }
+    }
+    //Erase extra precision
+    str.erase(str.begin() + e - 2, str.begin() + e);
+    //Remove trailing zeroes
+    i = e - 3;
+    while(str[i] == '0') {
+        str.erase(str.begin() + i);
+        i--;
+    }
+    if(str[i] == '.') str.erase(str.begin() + i);
+    return str;
 }
 string Arb::toStr(ParseCtx& ctx)const {
     string out;
