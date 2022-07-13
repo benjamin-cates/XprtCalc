@@ -435,21 +435,23 @@ std::vector<Function> Program::globalFunctions = {
     Function("gcd",{"a","b"},{{D(dub | arb,dub | arb),D(dub,dub)}},{{D(dub,dub),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
         uint64_t b = std::abs(input[1]->getR()) + 0.5;
+        if(a == 0 || b == 0) return Value::zero;
         //Euclidian algorithm for gcd
         while(b != 0) {
             std::swap(a,b);
             b = b % a;
         }
-        return std::make_shared<Number>(a);
+        return Value(std::make_shared<Number>(a));
     }}}),
     Function("lcm",{"a","b"},{{D(dub | arb,dub | arb),D(dub,dub)}},{{D(dub,dub),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
         uint64_t b = std::abs(input[1]->getR()) + 0.5;
+        if(a == 0 || b == 0) return Value::zero;
         uint64_t max = std::max(a,b);
         uint64_t min = std::min(a,b);
         uint64_t cur = max;
         while(cur % min != 0) cur += max;
-        return std::make_shared<Number>(cur);
+        return Value(std::make_shared<Number>(cur));
     }}}),
     Function("factors", {"x"}, {{D(arb),D(dub)}}, {{D(dub),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
