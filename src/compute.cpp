@@ -509,9 +509,25 @@ std::vector<Function> Program::globalFunctions = {
     #ifdef USE_ARB
     Function("arb_pi",{"prec"},{},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(mppp::real_pi(Arb::digitsToPrecision(prec)));}}}),
     Function("arb_e",{"prec"},{},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(mppp::exp(mppp::real(1.0,Arb::digitsToPrecision(prec))));}}}),
-    //Function("arb_rand", [](vector<Value> input) {
-    //    ret Value(0.0);
-    //}),
+    Function("arb_rand",{"prec"},{},{{D(dub),[](inp) {
+        double prec = input[0]->getR();
+        if(Program::smallCompute) prec = std::min(prec,50.0);
+        mpfr_prec_t p = Arb::digitsToPrecision(prec);
+        mppp::real out(0,p);
+        int binDigits = p;
+        int i = 0;
+        if(RAND_MAX >= 0xffffffff) while(i * 32 < binDigits) {
+            i++;
+            mppp::real cur{(unsigned long)(0xffffffff & rand()),mpfr_exp_t(-i * 32),p};
+            out += cur;
+        }
+        else while(i * 12 < binDigits) {
+            i++;
+            mppp::real cur{(unsigned long)(0xfff & rand()),mpfr_exp_t(-i * 12),p};
+            out += cur;
+        }
+        return std::make_shared<Arb>(out);
+    }}}),
     #endif
     Function("rand",{},{},{{D(),[](inp) {double upLim = RAND_MAX + 1.;ret(Number)(rand() / upLim + rand() / upLim / upLim);}}}),
     Function("srand",{"seed"},{downscale},{{D(dub),[](inp) { srand(getN(0).real() * 100); ret(Number)(0); }}}),
