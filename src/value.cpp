@@ -376,9 +376,56 @@ Value Argument::compute(ComputeCtx& ctx) {
 #pragma region toString
 string ValueBaseClass::toString()const { return this->toStr(Program::parseCtx); }
 string Number::componentToString(double x, int base) {
-    std::stringstream s;
-    s << x;
-    return s.str();
+    if(x == 0) return "0";
+    bool isNegative = x < 0;
+    x = std::abs(x);
+    double exponent = std::floor(std::log(x * 1.00000000000001) / std::log(double(base)));
+    x /= std::pow(base, exponent);
+    //Floating point
+    if(exponent > 9.0 || exponent < -7.0) {
+        return componentToString(x, base) + "e" + componentToString(double(exponent), base);
+    }
+    string out;
+    if(isNegative) out += "-";
+    //Leading zeroes
+    if(exponent < 0) {
+        out += "0.";
+        out += string((-exponent) - 1, '0');
+    }
+    //Create digit list
+    std::vector<int> digitList;
+    int i;
+    for(i = 0;i < 10;i++) {
+        if(std::floor(x * 1000000000) == 0 && i > exponent) break;
+        if(std::floor(x) >= base) {
+            digitList.push_back(1);
+            x -= base;
+        }
+        digitList.push_back(std::floor(x));
+        x -= std::floor(x);
+        x *= base;
+    }
+    //Rounding digit
+    if(i == 10 && digitList.back() >= base / 2) {
+        int x = digitList.size() - 2;
+        digitList.resize(digitList.size() - 1);
+        digitList[x] += 1;
+        while(digitList[x] >= base) {
+            digitList[x] = 0;
+            if(x == 0) { digitList.insert(digitList.begin(), 1);exponent += 1; }
+            else { digitList[x - 1] += 1;x--; }
+        }
+    }
+    //Remove trailing zeroes
+    while(digitList.size() > std::max(exponent + 1, 1.0) && digitList.back() == 0) digitList.resize(digitList.size() - 1);
+    //Add digits to string
+    const static string baseChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for(int d = 0;d < digitList.size();d++) {
+        out += baseChars[digitList[d]];
+        if(d == exponent && d != digitList.size() - 1) out += '.';
+    }
+    if(digitList.size() < exponent) out += string(exponent - digitList.size(), '0');
+    return out;
 }
 string Number::toStr(ParseCtx& ctx)const {
     string out;
