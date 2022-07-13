@@ -206,13 +206,19 @@ std::vector<Page> Help::pages = {
     Page::fromFunction("Least common multiple","lcm","Returns the least common multiple of `a` and `b`. The least common multiple is the smallest number that both numbers divide evenly into. Example: `lcm(8,12) = 24` because `24/8` and `24/12` are integers. If a fractional value is passed in, it will round down to the nearest integer. The ?arb? type is not supported, however it will be cast to a number and can be cast back to arb."),
     Page::fromFunction("Prime factors","factors","Returns a list of prime factors of `x`. Example: `factors(60) = <2,2,3,5>` because `2*2*3*5 = 60`. This can be used to test for primality because it will return a list of size one if `x` is prime."),
     #pragma endregion
-    #pragma region Comparison
+    #pragma region Binary Functions
     Page::fromFunction("Equal","equal","Returns `1` if `a` and `b` are equal, else returns `0`. It is aliased by the `==` and `=` operators.",{"equivalent","comparison","=="}),
     Page::fromFunction("Not equal","not_equal","Returns `1` if `a` and `b` are not equal, else returns `0`. It is aliased by the `!=` operator.",{"equivalent","comparison","!="}),
     Page::fromFunction("Less than","lt","Returns `1` if `a` is less than `b`, else returns `0`. It is aliased by the `<` operator. ?Imaginary? components are ignored.",{"comparison","<"}),
     Page::fromFunction("Greater than","gt","Returns `1` if `a` is greater than `b`, else returns `0`. It is aliased by the `>` operator. ?Imaginary? components are ignored",{"comparison",">"}),
     Page::fromFunction("Greater than or equal","gt_equal","Returns `1` if `a` is ?greater than? or ?equal? to `b`, else returns `0`. It is aliased by the `>=` operator. ?Imaginary? components are ignored",{"comparison",">="}),
     Page::fromFunction("Less than or equal","lt_equal","Returns `1` if `a` is ?less than? or ?equal? to `b`, else returns `0`. It is aliased by the `<=` operator. ?Imaginary? components are ignored",{"comparison","<="}),
+    Page::fromFunction("Not","not","Returns the boolean opposite of `x`. If `x` is a zero, it will return one. If `x` is any value other than zero, it will return zero."),
+    Page::fromFunction("And","and","Returns the bitwise and of `a` and `b`. If `a` and `b` are either one or zero, it works like a boolean operator. Both arguments are rounded to integers before calculation.",{"bitwise"},"https://en.wikipedia.org/wiki/Bitwise_operation#AND"),
+    Page::fromFunction("Or","or","Returns the bitwise or of `a` and `b`. If `a` and `b` are either one or zero, it works like a boolean operator. Both arguments are rounded to integers before calculation.",{"bitwise"},"https://en.wikipedia.org/wiki/Bitwise_operation#OR"),
+    Page::fromFunction("Xor","xor","Returns the bitwise xor of `a` and `b`. If `a` and `b` are either one or zero, it works like a boolean operator. Both arguments are rounded to integers before calculation",{"bitwise","exclusive or"},"https://en.wikipedia.org/wiki/Bitwise_operation#XOR"),
+    Page::fromFunction("Left shift","ls","Returns the bitwise left shift of `a` shifted by `b`. It is essentially equivalent to `a * 2^b`, however both arguments are rounded to integers before calculation. Left shift is circular, so if it overflows to the left, it will wrap around. The inverse is the right shift function `rs`.",{"bitwise","bit shift"},"https://en.wikipedia.org/wiki/Circular_shift#Example"),
+    Page::fromFunction("Right shift","rs","Returns the bitwise right shift of `a` shifted by `b`. It is essentially equivalent to `a / 2^b`, however both arguments are rounded to integers before and after calculation. Right shift is an arithmetic shift, so if it overflows to the right, it will be cut off. The inverse is the left shift function `ls`.",{"bitwise","bit shift"},"https://en.wikipedia.org/wiki/Arithmetic_shift"),
     #pragma endregion
     #pragma region Constants
     Page::fromFunction("True","true","Constant that returns 1. It is used for boolean logic because comparison operators return `1` on success. The `false` constant is the opposite of `true`.",{"binary","boolean"}),

@@ -486,36 +486,19 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     #pragma endregion
 #pragma region Binary logic
-    Function("equal",{"a","b"},{},{{D(all,all),[](inp) {
-        if(input[0] == input[1]) return Value::one;
-        else return Value::zero;
-    }}}),
-    Function("not_equal",{"a","b"},{},{{D(all,all),[](inp) {
-        if(input[0] == input[1]) return Value::zero;
-        else return Value::one;
-    }}}),
+    BinaryBaseTemplate("equal","a","b", input[0] == input[1] ? Value::one : Value::zero),
+    BinaryBaseTemplate("not_equal","a","b", input[0] == input[1] ? Value::zero : Value::one),
     BinaryBaseTemplate("lt", "a","b", num1.real() < num2.real() ? Value::one : Value::zero),
     BinaryBaseTemplate("gt", "a","b", num1.real() > num2.real() ? Value::one : Value::zero),
     BinaryBaseTemplate("lt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
     BinaryBaseTemplate("gt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
-//    Function("not", { "x" }, TypeDomain(nmr | set), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("or", { "a","b" }, TypeDomain(nmr, nmr), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("and", { "a","b" }, TypeDomain(nmr, nmr), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("xor", { "a","b" }, TypeDomain(nmr, nmr), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
-//    Function("ls", { "a","b" }, TypeDomain(dub | arb, dub | arb), [](vector<Value> input) {
-//        return new Value(0.0);
-//    }),
-//    Function("rs", { "a","b" }, TypeDomain(dub | arb, dub | arb), [](vector<Value> input) {
-//        ret Value(0.0);
-//    }),
+    #define BitwiseOperator(name,operat) Function(name,{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {uint64_t a = std::abs(input[0]->getR() + 0.5), b = std::abs(input[1]->getR() + 0.5);return std::make_shared<Number>(a operat b);}}})
+    Function("not",{"x"},{{D(arb),D(dub)}},{{D(dub),[](inp) {return input[0]->getR() == 0 ? Value::one : Value::zero;}}}),
+    BitwiseOperator("or", | ),
+    BitwiseOperator("and",&),
+    BitwiseOperator("xor",^),
+    BitwiseOperator("ls", << ),
+    BitwiseOperator("rs", >> ),
 #pragma endregion
 #pragma region Constants
     Constant("true",1),
