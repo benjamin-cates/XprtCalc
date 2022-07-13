@@ -485,6 +485,7 @@ string Arb::componentToString(mppp::real x, int base) {
         else {
             if(str[i - 1] == '.') i--;
             str[i - 1] = baseChars[baseChars.find(str[i - 1]) + 1];
+            i--;
         }
     }
     //Erase extra precision
@@ -583,7 +584,7 @@ bool Value::isOne(const Value& x) {
     #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = x.cast<Arb>()) {
         if(n->num == std::complex<mppp::real>(1)) return true;
-    }
+}
     #endif
     return false;
 }
@@ -594,7 +595,7 @@ bool Value::isZero(const Value& x) {
     #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = x.cast<Arb>()) {
         if(n->num == std::complex<mppp::real>(0)) return true;
-    }
+}
     #endif
     return false;
 }
