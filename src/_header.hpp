@@ -278,7 +278,7 @@ namespace Expression {
     //Computes string without context
     Value evaluate(const string& str);
     //Parse assignment operator. Eg. a[1]=45. Returns a tuple of the name, indicies, and value to set to.
-    std::tuple<string,ValList,Value> parseAssignment(string str);
+    std::tuple<string, ValList, Value> parseAssignment(string str);
 };
 //Contains a string and it's color data simultaneosly
 class ColoredString {
@@ -501,6 +501,7 @@ public:
     static void set(Value& val, ValList indicies, Value setTo);
     //List of human-readable type names
     static const std::vector<string> typeNames;
+    Value derivative(ValList argDerivatives);
     //Converts value into the return type with given type, throws error if incompatible
     Value convertTo(int type);
     enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, tre_t = 7, arg_t = 8, var_t = 9 };

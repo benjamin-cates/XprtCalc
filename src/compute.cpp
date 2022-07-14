@@ -656,6 +656,17 @@ std::vector<Function> Program::globalFunctions = {
         return Value(std::make_shared<Number>(calc));
 
     }}}),
+    Function("derivative",{"exp","wrt"},{},{{D(lmb,dub | arb | opt),[](inp) {
+        def(Lambda,func,0);
+        DefaultInp(1,Value::zero);
+        ValList argDx(func->inputNames.size(),Value::zero);
+        int wrt = input[0]->getR();
+        if(wrt >= func->inputNames.size()) wrt = func->inputNames.size() - 1;
+        if(wrt < 0) wrt = 0;
+        argDx[wrt] = Value::one;
+        Value tr = func->func.derivative(argDx);
+        return make_shared<Lambda>(func->inputNames,tr);
+    }}}),
 //    Function("infinite_sum", { "func" }, TypeDomain(lbm), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
