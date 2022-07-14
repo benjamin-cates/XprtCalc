@@ -75,6 +75,13 @@ Value ParseCtx::getVariable(const string& name)const {
         if(u.getBits() != 0)
             return std::make_shared<Number>(coef, 0, u);
     }
+    if(name[0] == '$') {
+        try {
+            int index = std::stoi(name.substr(1));
+            return std::make_shared<Tree>("ans", ValList{ std::make_shared<Number>(index) });
+        }
+        catch(...) { return nullptr; }
+    }
     return nullptr;
 }
 #pragma endregion
