@@ -244,6 +244,7 @@ Value Expression::parseNumeral(const string& str, int base) {
         if(ePos > pPos) throw "Exponent must be specified before precision";
         string exp = str.substr(ePos + 1, pPos - ePos - 1);
         exponent = Expression::parseNumeral(exp, base)->getR();
+        if(exp[0] == '-') exponent = -exponent;
     }
     else ePos = pPos;
     //Get digits
@@ -255,7 +256,7 @@ Value Expression::parseNumeral(const string& str, int base) {
     //Parse as arb if precision is specified
     if(precision != 15) {
         mppp::real out(digits, base, Arb::digitsToPrecision(precision));
-        if(exponent != 0) out *= mppp::pow(base, mppp::real(exponent));
+        if(exponent != 0) out *= mppp::pow(mppp::real{ base }, mppp::real{ exponent,Arb::digitsToPrecision(precision+10) });
         return std::make_shared<Arb>(out);
     }
     #else

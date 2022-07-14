@@ -449,7 +449,7 @@ string Number::toStr(ParseCtx& ctx)const {
 }
 #ifdef USE_ARB
 string Arb::componentToString(mppp::real x, int base) {
-    string str = x.to_string(10);
+    string str = x.to_string(base);
     int e = 0;
     for(int i = 0;i < str.length();i++) {
         //Find exponent
@@ -475,13 +475,14 @@ string Arb::componentToString(mppp::real x, int base) {
         str.erase(str.begin() + e, str.end());
         str.erase(str.begin() + 1);
         str = "0." + string(-exp - 1, '0') + str;
+        e += -exp;
     }
     //Round up trailing characters
     const static string baseChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     int i = e - 2;
-    while(str[i] >= baseChars[base / 2]) {
-        str[i] = 0;
-        if(i == 0) str = "1" + str;
+    while(str[i] >= baseChars[(i == e - 2) ? base / 2 : base]) {
+        str[i] = '0';
+        if(i == 0) {str = "1" + str;e++;}
         else {
             if(str[i - 1] == '.') i--;
             str[i - 1] = baseChars[baseChars.find(str[i - 1]) + 1];
@@ -584,7 +585,7 @@ bool Value::isOne(const Value& x) {
     #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = x.cast<Arb>()) {
         if(n->num == std::complex<mppp::real>(1)) return true;
-}
+    }
     #endif
     return false;
 }
@@ -595,7 +596,7 @@ bool Value::isZero(const Value& x) {
     #ifdef USE_ARB
     else if(std::shared_ptr<Arb> n = x.cast<Arb>()) {
         if(n->num == std::complex<mppp::real>(0)) return true;
-}
+    }
     #endif
     return false;
 }
