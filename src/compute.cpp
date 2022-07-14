@@ -311,7 +311,7 @@ Value Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
 using namespace std;
 std::vector<Function> Program::globalFunctions = {
     #define Constant(name,...) Function(name,{},{},{{D(),[](inp) {return std::make_shared<Number>(__VA_ARGS__);}}})
-    #define default(id,value) if(input.size()<=id) {input.resize(id,Value::zero);input[id]=value;}
+    #define DefaultInp(id,value) if(input.size()<=id) {input.resize(id+1,Value::zero);input[id]=value;}
 
     #ifdef USE_ARB
     #define ConstantArb(name,...) Function("name",{},{},{{D(dub),[](inp) {return ret(Arb)(__VA_ARGS__);}}})
@@ -599,6 +599,24 @@ std::vector<Function> Program::globalFunctions = {
         Value out = std::make_shared<Number>(1);
         for(int i = 0;i < vec->vec.size();i++)
             out = Program::computeGlobal("mul",ValList{out,vec->vec[i]},ctx);
+        return out;
+    }}}),
+    Function("infinite_sum",{"func"},{},{{D(lmb,dub | arb | opt),[](inp) {
+        def(Lambda,func,0);
+        DefaultInp(1,Value::zero);
+        Value out = Value::zero;
+        Value old = out;
+        shared_ptr<Number> n = make_shared<Number>(input[1]->getR());
+        ValList lambdaInput{n};
+        while(true) {
+            Value inc = (*func)(lambdaInput,ctx);
+            out = Program::computeGlobal("add",{out,inc},ctx);
+            n->num = {n->num.real() + 1,0};
+            if(n->num.real() == 100000) return out;
+            if(Program::smallCompute) if(n->num.real() == 20) return out;
+            if(out == old) break;
+            old = out;
+        }
         return out;
     }}}),
 //    Function("infinite_sum", { "func" }, TypeDomain(lbm), [](vector<Value> input) {
