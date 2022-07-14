@@ -619,6 +619,43 @@ std::vector<Function> Program::globalFunctions = {
         }
         return out;
     }}}),
+    Function("dint",{"func","lower","uppper"},{},{{D(lmb,dub,dub),[](inp) {
+        def(Lambda,func,0);
+        double lower=input[1]->getR();
+        double upper=input[2]->getR();
+        std::map<uint32_t,double> outputs;
+        uint32_t divisionSize = 0x40000000;
+        double calc=0, prevCalc=INFINITY;
+        shared_ptr<Number> x = make_shared<Number>(0);
+        ValList lambdaInput{x};
+        x->num = {lower,0}; outputs[0]=(*func)(lambdaInput,ctx)->getR();
+        x->num = {upper,0}; outputs[0xffffffff]=(*func)(lambdaInput,ctx)->getR();
+        while(true) {
+            int i=0;
+            //Add first and last
+            calc=outputs[0]+outputs[0xffffffff];
+            for(uint32_t ind=divisionSize;ind!=0;ind+=divisionSize) {
+                //Add elements if not found
+                if(outputs.find(ind)==outputs.end()) {
+                    x->num = {lower+(upper-lower)*(ind/double(0xffffffff)),0};
+                    outputs[ind]=(*func)(lambdaInput,ctx)->getR();
+                }
+                //Add intermediate elements
+                if(i%2==0) calc+=4*outputs[ind];
+                else calc+=2*outputs[ind];
+                i++;
+            }
+            //Multiply by deltax/3
+            calc*=divisionSize/double(0x100000000)*(upper-lower)/3.0;
+            //Divide deltax by two
+            divisionSize>>=1;
+            //If deltax is really low, end loop
+            if(divisionSize<=0x0004ffff) break;
+            prevCalc=calc;
+        }
+        return Value(std::make_shared<Number>(calc));
+
+    }}}),
 //    Function("infinite_sum", { "func" }, TypeDomain(lbm), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),
