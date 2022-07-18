@@ -137,6 +137,7 @@ public:
             if(pow > 0) positives.push_back(toAdd);
             else negatives.push_back(toAdd);
         }
+        if(positiveCoef == 0) return Value::zero;
         if(positiveCoef != 1 && positiveCoef / negativeCoef == std::floor(positiveCoef / negativeCoef))
             positives.push_front(std::make_shared<Number>(positiveCoef / negativeCoef));
         else {
