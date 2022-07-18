@@ -664,7 +664,7 @@ std::vector<Function> Program::globalFunctions = {
         if(wrt >= func->inputNames.size()) wrt = func->inputNames.size() - 1;
         if(wrt < 0) wrt = 0;
         argDx[wrt] = Value::one;
-        Value tr = func->func.derivative(argDx);
+        Value tr = func->func.derivative(argDx).simplify();
         return make_shared<Lambda>(func->inputNames,tr);
     }}}),
     Function("simplify",{"xpr"},{},{{D(all),[](inp) {
