@@ -181,6 +181,17 @@ bool operator==(const Value& lhs, const Value& rhs) {
     }
     return false;
 }
+bool Value::isInteger() {
+    if(ptr->typeID() == Value::num_t) {
+        Number* n = cast<Number>().get();
+        if(n->num.real() != std::floor(n->num.real())) return false;
+        if(n->num.imag() != 0) return false;
+        if(!n->unit.isUnitless()) return false;
+        return true;
+    }
+    return false;
+}
+
 #pragma endregion
 #pragma region Value conversion
 Value Value::convertTo(int type) {
@@ -504,7 +515,7 @@ string Arb::componentToString(mppp::real x, int base) {
     int i = e - 2;
     while(str[i] >= baseChars[(i == e - 2) ? base / 2 : base]) {
         str[i] = '0';
-        if(i == 0) {str = "1" + str;e++;}
+        if(i == 0) { str = "1" + str;e++; }
         else {
             if(str[i - 1] == '.') i--;
             str[i - 1] = baseChars[baseChars.find(str[i - 1]) + 1];

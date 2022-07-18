@@ -667,6 +667,9 @@ std::vector<Function> Program::globalFunctions = {
         Value tr = func->func.derivative(argDx);
         return make_shared<Lambda>(func->inputNames,tr);
     }}}),
+    Function("simplify",{"xpr"},{},{{D(all),[](inp) {
+        return input[0].simplify();
+    }}}),
 //    Function("infinite_sum", { "func" }, TypeDomain(lbm), [](vector<Value> input) {
 //        ret Value(0.0);
 //    }),

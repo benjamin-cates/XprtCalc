@@ -39,6 +39,270 @@ void Tree::simplify() {
 void Tree::compSimplify() {
 
 }
+double Value::evaluateToReal() {
+    try {
+        Value out = ptr->compute(Program::computeCtx);
+        if(out->typeID() == Value::num_t) {
+            Number* n = cast<Number>().get();
+            if(n->num.imag() != 0) return NAN;
+            if(!n->unit.isUnitless()) return NAN;
+            return n->num.real();
+        }
+        return NAN;
+    }
+    catch(...) {
+        return NAN;
+    }
+}
+
+#define construct(name,...) std::make_shared<Tree>(name,ValList{__VA_ARGS__})
+#define TWO std::make_shared<Number>(2)
+#define NEG(oneInp) construct("neg",oneInp)
+#define ADD(oneInp,twoInp) construct("add",oneInp,twoInp)
+#define SUB(oneInp,twoInp) construct("sub",oneInp,twoInp)
+#define MUL(oneInp,twoInp) construct("mul",oneInp,twoInp)
+#define DIV(oneInp,twoInp) construct("div",oneInp,twoInp)
+bool decimalPollution(double source, double next) {
+    if(source != 1 && source != -1) if(source == std::floor(source) && next != std::floor(next)) return true;
+    return std::isnan(next);
+}
+void combineValueList(std::list<Value>& ls, string op) {
+    while(ls.size() > 1) {
+        ls.front() = std::make_shared<Tree>(op, ValList{ ls.front(),*(std::next(ls.begin())) });
+        ls.erase(std::next(ls.begin()));
+    }
+}
+class OperatorGroup {
+    //Maps flatten() id to a pair of the value itself and it's magnitude
+    std::multimap<double, std::pair<Value, double>> members;
+public:
+    std::multimap<double, std::pair<Value, double>>::iterator find(const Value& val, double flat = 0) {
+        if(flat == 0) flat = val->flatten();
+        auto x = members.lower_bound(flat);
+        if(flat == x->first) {
+            if(x == members.end()) return x;
+            while(val != x->second.first) {
+                x++;
+                if(x->first != flat) return members.end();
+            }
+            return x;
+        }
+        return members.end();
+    }
+    double getMagnitude(const Value& val, double flat = 0) {
+        if(flat == 0) flat = val->flatten();
+        auto x = find(val, flat);
+        if(x == members.end()) return 0;
+        else return x->second.second;
+    }
+    void addElement(const Value& val, double magnitude = 1) {
+        double flat = val->flatten();
+        auto x = find(val, flat);
+        if(x == members.end()) members.insert(std::make_pair(flat, std::make_pair(val, magnitude)));
+        else x->second.second += magnitude;
+    }
+    std::multimap<double, std::pair<Value, double>>& getMap() { return members; }
+    string printGroup();
+};
+string OperatorGroup::printGroup() {
+    string out;
+    for(auto element : members)
+        out += element.second.first->toString() + " -> " + std::to_string(element.second.second) + "\n";
+    return out;
+}
+class ProductGroup : public OperatorGroup {
+public:
+    Value toTree() {
+        std::list<Value> positives;
+        std::list<Value> negatives;
+        double negativeCoef = 1;
+        double positiveCoef = 1;
+        auto& map = getMap();
+        for(auto element : map) {
+            double& pow = element.second.second;
+            Value& val = element.second.first;
+            if(val.isInteger()) {
+                double intgr = val->getR();
+                if(pow != 1) intgr = std::pow(intgr, pow);
+                if(pow > 0) positiveCoef *= intgr;
+                else negativeCoef *= intgr;
+                continue;
+            }
+            Value toAdd;
+            if(std::abs(pow) == 0.5) toAdd = std::make_shared<Tree>("sqrt", ValList{ val });
+            else if(std::abs(pow) == 1) toAdd = val;
+            else if(std::abs(pow) == 0) continue;
+            else toAdd = std::make_shared<Tree>("pow", ValList{ val,std::make_shared<Number>(std::abs(pow)) });
+            if(pow > 0) positives.push_back(toAdd);
+            else negatives.push_back(toAdd);
+        }
+        if(positiveCoef != 1 && positiveCoef / negativeCoef == std::floor(positiveCoef / negativeCoef))
+            positives.push_front(std::make_shared<Number>(positiveCoef / negativeCoef));
+        else {
+            if(positiveCoef != 1) positives.push_front(std::make_shared<Number>(positiveCoef));
+            if(negativeCoef != 1) negatives.push_front(std::make_shared<Number>(negativeCoef));
+        }
+        combineValueList(positives, "mul");
+        combineValueList(negatives, "mul");
+        if(negatives.size() != 0) {
+            if(positives.size() != 0) return std::make_shared<Tree>("div", ValList{ positives.front(),negatives.front() });
+            else return std::make_shared<Tree>("div", ValList{ Value::one,negatives.front() });
+        }
+        else {
+            if(positives.size() != 0) return positives.front();
+            return Value::one;
+        }
+    }
+    ProductGroup(Value tree) { ProductGroup::Generate(tree, *this, 1); }
+    static void Generate(const Value& val, ProductGroup& output, double coef = 1) {
+        if(val->typeID() == Value::tre_t) {
+            std::shared_ptr<Tree> tr = val.cast<Tree>();
+            string opName = Program::globalFunctions[tr->op].getName();
+            if(opName == "sqrt")
+                return Generate(tr->branches[0], output, coef * 0.5);
+            if(opName == "exp" || opName == "pow") {
+                double power = tr->branches[opName == "pow" ? 1 : 0].evaluateToReal();
+                if(!decimalPollution(coef, power)) {
+                    if(opName == "pow") Generate(tr->branches[0], output, coef * power);
+                    if(opName == "exp") output.addElement(Value(std::make_shared<Tree>("e", ValList{})), coef * power);
+                    return;
+                }
+            }
+            if(opName == "mul" || opName == "div") {
+                Generate(tr->branches[0], output, coef);
+                Generate(tr->branches[1], output, (opName == "mul" ? 1 : -1) * coef);
+                return;
+            }
+            if(opName == "neg") {
+                output.addElement(std::make_shared<Number>(-1), coef);
+                return Generate(tr->branches[0], output, coef);
+            }
+        }
+        if(val != Value::one) output.addElement(val, coef);
+    }
+};
+class SumGroup : public OperatorGroup {
+public:
+    Value toTree() {
+        auto& map = getMap();
+        std::list<Value> positives;
+        std::list<Value> negatives;
+        double extraIntegers = 0;
+        for(auto element : map) {
+            double& coef = element.second.second;
+            Value& val = element.second.first;
+            Value toAdd;
+            if(val.isInteger()) {
+                double intgr = val->getR();
+                if(coef != 1) intgr = std::pow(intgr, coef);
+                extraIntegers += intgr;
+                continue;
+            }
+            if(std::abs(coef) == 1) toAdd = val;
+            else if(std::abs(coef) == 0) continue;
+            else toAdd = std::make_shared<Tree>("mul", ValList{ std::make_shared<Number>(std::abs(coef)),val });
+            if(coef > 0) positives.push_back(toAdd);
+            else negatives.push_back(toAdd);
+        }
+        if(extraIntegers != 0) positives.push_back(std::make_shared<Number>(extraIntegers));
+        combineValueList(positives, "add");
+        combineValueList(negatives, "add");
+        if(negatives.size() != 0) {
+            if(positives.size() != 0) return std::make_shared<Tree>("sub", ValList{ positives.front(),negatives.front() });
+            else return std::make_shared<Tree>("neg", ValList{ negatives.front() });
+        }
+        else {
+            if(positives.size() != 0) return positives.front();
+            return Value::zero;
+        }
+    }
+    SumGroup(Value tree) { SumGroup::Generate(tree, *this, 1); }
+    static void Generate(const Value& val, SumGroup& output, double coef = 1) {
+        if(val->typeID() == Value::tre_t) {
+            std::shared_ptr<Tree> tr = val.cast<Tree>();
+            string opName = Program::globalFunctions[tr->op].getName();
+            if(opName == "mul") {
+                double a = tr->branches[0].evaluateToReal();
+                if(!decimalPollution(coef, a))
+                    return Generate(tr->branches[1], output, coef * a);
+                double b = tr->branches[1].evaluateToReal();
+                if(!decimalPollution(coef, b))
+                    return Generate(tr->branches[0], output, coef * b);
+            }
+            if(opName == "div" && coef != std::floor(coef)) {
+                double denom = tr->branches[1].evaluateToReal();
+                if(!std::isnan(denom))
+                    return Generate(tr->branches[0], output, coef / denom);
+            }
+            if(opName == "add" || opName == "sub") {
+                Generate(tr->branches[0], output, coef);
+                Generate(tr->branches[1], output, (opName == "add" ? 1 : -1) * coef);
+                return;
+            }
+            if(opName == "neg")
+                return Generate(tr->branches[0], output, -coef);
+        }
+        if(val != Value::zero) output.addElement(val, coef);
+    }
+};
+Value Value::simplify(bool useAddGroup, bool useMultGroup) {
+    int type = ptr->typeID();
+    if(type == vec_t) {
+        ValList& vec = cast<Vector>()->vec;
+        std::shared_ptr<Vector> out = std::make_shared<Vector>();
+        for(int i = 0;i < vec.size();i++) out->vec.push_back(vec[i].simplify());
+        return out;
+    }
+    else if(type == map_t) {
+        std::map<Value, Value>& map = cast<Map>()->getMapObj();
+        std::shared_ptr<Map> out = std::make_shared<Map>();
+        for(auto p : map) out->append(p.first.deepCopy().simplify(), p.second.simplify());
+        return out;
+    }
+    else if(type == lmb_t) {
+        return std::make_shared<Lambda>(cast<Lambda>()->inputNames, cast<Lambda>()->func.simplify());
+    }
+    else if(type == tre_t) {
+        string name = Program::globalFunctions[cast<Tree>()->op].getName();
+        ValList& branch = cast<Tree>()->branches;
+        if(name == "add" || name == "sub") if(branch[1] == Value::zero) return branch[0].simplify(true, useMultGroup);
+        if(name == "add") if(branch[0] == Value::zero) return branch[1].simplify(true, useMultGroup);
+        if(name == "mul" || name == "div") {
+            if(branch[0] == Value::zero) return Value::zero;
+        }
+        if(name == "mul") {
+            if(branch[1] == Value::zero) return Value::zero;
+            if(branch[0] == Value::one) return branch[1].simplify(useAddGroup, true);
+            if(branch[1] == Value::one) return branch[0].simplify(useAddGroup, true);
+        }
+        if(useAddGroup) if(name == "add" || name == "sub") {
+            ValList newArgs{ branch[0].simplify(false,true),branch[1].simplify(false,true) };
+            SumGroup g(std::make_shared<Tree>(cast<Tree>()->op, std::move(newArgs)));
+            Value out = g.toTree();
+            return out;
+        }
+        if(useMultGroup) if(name == "mul" || name == "div" || name == "pow") {
+            ValList newArgs{ branch[0].simplify(true,false),branch[1].simplify(true,false) };
+            ProductGroup g(std::make_shared<Tree>(cast<Tree>()->op, std::move(newArgs)));
+            Value out = g.toTree();
+            return out;
+        }
+        else {
+            bool areIntegers = true;
+            ValList newBranch;
+            for(int i = 0;i < branch.size();i++) {
+                newBranch.push_back(branch[i].simplify());
+                if(!newBranch.back().isInteger()) areIntegers = false;
+            }
+            if(areIntegers) {
+                Value out = ptr->compute(Program::computeCtx);
+                if(out.isInteger()) return out;
+            }
+            return std::make_shared<Tree>(cast<Tree>()->op, std::move(newBranch));
+        }
+    }
+    return *this;
+}
 Value Value::derivative(ValList argDerivatives) {
     int type = ptr->typeID();
     if(type == vec_t) {
@@ -50,7 +314,7 @@ Value Value::derivative(ValList argDerivatives) {
     else if(type == map_t) {
         std::map<Value, Value>& map = cast<Map>()->getMapObj();
         std::shared_ptr<Map> out = std::make_shared<Map>();
-        for(auto p : map) out->append(p.first, p.second);
+        for(auto p : map) out->append(p.first.deepCopy().derivative(argDerivatives), p.second.derivative(argDerivatives));
         return out;
     }
     else if(type == arg_t)
@@ -60,14 +324,7 @@ Value Value::derivative(ValList argDerivatives) {
 
     }
     else if(type == tre_t) {
-        #define construct(name,...) std::make_shared<Tree>(name,ValList{__VA_ARGS__})
         #define TimesDU(statement) return construct("mul",(statement),dx[0])
-        #define TWO std::make_shared<Number>(2)
-        #define NEG(oneInp) construct("neg",one)
-        #define ADD(oneInp,twoInp) construct("add",oneInp,twoInp)
-        #define SUB(oneInp,twoInp) construct("sub",oneInp,twoInp)
-        #define MUL(oneInp,twoInp) construct("mul",oneInp,twoInp)
-        #define DIV(oneInp,twoInp) construct("div",oneInp,twoInp)
         ValList& branch = cast<Tree>()->branches;
         int op = cast<Tree>()->op;
         string name = Program::globalFunctions[op].getName();

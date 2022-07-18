@@ -501,7 +501,10 @@ public:
     static void set(Value& val, ValList indicies, Value setTo);
     //List of human-readable type names
     static const std::vector<string> typeNames;
+    double evaluateToReal();
+    bool isInteger();
     Value derivative(ValList argDerivatives);
+    Value simplify(bool useAddGroup = true, bool useMultGroup = true);
     //Converts value into the return type with given type, throws error if incompatible
     Value convertTo(int type);
     enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, tre_t = 7, arg_t = 8, var_t = 9 };
