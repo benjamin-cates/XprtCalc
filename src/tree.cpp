@@ -332,7 +332,8 @@ Value Value::derivative(ValList argDerivatives) {
         ValList dx;
         for(int i = 0;i < branch.size();i++) dx.push_back(branch[i].derivative(argDerivatives));
         //Add,  subtract, neg
-        if(name == "add" || name == "sub" || name == "neg") return construct(op, dx[0], dx[1]);
+        if(name == "add" || name == "sub") return construct(op, dx[0], dx[1]);
+        if(name == "neg") return construct(op, dx[0]);
         //Multiply d/dx(a*b) = a*db+b*da
         if(name == "mul") return ADD(MUL(branch[0], dx[1]), MUL(branch[1], dx[0]));
         //Divide d/dx (a/b) = (a*db-b*da)/(a^2)
