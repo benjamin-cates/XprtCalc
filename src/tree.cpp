@@ -42,8 +42,9 @@ void Tree::compSimplify() {
 double Value::evaluateToReal() {
     try {
         Value out = ptr->compute(Program::computeCtx);
+        if(out == nullptr) return NAN;
         if(out->typeID() == Value::num_t) {
-            Number* n = cast<Number>().get();
+            Number* n = out.cast<Number>().get();
             if(n->num.imag() != 0) return NAN;
             if(!n->unit.isUnitless()) return NAN;
             return n->num.real();
