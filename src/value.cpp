@@ -125,10 +125,11 @@ bool operator==(const Value& lhs, const Value& rhs) {
     std::shared_ptr<Lambda> l1, l2;
     std::shared_ptr<String> s1, s2;
     std::shared_ptr<Map> m1, m2;
+    std::shared_ptr<Tree> t1, t2;
     switch(lhs->typeID()) {
     case Value::num_t:
-        cast(Number, n1, n2)
-            if(!(n1->unit == n2->unit)) return false;
+        cast(Number, n1, n2);
+        if(!(n1->unit == n2->unit)) return false;
         if(n1->num == n2->num) return true;
         return false;
     case Value::arb_t:
@@ -139,20 +140,41 @@ bool operator==(const Value& lhs, const Value& rhs) {
         #endif
         return false;
     case Value::vec_t:
-        cast(Vector, v1, v2)
-            if(v1->size() != v2->size()) return false;
+        cast(Vector, v1, v2);
+        if(v1->size() != v2->size()) return false;
         for(int i = 0;i < v1->size();i++) if(!(v1->vec[i] == v2->vec[i])) return false;
         return true;
     case Value::lmb_t:
-        cast(Lambda, l1, l2)
-            if(l1->inputNames.size() != l2->inputNames.size()) return false;
+        cast(Lambda, l1, l2);
+        if(l1->inputNames.size() != l2->inputNames.size()) return false;
         if(l1->func == l2->func) return true;
         return false;
     case Value::str_t:
-        cast(String, s1, s2)
-            if(s1->str == s2->str) return true;
+        cast(String, s1, s2);
+        if(s1->str == s2->str) return true;
         return false;
     case Value::map_t:
+        cast(Map, m1, m2);
+        if(true) {
+            auto& map1 = m1->getMapObj();
+            auto& map2 = m2->getMapObj();
+            if(map1.size() != map2.size()) return false;
+            for(auto member : map1)
+                if((*m2)[member.first] != member.second) return false;
+            return true;
+        }
+    case Value::arg_t:
+        if(lhs.cast<Argument>()->id != rhs.cast<Argument>()->id) return false;
+        return true;
+    case Value::tre_t:
+        cast(Tree, t1, t2);
+        if(t1->op != t2->op) return false;
+        if(t1->branches.size() != t2->branches.size()) return false;
+        for(int i = 0;i < t1->branches.size();i++)
+            if(!(t1->branches[i] == t2->branches[i])) return false;
+        return true;
+    case Value::var_t:
+        if(lhs.cast<Variable>()->name != rhs.cast<Variable>()->name) return false;
         return true;
     default:
         return false;
