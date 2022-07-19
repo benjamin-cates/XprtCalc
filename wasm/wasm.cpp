@@ -3,8 +3,13 @@
 
 namespace wasm {
     string evaluate(string xpr) {
-        Value tr = Tree::parseTree(xpr, Program::parseCtx);
-        return tr->compute(Program::computeCtx)->toString();
+        try {
+            Value tr = Tree::parseTree(xpr, Program::parseCtx);
+            return tr->compute(Program::computeCtx)->toString();
+        }
+        catch(string mess) { return "Error: " + mess; }
+        catch(const char* mess) { return "Error:" + string(mess); }
+        catch(...) { return "Error: unknown"; }
     }
 };
 

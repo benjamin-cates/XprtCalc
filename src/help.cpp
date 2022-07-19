@@ -61,7 +61,7 @@ ColoredString Page::toColoredString() {
 #pragma region Page generator functions
 Page Page::fromUnit(string n, string message, std::vector<string> aliases, string more) {
     Page out;
-    auto it = Unit::listOfUnits.find(n);
+    //auto it = Unit::listOfUnits.find(n);
     //if(it == Unit::listOfUnits.end()) throw "Cannot find " + n;
     //out.name = std::get<3>(it->second);
     out.symbol = "[" + n + "]";
@@ -77,25 +77,25 @@ Page Page::fromUnit(string n, string message, std::vector<string> aliases, strin
 }
 Page Page::fromFunction(string n, string sym, string message, std::vector<string> aliases, string more) {
     Page out;
-    Function& func = Program::globalFunctions[Program::globalFunctionMap[sym]];
-    std::vector<string>& inputs = func.getInputNames();
+    //Function& func = Program::globalFunctions[Program::globalFunctionMap[sym]];
+    //std::vector<string>& inputs = func.getInputNames();
     out.symbol = sym;
-    for(int i = 0;i < inputs.size();i++)
-        out.symbol += (i == 0 ? "(" : ",") + inputs[i];
-    if(inputs.size() != 0) out.symbol += ")";
+    //for(int i = 0;i < inputs.size();i++)
+    //    out.symbol += (i == 0 ? "(" : ",") + inputs[i];
+    //if(inputs.size() != 0) out.symbol += ")";
     out.name = n;
     out.aliases = aliases;
     out.content = message;
-    std::vector<Function::Domain> dom = func.getDomain();
-    if(dom.size() == 1 && dom[0].sig == 0) out.content += " `" + sym + "` takes no arguments.";
-    else {
-        out.content += " Acceptable inputs are: ";
-        for(int i = 0;i < dom.size();i++) {
-            if(i != 0) out.content += ", ";
-            out.content += dom[i].toString();
-        }
-        out.content += ". See ?types? for more info.";
-    }
+    //std::vector<Function::Domain> dom = func.getDomain();
+    //if(dom.size() == 1 && dom[0].sig == 0) out.content += " `" + sym + "` takes no arguments.";
+    //else {
+    //    out.content += " Acceptable inputs are: ";
+    //    for(int i = 0;i < dom.size();i++) {
+    //        if(i != 0) out.content += ", ";
+    //        out.content += dom[i].toString();
+    //    }
+    //    out.content += ". See ?types? for more info.";
+    //}
     out.seeMore = more;
     out.type = "function";
     return out;
