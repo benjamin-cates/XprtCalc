@@ -9,6 +9,6 @@ target_precompile_headers(xprt PUBLIC "../src/_header.hpp")
 
 add_executable(webxprtcalc wasm.cpp)
 target_link_options(webxprtcalc PUBLIC --bind)
-target_link_options(webxprtcalc PUBLIC --sNO_DISABLE_EXCEPTION_CATCHING=1)
+target_link_options(webxprtcalc PUBLIC -fwasm-exceptions)
 target_link_libraries(webxprtcalc PUBLIC xprt)
 target_precompile_headers(webxprtcalc REUSE_FROM xprt)
