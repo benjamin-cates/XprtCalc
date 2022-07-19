@@ -2,6 +2,7 @@
 #pragma region Startup and cleanup
 void Program::startup() {
     buildFunctionNameMap();
+    Help::addPageData();
     Value::zero = std::make_shared<Number>(0);
     Value::one = std::make_shared<Number>(1);
     if(implementationStartup) implementationStartup();

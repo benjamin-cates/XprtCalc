@@ -123,14 +123,14 @@ namespace Help {
         string toJSON();
         Page() {}
         Page(string n, string s, string t, string cont, std::vector<string> alias = {}, string more = "") { name = n; symbol = s; type = t; content = cont; aliases = alias;seeMore = more; }
-        static Page fromUnit(string n, string message, std::vector<string> aliases = {}, string more = "");
-        static Page fromFunction(string n, string message, string sym, std::vector<string> aliases = {}, string more = "");
-        static Page fromLibrary(string n, string message, std::vector<string> aliases = {}, string more = "");
-        static Page fromInfo(string n, string message, std::vector<string> aliases = {}, string more = "");
-        static Page fromType(string n, int id, string symbol, string message, std::vector<string> aliases = {}, string more = "");
+        void addTypeData();
+        void addUnitData();
+        void addFunctionData();
+        void addLibraryData();
     };
     extern std::map<uint64_t, std::vector<std::pair<int, int>>> queryHash;
     extern std::vector<Page> pages;
+    void addPageData();
     void generateQueryHash();
     void stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, const string& str, int basePriority);
     //Returns list of pointers to pages, sorted by relevance of the query
