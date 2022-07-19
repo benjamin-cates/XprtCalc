@@ -1,5 +1,6 @@
 build/*.cmake
 build/*
+wasm/build
 
 !build/compiling.md
 

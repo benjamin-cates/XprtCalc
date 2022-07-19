@@ -129,7 +129,7 @@ Page Page::fromType(string n, int id, string symbol, string message, std::vector
 }
 #pragma endregion
 std::vector<Page> Help::pages = {
-    #pragma region Introduction
+   /* #pragma region Introduction
     //Info
     Page("Welcome","","guide","Welcome to XprtCalc, use the \"/query\" command to search the help pages, or type \"/help introduction\" to read about the basic functionality, info can be found in the page called ?info?.",{"help"}),
     #pragma endregion
@@ -342,7 +342,7 @@ std::vector<Page> Help::pages = {
     Page("Highlight","/highlight","command","The highlight command takes in an expression and returns the coloring data for it"),
     Page("Help","/help","command","The help command finds the most relevant help page to the search query and displays it."),
     Page("Query","/query","command","The query command creates a list of help pages from the query sorted by relevance. It can be rerun with the index to display. Example: `/query log 2`."),
-    #pragma endregion
+    #pragma endregion*/
 };
 #pragma region Searching
 std::map<uint64_t, std::vector<std::pair<int, int>>> Help::queryHash;
