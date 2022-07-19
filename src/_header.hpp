@@ -94,7 +94,7 @@ namespace Program {
     //Vector of every global function (compute.cpp)
     extern std::vector<Function> globalFunctions;
     //Maps function names to their indicies in globalFunctions (compute.cpp)
-    extern std::unordered_map<string, int> globalFunctionMap;
+    extern std::map<string, int> globalFunctionMap;
     //Returns index of global function, or -1 if not found
     int getGlobal(const string& name);
     //Asserts whether argument count is supported with id

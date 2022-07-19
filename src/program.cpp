@@ -19,7 +19,7 @@ ComputeCtx Program::computeCtx;
 ParseCtx Program::parseCtx;
 Value Value::zero;
 Value Value::one;
-std::unordered_map<string, int> Program::globalFunctionMap;
+std::map<string, int> Program::globalFunctionMap;
 int Program::getGlobal(const string& name) {
     if(globalFunctionMap.find(name) == globalFunctionMap.end()) return -1;
     else return globalFunctionMap.at(name);
