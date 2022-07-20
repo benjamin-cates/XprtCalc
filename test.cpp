@@ -66,7 +66,7 @@ namespace Generate {
         }
         //Global function
         if(type == 0 && isFunction) {
-            std::unordered_map<string, int>::iterator it = Program::globalFunctionMap.begin();
+            std::map<string, int>::iterator it = Program::globalFunctionMap.begin();
             std::advance(it, fastrand() % Program::globalFunctionMap.size());
             if(argCount)
                 while(!Program::globalFunctions[it->second].assertArgCount(*argCount)) (*argCount)++;
