@@ -122,9 +122,9 @@ public:
         for(auto element : map) {
             double& pow = element.second.second;
             Value& val = element.second.first;
-            if(val.isInteger()) {
+            if(val.isInteger() && pow == std::floor(pow)) {
                 double intgr = val->getR();
-                if(pow != 1) intgr = std::pow(intgr, pow);
+                if(pow != 1) intgr = std::pow(intgr, std::abs(pow));
                 if(pow > 0) positiveCoef *= intgr;
                 else negativeCoef *= intgr;
                 continue;
