@@ -441,6 +441,9 @@ std::tuple<string, ValList, string> Expression::parseAssignment(string str) {
         else if(str[i] >= '0' && str[i] <= '9') continue;
         else if(str[i] == '_' || str[i] == ' ') continue;
         else if(str[i] == '=') {
+            //Ignore lambdas
+            if(str[i + 1] == '>') break;
+            //Get name and assignment
             string name = str.substr(0, i);
             removeSpaces(name);
             return std::tuple<string, ValList, string>(name, {}, str.substr(i + 1));
