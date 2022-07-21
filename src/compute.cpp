@@ -171,7 +171,7 @@ void Program::buildFunctionNameMap() {
 #define all 0b01111111
 Function::Domain::Domain(const ValList& input) {
     sig = 0;
-    for(int i = 0;i < input.size();i++) {
+    for(int i = 0;i < std::min(input.size(),size_t(4));i++) {
         int id = input[i]->typeID();
         if(id >= Value::tre_t) { sig = -1;return; }
         sig += (1 << (id - 1)) * (1 << (8 * i));
@@ -191,7 +191,7 @@ bool Function::assertArgCount(int count)const {
 int Function::Domain::maxArgCount()const {
     if(sig > 0xffffff) {
         //If final variable is optional and takes all types, allow many arguments
-        if(get(3) == all | opt) return 1000;
+        if(get(3) == (all | opt)) return 1000;
         return 4;
     }
     if(sig > 0xffff) return 3;

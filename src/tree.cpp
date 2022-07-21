@@ -289,19 +289,17 @@ Value Value::simplify(bool useAddGroup, bool useMultGroup) {
             Value out = g.toTree();
             return out;
         }
-        else {
-            bool areIntegers = true;
-            ValList newBranch;
-            for(int i = 0;i < branch.size();i++) {
-                newBranch.push_back(branch[i].simplify());
-                if(!newBranch.back().isInteger()) areIntegers = false;
-            }
-            if(areIntegers) {
-                Value out = ptr->compute(Program::computeCtx);
-                if(out.isInteger()) return out;
-            }
-            return std::make_shared<Tree>(cast<Tree>()->op, std::move(newBranch));
+        bool areIntegers = true;
+        ValList newBranch;
+        for(int i = 0;i < branch.size();i++) {
+            newBranch.push_back(branch[i].simplify());
+            if(!newBranch.back().isInteger()) areIntegers = false;
         }
+        if(areIntegers) {
+            Value out = ptr->compute(Program::computeCtx);
+            if(out.isInteger()) return out;
+        }
+        return std::make_shared<Tree>(cast<Tree>()->op, std::move(newBranch));
     }
     return *this;
 }
