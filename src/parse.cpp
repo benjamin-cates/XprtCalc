@@ -263,7 +263,7 @@ Value Expression::parseNumeral(const string& str, int base) {
     //Parse as arb if precision is specified
     if(precision != 15) {
         mppp::real out(digits, base, Arb::digitsToPrecision(precision));
-        if(exponent != 0) out *= mppp::pow(mppp::real{ base }, mppp::real{ exponent,Arb::digitsToPrecision(precision+10) });
+        if(exponent != 0) out *= mppp::pow(mppp::real{ base }, mppp::real{ exponent,Arb::digitsToPrecision(precision + 10) });
         return std::make_shared<Arb>(out);
     }
     #else
@@ -433,8 +433,8 @@ Value Expression::evaluate(const string& str) {
     Value tr = Tree::parseTree(str, Program::parseCtx);
     return tr->compute(Program::computeCtx);
 }
-std::tuple<string, ValList, Value> Expression::parseAssignment(string str) {
-    if(str[0] >= '0' && str[0] <= '9') return std::tuple<string, ValList, Value>();
+std::tuple<string, ValList, string> Expression::parseAssignment(string str) {
+    if(str[0] >= '0' && str[0] <= '9') return std::tuple<string, ValList, string>();
     for(int i = 0;i < str.length();i++) {
         if(str[i] >= 'A' && str[i] <= 'Z') continue;
         else if(str[i] >= 'a' && str[i] <= 'z') continue;
@@ -443,11 +443,10 @@ std::tuple<string, ValList, Value> Expression::parseAssignment(string str) {
         else if(str[i] == '=') {
             string name = str.substr(0, i);
             removeSpaces(name);
-            Value val = evaluate(str.substr(i + 1));
-            return std::tuple<string, ValList, Value>(name, {}, val);
+            return std::tuple<string, ValList, string>(name, {}, str.substr(i + 1));
         }
         //Index assignment
-        else if(str[i] == '[') {
+        else if(str[i] == '[' && i != 0) {
             string name = str.substr(0, i);
             int bracketDepth = 0;
             std::vector<int> startingBrackets;
@@ -465,12 +464,11 @@ std::tuple<string, ValList, Value> Expression::parseAssignment(string str) {
                 for(int x = 0;x < bracketDepth;x++) {
                     indicies[x] = evaluate(str.substr(startingBrackets[x] + 1, endingBrackets[x] - startingBrackets[x] - 2));
                 }
-                Value set = evaluate(str.substr(i + 1));
-                return std::tuple<string, ValList, Value>(name, indicies, set);
+                return std::tuple<string, ValList, string>(name, indicies, str.substr(i + 1));
             }
             else break;
         }
-        else if(str[i] == '(') {
+        else if(str[i] == '(' && i != 0) {
             string name = str.substr(0, i);
             int endB = matchBracket(str, i);
             if(endB == str.length()) break;
@@ -478,12 +476,11 @@ std::tuple<string, ValList, Value> Expression::parseAssignment(string str) {
             while(str[eq] == ' ') eq++;
             if(str[eq] != '=') break;
             string function = str.substr(i, endB - i + 1) + "=>" + str.substr(eq + 1);
-            Value set = evaluate(function);
-            return std::tuple<string, ValList, Value>(name, {}, set);
+            return std::tuple<string, ValList, string>(name, {}, function);
         }
         else break;
     }
-    return std::tuple<string, ValList, Value>();
+    return std::tuple<string, ValList, string>();
 }
 #pragma endregion
 #pragma region ColoredString
@@ -659,38 +656,13 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
         else if(type == Section::lambda) {
             int equal;
             std::vector<string> arguments;
+            equal = Expression::findNext(sec, 0, '=');
             //Color arg list (a,b)
             if(sec[0] == '(') {
-                int end = Expression::matchBracket(sec, 0);
-                equal = Expression::findNext(sec, end + 1, '=');
-                //Split by commas
-                std::vector<int> commas = getDelimiterList(sec, 0, end, ',');
-                for(int i = 0;i < commas.size() - 1;i++) {
-                    //Color comma
-                    *(out + commas[i]) = ColorType::hl_delimiter;
-                    //Color if is valid argument
-                    string arg = sec.substr(commas[i] + 1, commas[i + 1] - commas[i] - 1);
-                    bool isValid = true;
-                    if(arg[0] >= '0' && arg[0] <= '9') isValid = false;
-                    else for(int x = 0;x < arg.length();x++) {
-                        if(arg[i] >= 'a' && arg[i] <= 'z');
-                        if(arg[i] >= 'A' && arg[i] <= 'Z');
-                        if(arg[i] >= '0' && arg[i] <= '9');
-                        if(arg[i] == '_' || arg[i] == ' ');
-                        else { isValid = false;break; }
-                    }
-                    ColorType type = isValid ? hl_argument : hl_error;
-                    std::fill(out + commas[i] + 1, out + commas[i + 1] - 1, type);
-                    //Add to arg list if valid
-                    if(isValid) arguments.push_back(Expression::removeSpaces(arg));
-                    //Color brackets
-                    *out = ColorType::hl_bracket;
-                    *(out + end) = ColorType::hl_bracket;
-                }
+                arguments = colorArgList(str, out, ctx);
             }
             //Else if single variable
             else {
-                equal = Expression::findNext(sec, 0, '=');
                 std::fill(out, out + equal, ColorType::hl_argument);
                 string name = Expression::removeSpaces(sec.substr(0, equal));
                 if(name != "_") arguments.push_back(name);
@@ -723,10 +695,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             else {
                 *out = ColorType::hl_bracket;
                 *(out + endB) = ColorType::hl_bracket;
-
             }
-
-
         }
         else if(type == Section::operat) {
             std::fill(out, out + sec.length(), ColorType::hl_operator);
@@ -740,6 +709,105 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
         }
         previousSec = type;
     }
+}
+std::vector<string> Expression::colorArgList(string sec, string::iterator out, ParseCtx& ctx) {
+    int end = Expression::matchBracket(sec, 0);
+    int equal = Expression::findNext(sec, end + 1, '=');
+    //Split by commas
+    std::vector<int> commas = getDelimiterList(sec, 0, end, ',');
+    std::vector<string> arguments;
+    for(int i = 0;i < commas.size() - 1;i++) {
+        //Color comma
+        *(out + commas[i]) = ColorType::hl_delimiter;
+        //Color if is valid argument
+        string arg = sec.substr(commas[i] + 1, commas[i + 1] - commas[i] - 1);
+        bool isValid = true;
+        if(arg[0] >= '0' && arg[0] <= '9') isValid = false;
+        else for(int x = 0;x < arg.length();x++) {
+            if(arg[x] >= 'a' && arg[x] <= 'z') {}
+            else if(arg[x] >= 'A' && arg[x] <= 'Z') {}
+            else if(arg[x] >= '0' && arg[x] <= '9') {}
+            else if(arg[x] == '_' || arg[x] == ' ') {}
+            else { isValid = false;break; }
+        }
+        ColorType type = isValid ? hl_argument : hl_error;
+        std::fill(out + commas[i] + 1, out + commas[i + 1], type);
+        //Add to arg list if valid
+        if(isValid) arguments.push_back(Expression::removeSpaces(arg));
+    }
+    //Color brackets
+    *out = ColorType::hl_bracket;
+    *(out + end) = ColorType::hl_bracket;
+    return arguments;
+}
+string Expression::colorLine(string str, ParseCtx& ctx) {
+    string out(str.length(), hl_null);
+    if(str == "") return "";
+    string commandPrefix = Preferences::getAs<string>("command_prefix");
+    if(str.substr(0, commandPrefix.length()) == commandPrefix) {
+        int sp = findNext(str, 1, ' ');
+        if(sp == -1) return string(str.length(), ColorType::hl_command);
+        else {
+            std::fill(out.begin(), out.begin() + sp, hl_command);
+            std::fill(out.begin() + sp, out.end(), hl_text);
+        }
+        return out;
+    }
+    std::tuple<string, ValList, string> assign;
+    try { assign = Expression::parseAssignment(str); }
+    catch(...) {}
+    if(std::get<0>(assign) != "") {
+        string& name = std::get<0>(assign);
+        int eq = findNext(str, 0, '=');
+        int b = findNext(str, 0, '[');
+        int p = findNext(str, 0, '(');
+        //As assignment with index
+        if(b != -1 && b < eq) {
+            std::fill(out.begin(), out.begin() + b, hl_variable);
+            while(true) {
+                int end = matchBracket(str, b);
+                //Color within brackets
+                out[b] = hl_bracket;
+                color(str.substr(b + 1, end - b - 1), out.begin() + b + 1, ctx);
+                out[end] = hl_bracket;
+                //Find next bracket or equal
+                while(str[end] == ' ') out[end++] = hl_space;
+                if(str[end] == '=') {
+                    out[end] = hl_command;
+                    color(str.substr(end + 1), out.begin() + end + 1, ctx);
+                    return out;
+                }
+                else if(str[end] == '[') {
+                    b = end;
+                    continue;
+                }
+                else return out;
+            }
+        }
+        //As functional assignment
+        else if(p != -1 && p < eq) {
+            std::fill(out.begin(), out.begin() + p, hl_variable);
+            int end = matchBracket(str, p);
+            int eq = findNext(str, end + 1, '=');
+            std::vector<string> args = colorArgList(str.substr(p, end - p + 1), out.begin() + p, ctx);
+            ctx.push(args);
+            //Color expression
+            out[eq] = hl_command;
+            color(str.substr(eq + 1), out.begin() + eq + 1, ctx);
+            ctx.pop();
+        }
+        //As regular assignment
+        else {
+            std::fill(out.begin(), out.begin() + eq, hl_variable);
+            out[eq] = hl_command;
+            color(str.substr(eq + 1), out.begin() + eq + 1, ctx);
+            return out;
+        }
+    }
+    else {
+        color(str, out.begin(), ctx);
+    }
+    return out;
 }
 #pragma endregion
 //THE TREE PARSER

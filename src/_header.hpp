@@ -246,10 +246,11 @@ namespace Expression {
         operat
     };
     enum ColorType : char {
-        hl_null = 'a', hl_numeral = 'n', hl_function = 'f', hl_variable = 'v', hl_argument = 'a', hl_error = 'e', hl_bracket = 'b', hl_operator = 'o', hl_string = 's', hl_comment = 'c', hl_delimiter = 'd', hl_unit = 'u', hl_space = ' ', hl_text = 't'
+        hl_null = 'x', hl_numeral = 'n', hl_function = 'f', hl_variable = 'v', hl_argument = 'a', hl_error = 'e', hl_bracket = 'b', hl_operator = 'o', hl_string = 's', hl_comment = 'c', hl_delimiter = 'd', hl_unit = 'u', hl_space = ' ', hl_text = 't', hl_command = '/'
     };
     //Sets string contained inside iterator to color data of str
     void color(string str, string::iterator output, ParseCtx& ctx);
+    std::vector<string> colorArgList(string str, string::iterator output, ParseCtx& ctx);
     //Returns string with color data of the expression and command support
     string colorLine(string str, ParseCtx& ctx);
     //Remove non quoted spaces from an expression
@@ -278,7 +279,7 @@ namespace Expression {
     //Computes string without context
     Value evaluate(const string& str);
     //Parse assignment operator. Eg. a[1]=45. Returns a tuple of the name, indicies, and value to set to.
-    std::tuple<string, ValList, Value> parseAssignment(string str);
+    std::tuple<string, ValList, string> parseAssignment(string str);
 };
 //Contains a string and it's color data simultaneosly
 class ColoredString {

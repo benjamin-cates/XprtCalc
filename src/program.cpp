@@ -202,7 +202,7 @@ ColoredString Program::runLine(string str) {
             return Program::runCommand(str.substr(commandPrefix.size()));
         }
         //Parsing assignment statements
-        std::tuple<string, ValList, Value> assign = Expression::parseAssignment(str);
+        std::tuple<string, ValList, string> assign = Expression::parseAssignment(str);
         if(std::get<0>(assign) != "") {
             string& name = std::get<0>(assign);
             if(!Program::parseCtx.variableExists(name)) {
@@ -210,7 +210,8 @@ ColoredString Program::runLine(string str) {
                 Program::computeCtx.defineVariable(name, Value::zero);
             }
             Value& var = Program::computeCtx.variables[name].back();
-            Value::set(var, std::get<1>(assign), std::get<2>(assign));
+            Value set = Expression::evaluate(std::get<2>(assign));
+            Value::set(var, std::get<1>(assign), set);
             ColoredString out(name, Expression::hl_variable);
             out += ColoredString(" = ", " o ");
             out += ColoredString::fromXpr(var->toString());
@@ -314,13 +315,13 @@ ColoredString command_meta(vector<string>& input) {
 }
 ColoredString command_def(vector<string>& input) {
     string inp = combineArgs(input);
-    std::tuple<string, ValList, Value> assign = Expression::parseAssignment(inp);
+    std::tuple<string, ValList, string> assign = Expression::parseAssignment(inp);
     if(std::get<0>(assign) == "") throw "not an assignment";
     return Program::runLine(inp);
 }
 ColoredString command_pref(vector<string>& input) {
     string inp = combineArgs(input);
-    std::tuple<string, ValList, Value> assign = Expression::parseAssignment(inp);
+    std::tuple<string, ValList, string> assign = Expression::parseAssignment(inp);
     string& name = std::get<0>(assign);
     //Just display
     if(name == "") {
@@ -331,7 +332,8 @@ ColoredString command_pref(vector<string>& input) {
     else {
         if(Preferences::pref.find(name) == Preferences::pref.end()) throw "preference " + name + " not found";
         Value& val = Preferences::pref[name].first;
-        Value::set(val, std::get<1>(assign), std::get<2>(assign));
+        Value set=Expression::evaluate(std::get<2>(assign));
+        Value::set(val, std::get<1>(assign), set);
         if(Preferences::pref[name].second) Preferences::pref[name].second(Preferences::pref[name].first);
     }
     ColoredString out(name, Expression::hl_function);
@@ -348,9 +350,7 @@ ColoredString command_ls(vector<string>& input) {
 }
 ColoredString command_highlight(vector<string>& input) {
     string inp = combineArgs(input);
-    string colors(inp.length(), Expression::ColorType::hl_error);
-    Expression::color(inp, colors.begin(), Program::parseCtx);
-    return { colors };
+    return { Expression::colorLine(inp,Program::parseCtx) };
 }
 ColoredString command_help(vector<string>& input) {
     string inp = combineArgs(input);
