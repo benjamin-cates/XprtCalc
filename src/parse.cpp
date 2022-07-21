@@ -87,20 +87,20 @@ Value ParseCtx::getVariable(const string& name)const {
 #pragma endregion
 #pragma region Expression constants
 const std::map<string, std::pair<string, int>> Expression::operatorList = {
-    {"+",{"add",3}},
-    {"-",{"sub",3}},
-    {"*",{"mul",2}},
-    {"/",{"div",2}},
-    {"%",{"mod",2}},
+    {"+",{"add",4}},
+    {"-",{"sub",4}},
+    {"*",{"mul",3}},
+    {"/",{"div",3}},
+    {"%",{"mod",3}},
     {"**",{"pow",1}},
     {"^",{"pow",1}},
-    {"==",{"equal",4}},
-    {"=",{"equal",4}},
-    {"!=",{"not_equal",4}},
-    {">",{"gt",4}},
-    {">=",{"gt_equal",4}},
-    {"<",{"lt",4}},
-    {"<=",{"lt_equal",4}},
+    {"==",{"equal",5}},
+    {"=",{"equal",5}},
+    {"!=",{"not_equal",5}},
+    {">",{"gt",5}},
+    {">=",{"gt_equal",5}},
+    {"<",{"lt",5}},
+    {"<=",{"lt_equal",5}},
 };
 const std::map<char, string> Expression::prefixOperators = {
     {'-',"neg"},
@@ -1004,6 +1004,9 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             operators.resize(treeList.size());
             if(treeList.size() == 0) throw "Missing expression before " + sect;
             operators[treeList.size() - 1] = op->second;
+        }
+        else {
+            throw "Unable to parse " + sect;
         }
         prevSec = type;
     }
