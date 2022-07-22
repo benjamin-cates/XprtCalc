@@ -37,7 +37,7 @@ html {
 #output {
     width: 50%;
     word-wrap: break-word;
-    font-size:20pt;
+    font-size: 20pt;
 }
 
 pre {
@@ -83,24 +83,20 @@ pre {
     margin-bottom: 10px;
 }
 
-.COLa {
-    color: #fff;
-}
-
 .COLn {
-    color: rgb(255, 235, 138);
+    color: rgb(250, 230, 174);
 }
 
 .COLf {
-    color: #ffff7e;
+    color: #efec9d;
 }
 
 .COLv {
-    color: rgb(231, 114, 231);
+    color: rgb(238, 156, 238);
 }
 
 .COLa {
-    color: #8585ff;
+    color: #68afea;
 }
 
 .COLe {
@@ -128,10 +124,14 @@ pre {
     color: #52ffa8;
 }
 
-.colorT {
+.COLt {
     color: #fff;
 }
 
-.colorX {
+.COLx {
     color: #fff;
+}
+
+.COL\/ {
+    color: #856de3;
 }
