@@ -196,7 +196,7 @@ public:
             Value toAdd;
             if(val.isInteger()) {
                 double intgr = val->getR();
-                if(coef != 1) intgr = std::pow(intgr, coef);
+                if(coef != 1) intgr = intgr * coef;
                 extraIntegers += intgr;
                 continue;
             }
@@ -336,7 +336,7 @@ Value Value::derivative(ValList argDerivatives) {
         //Multiply d/dx(a*b) = a*db+b*da
         if(name == "mul") return ADD(MUL(branch[0], dx[1]), MUL(branch[1], dx[0]));
         //Divide d/dx (a/b) = (a*db-b*da)/(a^2)
-        if(name == "div") return DIV(SUB(MUL(branch[0], dx[1]), MUL(dx[0], branch[1])), construct("pow", branch[0], TWO));
+        if(name == "div") return DIV(SUB(MUL(branch[1], dx[0]), MUL(dx[1], branch[0])), construct("pow", branch[1], TWO));
         //Power d/dx (a^b) = a^b * (b/a*da + ln(a)*db)
         if(name == "pow") return MUL(construct("pow", branch[0], branch[1]), ADD(
             MUL(DIV(branch[1], branch[0]), dx[0]),
