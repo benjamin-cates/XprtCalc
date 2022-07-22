@@ -1,6 +1,8 @@
 build/*.cmake
 build/*
-wasm/build
+wasm/build/*
+!wasm/build/webxprtcalc.js
+!wasm/build/webxprtcalc.wasm
 
 !build/compiling.md
 

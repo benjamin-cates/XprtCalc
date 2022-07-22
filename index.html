@@ -1,12 +1,26 @@
 <!DOCTYPE HTML>
 <html>
+
     <head>
-        <meta charset="UTF8"/>
+        <meta charset="UTF8" />
         <script src="wasm/build/webxprtcalc.js"></script>
         <script src="wasm/driver.js"></script>
+        <link rel="stylesheet" href="wasm/style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     </head>
-    <body>
 
+    <body>
+        <div id="io">
+            <div id="input">
+                <textarea id="input_element" spellcheck="false" oninput="update_highlight(this.value)"></textarea>
+                <pre><code id="highlight_output" aria-hidden="true"></code></pre>
+            </div>
+            <div id="output">
+
+            </div>
+        </div>
     </body>
 
 </html>
