@@ -27,8 +27,18 @@ void printColoredString(const ColoredString& str) {
     }
     std::cout << "\033[0m";
 }
+ColoredString quitCommand(std::vector<string>& args) {
+    exit(0);
+    return ColoredString("");
+}
+
+void startup() {
+    Program::commandList.insert(std::pair<string, Command>{"quit", { &quitCommand }});
+
+}
 
 int main(int argc, char** argv) {
+    Program::implementationStartup = &startup;
     Program::startup();
     int i = 0;
     string commandPrefix = Preferences::getAs<string>("command_prefix");
