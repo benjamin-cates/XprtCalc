@@ -200,6 +200,17 @@ string Expression::removeSpaces(const string& str) {
     out.resize(str.size() - offset);
     return out;
 }
+string Expression::sanitizeVariable(const string& str) {
+    string out(' ', str.length());
+    int offset = 0;
+    for(int i = 0;i < str.size();i++) {
+        if(str[i] == ' ') offset++;
+        else if(str[i] >= 'A' && str[i] <= 'Z') out[i - offset] = str[i] - 'A' + 'a';
+        else out[i - offset] = str[i];
+    }
+    out.resize(str.size() - offset);
+    return out;
+}
 //Get a list of positions of delimiter, including start and end
 std::vector<int> getDelimiterList(const string& str, int start, int end, char delimiter) {
     //Get positions
@@ -445,7 +456,7 @@ std::tuple<string, ValList, string> Expression::parseAssignment(string str) {
             if(str[i + 1] == '>') break;
             //Get name and assignment
             string name = str.substr(0, i);
-            removeSpaces(name);
+            name = sanitizeVariable(name);
             return std::tuple<string, ValList, string>(name, {}, str.substr(i + 1));
         }
         //Index assignment
@@ -462,7 +473,7 @@ std::tuple<string, ValList, string> Expression::parseAssignment(string str) {
                 bracketDepth++;
             }
             if(str[i] == '=') {
-                removeSpaces(name);
+                name = sanitizeVariable(name);
                 ValList indicies(bracketDepth);
                 for(int x = 0;x < bracketDepth;x++) {
                     indicies[x] = evaluate(str.substr(startingBrackets[x] + 1, endingBrackets[x] - startingBrackets[x] - 2));
@@ -473,6 +484,7 @@ std::tuple<string, ValList, string> Expression::parseAssignment(string str) {
         }
         else if(str[i] == '(' && i != 0) {
             string name = str.substr(0, i);
+            name = sanitizeVariable(name);
             int endB = matchBracket(str, i);
             if(endB == str.length()) break;
             int eq = endB + 1;
@@ -618,7 +630,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
         }
         else if(type == Section::variable) {
             int len = sec.length();
-            sec = Expression::removeSpaces(sec);
+            sec = Expression::sanitizeVariable(sec);
             Value a = ctx.getVariable(sec);
             ColorType type;
             if(a == nullptr) type = ColorType::hl_error;
@@ -633,7 +645,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             //Color name
             string name = sec.substr(0, bracket);
             int nameLen = name.length();
-            name = Expression::removeSpaces(name);
+            name = Expression::sanitizeVariable(name);
             Value func = ctx.getVariable(name);
             ColorType nameType;
             if(func == nullptr) nameType = ColorType::hl_error;
@@ -667,7 +679,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             //Else if single variable
             else {
                 std::fill(out, out + equal, ColorType::hl_argument);
-                string name = Expression::removeSpaces(sec.substr(0, equal));
+                string name = Expression::sanitizeVariable(sec.substr(0, equal));
                 if(name != "_") arguments.push_back(name);
             }
             //Color => symbol
@@ -736,7 +748,7 @@ std::vector<string> Expression::colorArgList(string sec, string::iterator out, P
         ColorType type = isValid ? hl_argument : hl_error;
         std::fill(out + commas[i] + 1, out + commas[i + 1], type);
         //Add to arg list if valid
-        if(isValid) arguments.push_back(Expression::removeSpaces(arg));
+        if(isValid) arguments.push_back(Expression::sanitizeVariable(arg));
     }
     //Color brackets
     *out = ColorType::hl_bracket;
@@ -897,7 +909,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
         }
         //Variables
         else if(type == variable) {
-            sect = removeSpaces(sect);
+            sect = sanitizeVariable(sect);
             Value op = ctx.getVariable(sect);
             if(op.get() == nullptr) throw "Variable " + sect + " not found";
             if(op->typeID() == Value::tre_t) {
@@ -916,7 +928,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             int startBrace = findNext(sect, 0, '(');
             int endBrace = matchBracket(sect, startBrace);
             string name = sect.substr(0, startBrace);
-            name = removeSpaces(name);
+            name = sanitizeVariable(name);
             Value op = ctx.getVariable(name);
             if(op.get() == nullptr) throw "Function " + name + " not found";
             std::vector<string> argsStr = splitBy(sect, startBrace, endBrace, ',');
@@ -945,12 +957,12 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             if(str[0] == '(') {
                 int endBrace = matchBracket(sect, 0);
                 arguments = splitBy(sect, 0, endBrace, ',');
-                for(int i = 0;i < arguments.size();i++) arguments[i] = removeSpaces(arguments[i]);
+                for(int i = 0;i < arguments.size();i++) arguments[i] = Expression::sanitizeVariable(arguments[i]);
                 arrow = str.find('>', endBrace + 1);
             }
             else {
                 arrow = str.find('>');
-                arguments.push_back(Expression::removeSpaces(sect.substr(0, arrow - 1)));
+                arguments.push_back(Expression::sanitizeVariable(sect.substr(0, arrow - 1)));
             }
             ctx.push(arguments);
             Value tr;

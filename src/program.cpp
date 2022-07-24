@@ -326,7 +326,7 @@ ColoredString command_pref(vector<string>& input) {
     //Just display
     if(name == "") {
         name = inp;
-        Expression::removeSpaces(name);
+        name = Expression::sanitizeVariable(name);
         if(Preferences::pref.find(name) == Preferences::pref.end()) throw "preference " + name + " not found";
     }
     else {
