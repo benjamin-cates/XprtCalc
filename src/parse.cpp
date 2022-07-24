@@ -507,6 +507,27 @@ void ColoredString::setColor(string&& c) {
     color = std::forward<string>(c);
     if(color.size() < str.size()) color.resize(str.size(), Expression::hl_text);
 }
+string ColoredString::toHTML()const {
+    string out = "";
+    char prevColor = 0;
+    for(int i = 0;i < color.length();i++) {
+        if(color[i] != prevColor || i == 0) {
+            if(i != 0) out += "</span>";
+            out += "<span class='COL";
+            out += color[i];
+            out += "'>";
+            prevColor = color[i];
+        }
+        if(str[i] == '&') out += "&amp;";
+        else if(str[i] == '<') out += "&lt;";
+        else if(str[i] == '>') out += "&gt;";
+        else if(str[i] == '"') out += "&quot;";
+        else if(str[i] == ' ') out += "&#32;";
+        else out += str[i];
+    }
+    out += "</span>";
+    return out;
+}
 ColoredString ColoredString::operator+(ColoredString& rhs) {
     return ColoredString(str + rhs.getStr(), color + rhs.getColor());
 }
@@ -538,8 +559,8 @@ void ColoredString::colorAsExpression() {
     color = string(str.size(), Expression::hl_error);
     Expression::color(str, color.begin(), Program::parseCtx);
 }
-ColoredString ColoredString::fromXpr(string&& str) {
-    ColoredString out(std::forward<string>(str));
+ColoredString ColoredString::fromXpr(const string& str) {
+    ColoredString out(str);
     out.colorAsExpression();
     return out;
 }

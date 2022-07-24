@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 project(xprtcalc)
 if(DEBUG)
@@ -20,15 +20,23 @@ else()
 endif()
 
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
+
 add_library(xprt STATIC ${SRC_FILES})
 target_precompile_headers(xprt PUBLIC "src/_header.hpp")
-add_executable(xprtcalc ../cli.cpp)
-add_executable(xprttest ../test.cpp)
 if(${USE_ARB})
     target_link_libraries(xprt PUBLIC mp++::mp++)
 endif()
+
+
+add_executable(xprtcalc ../cli.cpp)
 target_link_libraries(xprtcalc PUBLIC xprt)
 target_precompile_headers(xprtcalc REUSE_FROM xprt)
+
+add_executable(xprttest ../test.cpp)
 target_link_libraries(xprttest PUBLIC xprt)
 target_precompile_headers(xprttest REUSE_FROM xprt)
 add_test(tests xprttest)
+
+add_executable(createhelphtml ../docs/help/helpPageGenerator.cpp)
+target_link_libraries(createhelphtml PUBLIC xprt)
+target_precompile_headers(createhelphtml REUSE_FROM xprt)

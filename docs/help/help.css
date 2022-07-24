@@ -1,0 +1,45 @@
+html {
+    width: 100vw;
+    word-wrap: break-word;
+    font-size: 16pt;
+    font-family: "Lato", sans-serif;
+}
+
+.mono {
+    font-family: "Roboto Mono", monospace;
+}
+
+.help_title {
+    font-size: 2em;
+    display: block;
+}
+
+.help_symbol,
+.help_aliases,
+.help_type {
+    font-size: 0.7em;
+    font-family: "Roboto Mono", monospace;
+    display: block;
+}
+
+.help_symbol:before {
+    content: "Symbol: ";
+}
+
+.help_aliases:before {
+    content: "Tags: ";
+}
+
+.help_type:before {
+    content: "Type: ";
+
+}
+
+.help_content {
+    display: block;
+}
+
+.help_seemore {
+    display: block;
+
+}

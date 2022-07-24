@@ -28,6 +28,61 @@ string Page::toJSON() {
     alias += ']';
     return "{name:\"" + name + "\", symbol: \"" + String::safeBackspaces(symbol) + "\", type: \"" + type + "\", aliases:" + alias + ", content: \"" + String::safeBackspaces(content) + "\"}";
 }
+string Page::toHTML() {
+    string out = "<span class='help_title'>" + name + "</span>";
+    if(symbol.length() != 0)
+        out += "<span class='help_symbol'>" + symbol + "</span>";
+    if(type.length() != 0)
+        out += "<span class='help_type'>" + type + "</span>";
+    if(aliases.size() != 0) {
+        out += "<span class='help_aliases'>";
+        for(int i = 0;i < aliases.size();i++) out += (i == 0 ? "" : ", ") + aliases[i];
+        out += "</span>";
+    }
+    out += "<span class='help_content'>";
+    for(int i = 0;i < content.length();i++) {
+        if(content[i] == '?') {
+            int end = i + 1;
+            while(end != content.length() && content[end] != '?') end++;
+            string link = content.substr(i + 1, end - i - 1);
+            out += "<span onclick='openHelp(this)'>" + link + "</span>";
+            i = end;
+        }
+        else if(content[i] == '`') {
+            int end = i + 1;
+            while(end != content.length() && content[end] != '`') end++;
+            if(end == -1) throw "Cannot find end of `";
+            out += "<span class='mono'>";
+            //Get colored string
+            string cont = content.substr(i + 1, end - i - 1);
+            ColoredString str;
+            if(cont[0] == '/') str = ColoredString(cont, Expression::colorLine(cont, Program::parseCtx));
+            else str = ColoredString::fromXpr(cont);
+            //Replace error with argument type
+            string col = str.getColor();
+            for(int i = 0;i < col.length();i++)
+                if(col[i] == Expression::hl_error) col[i] = Expression::hl_argument;
+            str.setColor(std::move(col));
+            out += str.toHTML();
+            out += "</span>";
+            i = end;
+        }
+        else if(content[i] == '"') out += "&quot;";
+        else if(content[i] == '&') out += "&amp;";
+        else if(content[i] == '<') out += "&lt;";
+        else if(content[i] == '>') out += "&gt;";
+        else if(content[i] == '\n') out += "<br>";
+        else out += content[i];
+    }
+    out += "</span>";
+    if(seeMore.length() != 0) {
+        string humanReadable = seeMore;
+        if(humanReadable.substr(0, 8) == "https://") humanReadable = humanReadable.substr(8);
+        if(humanReadable.find("/") != string::npos) humanReadable = humanReadable.substr(0, humanReadable.find("/"));
+        out += "<span class='help_seemore'>See more: <a href='" + seeMore + "'>" + humanReadable + "</a></span>";
+    }
+    return out;
+}
 ColoredString Page::toColoredString() {
     ColoredString out;
     int lastSection = 0;
@@ -60,11 +115,11 @@ ColoredString Page::toColoredString() {
 #pragma endregion
 #pragma region Page generator functions
 void Help::addPageData() {
-    for(int i=0;i<pages.size();i++) {
-        if(pages[i].type=="function") pages[i].addFunctionData();
-        if(pages[i].type=="unit") pages[i].addUnitData();
-        if(pages[i].type=="type") pages[i].addTypeData();
-        if(pages[i].type=="library") pages[i].addLibraryData();
+    for(int i = 0;i < pages.size();i++) {
+        if(pages[i].type == "function") pages[i].addFunctionData();
+        if(pages[i].type == "unit") pages[i].addUnitData();
+        if(pages[i].type == "type") pages[i].addTypeData();
+        if(pages[i].type == "library") pages[i].addLibraryData();
     }
 }
 void Page::addUnitData() {
@@ -72,7 +127,7 @@ void Page::addUnitData() {
     auto it = Unit::listOfUnits.find(symbol);
     name = std::get<3>(it->second);
     symbol = "[" + symbol + "]";
-    content += " " + name + " has base units: [" + std::get<0>(it->second).toString() + "]` with coefficient `" + std::to_string(std::get<1>(it->second)) + "`.";
+    content += " " + name + " has base units: `[" + std::get<0>(it->second).toString() + "]` with coefficient `" + std::to_string(std::get<1>(it->second)) + "`.";
     if(std::get<2>(it->second))
         content += " " + name + " supports ?metric prefixes?.";
     else content += " " + name + " does not support ?metric prefixes?.";
@@ -112,9 +167,9 @@ void Page::addLibraryData() {
     }
 }
 void Page::addTypeData() {
-    int type = content[0];
+    string type = content.substr(0, 1);
     content = content.substr(1);
-    content += " The ?typeof? function returns " + std::to_string(type) + " for this type.";
+    content += " The ?typeof? function returns `" + type + "` for this type.";
 }
 #pragma endregion
 std::vector<Page> Help::pages = {
@@ -153,11 +208,11 @@ std::vector<Page> Help::pages = {
     Page("Modulo","mod","function","Returns `a % b`, which is the remainder when `a` is divided by `b`. It is also aliased by the operator '`%`'.",{"%","modulus"},"https://en.wikipedia.org/wiki/Modulo_operation"),
     Page("Square Root","sqrt","function","Returns the square root of `x`, which is equivalent to raising it by `0.5`.",{"power","exponent","root"},"https://en.wikipedia.org/wiki/Square_root"),
     Page("Exponent","exp","function","Returns the `e ^ x`, which means ?Euler's number? raised to the power of `x`.",{"e","e^x","power","exponent",},"https://en.wikipedia.org/wiki/Exponential_function"),
-    Page("Natural log","ln","function","Returns the natural logarithm of `x`, it is the inverse of `?exp?`. For an arbitrary base, see the `?logb?` function.",{"logarithm"},"https://en.wikipedia.org/wiki/Natural_logarithm"),
-    Page("Logarithm","log","function","Returns the logarithm base 10 of `x`, which means `10^ln(x)` is `x`. For an arbitrary base, see the `?logb?` function.",{"log"},"https://en.wikipedia.org/wiki/Logarithm"),
-    Page("Logarithm base b","logb","function","Returns the logarithm base `b` of `x`, which means `b^logb(x,b)` is `x`. For specialized bases, see the `?exp?` and `?log?` functions.",{"log"},"https://en.wikipedia.org/wiki/Logarithm"),
-    Page("Gamma","gamma","function","Returns the gamma function of `x`. It currently does not support imaginary numbers. Equivalent to `?factorial?(x+1)`.",{},"https://en.wikipedia.org/wiki/Gamma_function"),
-    Page("Factorial","factorial","function","Returns the factorial of `x`. It currently does not support imaginary numbers. It is also aliased by the `!` operator. Example: `4!+2` means `factorial(4)+2`. Factorial is equivalent to `?gamma?(x-1)`.",{},"https://en.wikipedia.org/wiki/Gamma_function"),
+    Page("Natural log","ln","function","Returns the natural logarithm of `x`, it is the inverse of `exp`. For an arbitrary base, see the `logb` function.",{"logarithm"},"https://en.wikipedia.org/wiki/Natural_logarithm"),
+    Page("Logarithm","log","function","Returns the logarithm base 10 of `x`, which means `10^ln(x)` is `x`. For an arbitrary base, see the `logb` function.",{"log"},"https://en.wikipedia.org/wiki/Logarithm"),
+    Page("Logarithm base b","logb","function","Returns the logarithm base `b` of `x`, which means `b^logb(x,b)` is `x`. For specialized bases, see the `exp` and `log` functions.",{"log"},"https://en.wikipedia.org/wiki/Logarithm"),
+    Page("Gamma","gamma","function","Returns the gamma function of `x`. It currently does not support imaginary numbers. Equivalent to `factorial(x+1)`.",{},"https://en.wikipedia.org/wiki/Gamma_function"),
+    Page("Factorial","factorial","function","Returns the factorial of `x`. It currently does not support imaginary numbers. It is also aliased by the `!` operator. Example: `4!+2` means `factorial(4)+2`. Factorial is equivalent to `gamma(x-1)`.",{},"https://en.wikipedia.org/wiki/Gamma_function"),
     Page("Error function","erf","function","Returns the error function of `x`. It currently does not support imaginary numbers. It does not have much use in simple mathematics, however support is there for who needs it.",{},"https://en.wikipedia.org/wiki/Error_function"),
     #pragma endregion
     #pragma region Trigonometry

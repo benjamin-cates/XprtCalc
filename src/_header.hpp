@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 //STL containers
 #include <map>
 #include <unordered_map>
@@ -121,6 +122,7 @@ namespace Help {
         string toString();
         ColoredString toColoredString();
         string toJSON();
+        string toHTML();
         Page() {}
         Page(string n, string s, string t, string cont, std::vector<string> alias = {}, string more = "") { name = n; symbol = s; type = t; content = cont; aliases = alias;seeMore = more; }
         void addTypeData();
@@ -290,6 +292,7 @@ class ColoredString {
 public:
     const string& getStr()const { return str; }
     const string& getColor()const { return color; }
+    string toHTML()const;
     void setStr(string&& s);
     void setColor(string&& c);
     void colorAsExpression();
@@ -301,13 +304,13 @@ public:
     ColoredString operator+(ColoredString& rhs);
     ColoredString(const char* s) { str = string(s);color = string(str.length(), 't'); }
     ColoredString(string&& s) { str = std::move(s);color = string(str.length(), 't'); }
-    ColoredString(string&& s, string&& c) { str = std::move(s);color = std::move(c); }
-    ColoredString(string&& s, char t) { str = std::move(s);color = string(str.length(), t); }
+    ColoredString(string&& s, string&& c) { str = std::forward<string>(s);color = std::forward<string>(c); }
+    ColoredString(string&& s, char t) { str = std::forward<string>(s);color = string(str.length(), t); }
     ColoredString(const string& s) { str = s;color = string(s.length(), 't'); }
     ColoredString(const string& s, const string& c) { str = s;color = c; }
     ColoredString(const string& s, char t) { str = s;color = string(s.length(), t); }
     ColoredString() {}
-    static ColoredString fromXpr(string&& str);
+    static ColoredString fromXpr(const string& str);
     ColoredString& append(const std::vector<ColoredString>& args);
 };
 #pragma endregion

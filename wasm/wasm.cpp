@@ -13,34 +13,16 @@ namespace wasm {
     }
     string highlight(string str, string colors) {
         if(str == "") return "";
-        string out = "";
-        char prevColor = 0;
-        for(int i = 0;i < colors.length();i++) {
-            if(colors[i] != prevColor || i == 0) {
-                if(i != 0) out += "</span>";
-                out += "<span class='COL";
-                out += colors[i];
-                out += "'>";
-                prevColor = colors[i];
-            }
-            if(str[i] == '&') out += "&amp;";
-            else if(str[i] == '<') out += "&lt;";
-            else if(str[i] == '>') out += "&gt;";
-            else if(str[i] == '"') out += "&quot;";
-            else if(str[i] == ' ') out += "&#32;";
-            else out += str[i];
-        }
-        out += "</span>";
-        return out;
+        return ColoredString(string, color).toHTML();
     }
     string highlightLine(string str) {
         string colors = Expression::colorLine(str, Program::parseCtx);
         return highlight(str, colors);
     }
     string highlightExpression(string str) {
-        string colors(str.length(),Expression::hl_error);
-        Expression::color(str,colors.begin(),Program::parseCtx);
-        return highlight(str,colors);
+        string colors(str.length(), Expression::hl_error);
+        Expression::color(str, colors.begin(), Program::parseCtx);
+        return highlight(str, colors);
     }
     string runLine(string call) {
         return Program::runLine(call).getStr();
