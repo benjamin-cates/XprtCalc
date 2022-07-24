@@ -117,7 +117,7 @@ Value Function::operator()(ValList& input, ComputeCtx& ctx) {
     }
     //Run immediately if current type is supported
     for(auto& impl : funcs) if(impl.first.match(cur)) {
-        return impl.second(input, ctx);
+        return impl.second(input, ctx, name);
     }
     //Map to new type if domain map supports that conversion
     for(auto& dm : domainMap) if(dm.first.match(cur)) {
@@ -127,7 +127,7 @@ Value Function::operator()(ValList& input, ComputeCtx& ctx) {
         for(int i = 0;i < input.size();i++)
             convertedInput[i] = input[i].convertTo(newMap.get(i));
         //return function result
-        return funcs[newMap](convertedInput, ctx);
+        return funcs[newMap](convertedInput, ctx, name);
     }
     throw "Cannot run '" + name + "' with types " + cur.toString();
 }
@@ -233,7 +233,7 @@ string Function::Domain::toString()const {
 #define aa D(arb,arb)
 #define dd D(dub,dub)
 #define vv D(vec_t,vec_t)
-#define inp ValList input,ComputeCtx& ctx
+#define inp ValList input,ComputeCtx& ctx,const string& self
 #define def(type,name,index) std::shared_ptr<type> name = input[index].cast<type>()
 #define getV(type,index) input[index].cast<type>()
 #define ret(type) return std::make_shared<type>
@@ -246,62 +246,58 @@ string Function::Domain::toString()const {
 
 #define D Function::Domain
 #define samePrecision {D(dub,arb),aa},{D(arb,dub),aa}
-#define BinVecApply(name) {D(vec_t,dub|arb),applyVecLHS(name)},{D(dub|arb,vec_t),applyVecRHS(name)}
-#define Apply2VecMax(name) {vv,applyBinVec(name,[](int a,int b){return std::max(a,b);})}
-#define Apply2VecMin(name) {vv,applyBinVec(name,[](int a,int b){return std::min(a,b);})}
-#define UnaryVecApply(name) {D(vec_t),applyToVector(name)}
+#define BinVecApply {D(vec_t,dub|arb),applyVecLHS},{D(dub|arb,vec_t),applyVecRHS},{vv,applyBinVec}
+#define UnaryVecApply {D(vec_t),applyToVector}
 
 #pragma endregion
 #pragma region Apply to vector lambdas
-Function::fobj applyToVector(string name) {
-    return [name = name](inp) {
-        def(Vector, x, 0);
-        std::shared_ptr<Vector> out;
-        if(x.unique()) out = x;
-        else out = std::make_shared<Vector>(x->size());
-        for(int i = 0;i < x->size();i++) {
-            out->vec[i] = Program::computeGlobal(name, ValList{ x->vec[i] }, ctx);
-        }
-        return out;
-    };
-}
-Function::fobj applyVecLHS(string name) {
-    return [name = name](inp) {
-        def(Vector, x, 0);
-        std::shared_ptr<Vector> out;
-        if(x.unique()) out = x;
-        else out = std::make_shared<Vector>(x->size());
-        for(int i = 0;i < x->size();i++) {
-            out->vec[i] = Program::computeGlobal(name, ValList{ x->vec[i],input[1] }, ctx);
-        }
-        return out;
-    };
-}
-Function::fobj applyVecRHS(string name) {
-    return [name = name](inp) {
-        def(Vector, x, 1);
-        std::shared_ptr<Vector> out;
-        if(x.unique()) out = x;
-        else out = std::make_shared<Vector>(x->size());
-        for(int i = 0;i < x->size();i++) {
-            out->vec[i] = Program::computeGlobal(name, ValList{ input[0], x->vec[i] }, ctx);
-        }
-        return out;
-    };
-}
-Function::fobj applyBinVec(string name, std::function<int(int, int)> maxormin) {
-    return [name = name, maxormin = maxormin](inp) {
-        def(Vector, a, 0); def(Vector, b, 1);
-        std::shared_ptr<Vector> out;
-        if(a.unique()) out = a;
-        else if(b.unique()) out = b;
-        else out = std::make_shared<Vector>();
-        int size = maxormin(a->size(), b->size());
-        out->vec.resize(size, Value::zero);
-        for(int i = 0;i < size;i++) out->vec[i] = Program::computeGlobal(name, ValList{ a->vec[i], b->vec[i] }, ctx);
-        return out;
-    };
-}
+auto applyToVector = [](inp) {
+    def(Vector, x, 0);
+    std::shared_ptr<Vector> out;
+    if(x.unique()) out = x;
+    else out = std::make_shared<Vector>(x->size());
+    for(int i = 0;i < x->size();i++)
+        out->vec[i] = Program::computeGlobal(self, ValList{ x->vec[i] }, ctx);
+    return Value(out);
+};
+auto applyVecLHS = [](inp) {
+    def(Vector, x, 0);
+    std::shared_ptr<Vector> out;
+    if(x.unique()) out = x;
+    else out = std::make_shared<Vector>(x->size());
+    for(int i = 0;i < x->size();i++)
+        out->vec[i] = Program::computeGlobal(self, ValList{ x->vec[i],input[1] }, ctx);
+        return Value(out);
+};
+auto applyVecRHS = [](inp) {
+    def(Vector, x, 1);
+    std::shared_ptr<Vector> out;
+    if(x.unique()) out = x;
+    else out = std::make_shared<Vector>(x->size());
+    for(int i = 0;i < x->size();i++)
+        out->vec[i] = Program::computeGlobal(self, ValList{ input[0], x->vec[i] }, ctx);
+    return Value(out);
+};
+auto applyBinVec = [](inp) {
+    bool useSizeMin = false;
+    if(self == "mul" || self == "div" || self == "mod" || self == "logb") useSizeMin = true;
+    def(Vector, a, 0); def(Vector, b, 1);
+    std::shared_ptr<Vector> out;
+    if(a.unique()) out = a;
+    else if(b.unique()) out = b;
+    else out = std::make_shared<Vector>();
+    int size = 0;
+    if(useSizeMin) size = std::min(a->size(), b->size());
+    else {
+        size = std::max(a->size(), b->size());
+        //Fill remaining elements with zeroes
+        if(a->size() < b->size()) a->vec.resize(size, Value::zero);
+        else if(b->size() < a->size()) b->vec.resize(size, Value::zero);
+    }
+    out->vec.resize(size, Value::zero);
+    for(int i = 0;i < size;i++) out->vec[i] = Program::computeGlobal(self, ValList{ a->vec[i], b->vec[i] }, ctx);
+    return Value(out);
+};
 #pragma endregion
 Value Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
     int index = globalFunctionMap[name];
@@ -318,18 +314,18 @@ std::vector<Function> Program::globalFunctions = {
     #define UnaryWithUnit(name,formula,unitF,...) Function(name,{"x"},{}, {\
         {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);ret(Number)(formula,unitF);}},\
         {D(arb),[](inp) {using T=mppp::real;std::complex<T> num = getArbN(0);Unit unit=getArbU(0);ret(Arb)(formula,unitF);}},\
-        UnaryVecApply(name),__VA_ARGS__})
-    #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},{D(arb),[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num=getArbN(0);Unit unit=getArbU(0);formula;}},UnaryVecApply(name),__VA_ARGS__})
+        UnaryVecApply,__VA_ARGS__})
+    #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},{D(arb),[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num=getArbN(0);Unit unit=getArbU(0);formula;}},BinVecApply,__VA_ARGS__})
     #define BinaryBaseTemplate(name,arg1,arg2,returnType,...) Function(name,{arg1,arg2},{samePrecision}, {\
         {dd,[](inp) {using T=double;using R=Number;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);return returnType;}},\
-        {aa,[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num1=getArbN(0);std::complex<T> num2=getArbN(1);Unit unit1=getArbU(0);Unit unit2=getArbU(1);return returnType;}},BinVecApply(name),__VA_ARGS__})
+        {aa,[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num1=getArbN(0);std::complex<T> num2=getArbN(1);Unit unit1=getArbU(0);Unit unit2=getArbU(1);return returnType;}},BinVecApply,__VA_ARGS__})
     #else
     #define UnaryWithUnit(name,formula,unitF,...) Function(name,{"x"},{}, {\
         {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);ret(Number)(formula,unitF);}},\
-        UnaryVecApply(name),__VA_ARGS__})
-    #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},UnaryVecApply(name),__VA_ARGS__})
+        UnaryVecApply,__VA_ARGS__})
+    #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},UnaryVecApply,__VA_ARGS__})
     #define BinaryBaseTemplate(name,arg1,arg2,returnType,...) Function(name,{arg1,arg2},{samePrecision}, {\
-        {dd,[](inp) {using T=double;using R=Number;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);return returnType;}}})
+        {dd,[](inp) {using T=double;using R=Number;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);return returnType;}},BinVecApply,__VA_ARGS__})
     #endif
 
 
@@ -352,7 +348,7 @@ std::vector<Function> Program::globalFunctions = {
     Unary("ln",log(num)),
     Unary("log",log10(num)),
 
-    Binary("logb","x","b",log(num1) / log(num2),BinVecApply("logb"),Apply2VecMin("logb")),
+    Binary("logb","x","b",log(num1) / log(num2)),
     DoubleArbTemplate("gamma",if(num.imag() != 0) throw "Gamma function does not support complex";ret(R)(Math::gamma(num.real()),unit)),
     DoubleArbTemplate("factorial",if(num.imag() != 0) throw "Factorial function does not support complex";ret(R)(Math::gamma(num.real() + 1),unit)),
     DoubleArbTemplate("erf",if(num.imag() != 0) throw "Error function does not support complex";ret(R)(erf(num.real()),unit)),
@@ -381,7 +377,7 @@ std::vector<Function> Program::globalFunctions = {
     UnaryWithUnit("getr",std::complex<T>(num.real(),0),0),
     UnaryWithUnit("geti",std::complex<T>(num.imag(),0),0),
     UnaryWithUnit("getu",std::complex<T>(1.0,0.0),unit),
-    Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,Apply2VecMax("max"),{D(vec_t),[](inp) {
+    Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,{D(vec_t),[](inp) {
         def(Vector,v,0);
         Value max = Value::zero;
         for(int i = 0;i < v->vec.size();i++) {
@@ -391,7 +387,7 @@ std::vector<Function> Program::globalFunctions = {
         }
         return max;
     }}),
-    Binary("min","a","b",num1.real() > num2.real() ? num2 : num1,Apply2VecMax("min"),{D(vec_t),[](inp) {
+    Binary("min","a","b",num1.real() > num2.real() ? num2 : num1,{D(vec_t),[](inp) {
         def(Vector,v,0);
         Value min = make_shared<Number>(INFINITY);
         for(int i = 0;i < v->vec.size();i++) {
@@ -492,7 +488,7 @@ std::vector<Function> Program::globalFunctions = {
     BinaryBaseTemplate("gt", "a","b", num1.real() > num2.real() ? Value::one : Value::zero),
     BinaryBaseTemplate("lt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
     BinaryBaseTemplate("gt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
-    #define BitwiseOperator(name,operat) Function(name,{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {uint64_t a = std::abs(input[0]->getR() + 0.5), b = std::abs(input[1]->getR() + 0.5);return std::make_shared<Number>(a operat b);}}})
+    #define BitwiseOperator(name,operat) Function(name,{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {uint64_t a = std::abs(input[0]->getR() + 0.5), b = std::abs(input[1]->getR() + 0.5);return std::make_shared<Number>(a operat b);}},BinVecApply})
     Function("not",{"x"},{{D(arb),D(dub)}},{{D(dub),[](inp) {return input[0]->getR() == 0 ? Value::one : Value::zero;}}}),
     BitwiseOperator("or", | ),
     BitwiseOperator("and",&),

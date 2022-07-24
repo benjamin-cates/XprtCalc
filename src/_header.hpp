@@ -315,7 +315,7 @@ class Function {
 
 public:
     //std::function that takes in a list of values and a context and returns a value
-    typedef std::function<Value(ValList, ComputeCtx&)> fobj;
+    typedef std::function<Value(ValList, ComputeCtx&, const string&)> fobj;
     struct Domain {
         //Contains binary data on support for first four arguments
         uint32_t sig;
