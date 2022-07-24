@@ -528,7 +528,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("rand",{},{},{{D(),[](inp) {double upLim = RAND_MAX + 1.;ret(Number)(rand() / upLim + rand() / upLim / upLim);}}}),
     Function("srand",{"seed"},{downscale},{{D(dub),[](inp) { srand(getN(0).real() * 100); ret(Number)(0); }}}),
     Constant("e",2.71828182845904523),
-    Constant("nan",NAN),
+    Constant("undefined",NAN),
     Constant("inf",INFINITY),
     Constant("histlen",Program::history.size()),
     Function("ans",{"index"},{},{{D(dub | arb | opt),[](inp) {

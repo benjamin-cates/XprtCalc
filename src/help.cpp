@@ -220,7 +220,7 @@ std::vector<Page> Help::pages = {
     Page("Arbitrary Euler's number","arb_e","function","Returns Euler's number to `prec` decimal digits as an `arbitrary precision` float. See `e` for the 15-digit approximation."),
     Page("Random","rand","function","Returns a unique random number between zero and one every time it is calculated. See `srand` for seeding."),
     Page("Random seed","srand","function","Takes in a float as a random seed and seeds the random number generator. If the same seed is provided, `rand` will return the exact same sequence of random numbers.",{},"https://en.wikipedia.org/wiki/Random_seed"),
-    Page("Not available number","nan","function","Constant for the not available number floating point exception. This constant is not particularly useful, but included for completeness sake"),
+    Page("Undefined","undefined","function","Constant for a non-definable floating point exception. This constant is not meant for regular use but is returned by some functions in the case of an error.",{"nan"}),
     Page("Infinity","inf","function","Constant for the floating point infinity. Please do not use this for calculations, only comparison with other infinities."),
     Page("History length","histlen","function","Constant for the number of elements in the ?history?",{"memory"}),
     Page("Answer","ans","function","Returns the previously calculated value. If an argument is provided, it returns the `x`th element in the ?history?, or if `x` is negative, `x` values in the past (negative one being the previous value).",{"history","memory"}),

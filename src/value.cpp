@@ -463,20 +463,20 @@ string Number::componentToString(double x, int base) {
 string Number::toStr(ParseCtx& ctx)const {
     string out;
     if(num.real() != 0) {
-        if(Math::isInf(num.real())) out += "inf";
-        else if(Math::isNan(num.real())) return "nan";
+        if(Math::isInf(num.real())) return "inf";
+        else if(Math::isNan(num.real())) return "undefined";
         else out += Number::componentToString(num.real(), 10);
     }
     if(num.imag() != 0) {
         if(num.imag() > 0 && num.real() != 0) out += '+';
         if(Math::isInf(num.imag())) out += "+inf*";
-        else if(Math::isNan(num.imag())) out += "+nan*";
+        else if(Math::isNan(num.imag())) out += "+undefined*";
         else out += Number::componentToString(num.imag(), 10);
         out += 'i';
     }
     if(out == "") out = "0";
     if(!unit.isUnitless()) {
-        out += "[" + unit.toString() + "]";
+        out += "*[" + unit.toString() + "]";
     }
     return out;
 }
