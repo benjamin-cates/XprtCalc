@@ -61,23 +61,25 @@ bool ParseCtx::variableExists(const string& name)const {
     return it->second > 0;
 }
 Value ParseCtx::getVariable(const string& name)const {
+    string san=Expression::sanitizeVariable(name);
     for(auto it = argStack.begin();it != argStack.end();it++) {
-        if(name == *it) return std::make_shared<Argument>(std::distance(argStack.begin(), it));
+        if(san == *it) return std::make_shared<Argument>(std::distance(argStack.begin(), it));
     }
-    if(variableExists(name)) {
-        return std::make_shared<Variable>(name);
+    if(variableExists(san)) {
+        return std::make_shared<Variable>(san);
     }
-    if(Program::globalFunctionMap.find(name) != Program::globalFunctionMap.end())
-        return std::make_shared<Tree>(Program::globalFunctionMap[name]);
+    if(Program::globalFunctionMap.find(san) != Program::globalFunctionMap.end())
+        return std::make_shared<Tree>(Program::globalFunctionMap[san]);
     if(useUnits()) {
+        string unitName = Expression::removeSpaces(name);
         double coef = 1;
-        Unit u = Unit::parseName(name, coef);
+        Unit u = Unit::parseName(unitName, coef);
         if(u.getBits() != 0)
             return std::make_shared<Number>(coef, 0, u);
     }
-    if(name[0] == '$') {
+    if(san[0] == '$') {
         try {
-            int index = std::stoi(name.substr(1));
+            int index = std::stoi(san.substr(1));
             return std::make_shared<Tree>("ans", ValList{ std::make_shared<Number>(index) });
         }
         catch(...) { return nullptr; }
@@ -651,7 +653,6 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
         }
         else if(type == Section::variable) {
             int len = sec.length();
-            sec = Expression::sanitizeVariable(sec);
             Value a = ctx.getVariable(sec);
             ColorType type;
             if(a == nullptr) type = ColorType::hl_error;
@@ -666,7 +667,6 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             //Color name
             string name = sec.substr(0, bracket);
             int nameLen = name.length();
-            name = Expression::sanitizeVariable(name);
             Value func = ctx.getVariable(name);
             ColorType nameType;
             if(func == nullptr) nameType = ColorType::hl_error;
@@ -930,7 +930,6 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
         }
         //Variables
         else if(type == variable) {
-            sect = sanitizeVariable(sect);
             Value op = ctx.getVariable(sect);
             if(op.get() == nullptr) throw "Variable " + sect + " not found";
             if(op->typeID() == Value::tre_t) {
@@ -949,7 +948,6 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             int startBrace = findNext(sect, 0, '(');
             int endBrace = matchBracket(sect, startBrace);
             string name = sect.substr(0, startBrace);
-            name = sanitizeVariable(name);
             Value op = ctx.getVariable(name);
             if(op.get() == nullptr) throw "Function " + name + " not found";
             std::vector<string> argsStr = splitBy(sect, startBrace, endBrace, ',');
