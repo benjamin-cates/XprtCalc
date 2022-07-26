@@ -45,7 +45,7 @@ string Page::toHTML() {
             int end = i + 1;
             while(end != content.length() && content[end] != '?') end++;
             string link = content.substr(i + 1, end - i - 1);
-            out += "<span onclick='openHelp(this)'>" + link + "</span>";
+            out += "<a href='javascript:void(0)' onclick='openHelp(this)'>" + link + "</a>";
             i = end;
         }
         else if(content[i] == '`') {
@@ -79,7 +79,7 @@ string Page::toHTML() {
         string humanReadable = seeMore;
         if(humanReadable.substr(0, 8) == "https://") humanReadable = humanReadable.substr(8);
         if(humanReadable.find("/") != string::npos) humanReadable = humanReadable.substr(0, humanReadable.find("/"));
-        out += "<span class='help_seemore'>See more: <a href='" + seeMore + "'>" + humanReadable + "</a></span>";
+        out += "<span class='help_seemore'>See more: <a href='" + seeMore + "' target='_blank'>" + humanReadable + "</a></span>";
     }
     return out;
 }

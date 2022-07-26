@@ -1,8 +1,9 @@
 html {
     width: 100vw;
     word-wrap: break-word;
-    font-size: 16pt;
     font-family: "Lato", sans-serif;
+    font-size: 14pt;
+    background: #333;
 }
 
 .mono {

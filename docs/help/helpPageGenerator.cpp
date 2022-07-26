@@ -12,6 +12,7 @@ int main() {
     out += "<title>XprtCalc Help</title>\n";
     out += "<meta charset='utf-8'>\n";
     out += "<meta name='description' content='Help pages for XprtCalc.' />\n";
+    out += "<script src='help.js'></script>";
     out += "<link rel='stylesheet' href='../../wasm/style.css'>\n";
     out += "<link rel='stylesheet' href='help.css'>\n";
     out += "<link rel='preconnect' href='https://fonts.googleapis.com'>";

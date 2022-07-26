@@ -4,15 +4,32 @@ html {
     height: 100vh;
     width: 100vw;
     font-size: 24pt;
+    overflow: hidden;
+}
+
+body {
+    margin: 0;
+}
+
+a:link,
+a:visited {
+    color: rgb(0, 162, 255);
 }
 
 #io {
+    padding: 8px 8px 8px 8px;
+    transition: 0.5s ease padding;
     display: flex;
     flex-direction: column;
     justify-content: start;
     width: 100%;
     align-items: center;
     font-family: 'Roboto Mono', monospace;
+    box-sizing: border-box;
+}
+
+#io.pushed {
+    padding-left: 408px;
 }
 
 #input {
@@ -25,9 +42,14 @@ html {
     margin: 0;
     padding: 0;
     border-radius: 6px;
-    transition: box-shadow 0.5s ease;
+    transition: box-shadow 0.5s ease, width 0.5s ease;
     box-shadow: 2px 2px 2px 2px #00000044;
     margin-bottom: 10px;
+}
+
+.mobile>#input,
+.mobile>#output {
+    width: 100%;
 }
 
 #input:hover {
@@ -38,6 +60,7 @@ html {
     width: 50%;
     word-wrap: break-word;
     font-size: 20pt;
+    transition: width 0.5s ease;
 }
 
 pre {
@@ -81,6 +104,138 @@ pre {
 
 .output_element {
     margin-bottom: 10px;
+}
+
+#panel {
+    z-index: 10;
+    position: absolute;
+    top: 0;
+    left: calc(0px - min(400px,100vw));
+    height: 100vh;
+    width: min(400px, 100vw);
+    background: #333;
+    transition: 0.5s ease left;
+}
+
+#cover {
+    opacity: 0%;
+    transition: 0.5s ease opacity;
+    pointer-events: none;
+    height: 100vh;
+    width: 100vw;
+    background: #041a15;
+    position: absolute;
+    left: 100%;
+}
+
+.mobile.open>#cover {
+    opacity: 35%;
+}
+
+#panel_open {
+    position: absolute;
+    left: min(400px,100vw);
+    bottom: 0;
+    opacity: 100%;
+    transition: ease 0.5s opacity;
+    background: rgba(13, 60, 34, 1);
+    width: 50px;
+    height: 50px;
+    border: 0;
+    padding: 0;
+    padding-left: 2px;
+    border-radius: 0 10px 0 0;
+}
+
+.open>#panel_open {
+    opacity: 0%;
+}
+
+#panel.open {
+    left: 0;
+}
+
+#panel_header {
+    background: rgba(13, 60, 34, 1);
+    box-shadow: -2px 4px 5px 0px rgba(5, 30, 10, 0.2);
+    height: 50px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+#panel_header>button {
+    box-sizing: content-box;
+    height: 30px;
+    border: 0;
+    background: transparent;
+    padding: 3px;
+    margin: 2px;
+    border-radius: 4px;
+}
+
+.panel_header_icon {
+    fill: #FFF;
+    transition: fill 0.2s ease;
+}
+
+#panel_header button.header_button_active .panel_header_icon {
+    fill: #bbb;
+}
+
+#panel_header button.header_button_active {
+    border-bottom: #bbb 4px solid;
+
+}
+
+button:hover .panel_header_icon {
+    fill: #bbb;
+}
+
+.panel_page {
+    display: none;
+    margin: 5px;
+}
+
+.panel_page_active {
+    display: block;
+}
+
+#help_page {
+    border: 0;
+    width: 100%;
+    opacity: 0;
+    padding: 0px 5px 0px 5px;
+    margin: 5px 0px 5px 0px;
+    box-sizing: border-box;
+    display: none;
+}
+
+#help_page.shown {
+    opacity: 100;
+    display: block;
+}
+
+#help_search {
+    outline: 0;
+    background: #222;
+    border-radius: 5px;
+    border: 0;
+    color: #fff;
+    margin: 10px auto;
+    padding: 5px;
+    display: block;
+    font-size: 16pt;
+}
+
+
+#search_results {
+    font-family: "Roboto Mono", monospace;
+    font-size: 14pt;
+}
+
+.search_result:hover {
+    background: #FFFFFF10;
 }
 
 .COLn {

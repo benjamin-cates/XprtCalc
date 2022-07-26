@@ -13,7 +13,7 @@ namespace wasm {
     }
     string highlight(string str, string colors) {
         if(str == "") return "";
-        return ColoredString(string, color).toHTML();
+        return ColoredString(str, colors).toHTML();
     }
     string highlightLine(string str) {
         string colors = Expression::colorLine(str, Program::parseCtx);
@@ -31,6 +31,21 @@ namespace wasm {
         ColoredString res = Program::runLine(call);
         return highlight(res.getStr(), res.getColor());
     }
+    string query(string search) {
+        std::vector<Help::Page*> pages = Help::search(search);
+        string out = "[";
+        for(int i = 0;i < pages.size();i++) {
+            if(i != 0) out += ",";
+            out += "{\"name\": \"";
+            out += pages[i]->name;
+            if(pages[i]->symbol != "") out += " - " + pages[i]->symbol;
+            out += "\",\"id\": ";
+            out += std::to_string(pages[i] - &Help::pages[0]);
+            out += "}";
+        }
+        out += "]";
+        return out;
+    }
 };
 
 using namespace emscripten;
@@ -41,6 +56,7 @@ EMSCRIPTEN_BINDINGS(module) {
     function("highlightExpression", &wasm::highlightExpression);
     function("runLine", &wasm::runLine);
     function("runLineWithColor", &wasm::runLineWithColor);
+    function("query",&wasm::query);
 }
 
 int main() {
