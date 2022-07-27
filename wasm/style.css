@@ -16,6 +16,22 @@ a:visited {
     color: rgb(0, 162, 255);
 }
 
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-button {
+    display: none;
+}
+
+::-webkit-scrollbar-track {
+    width: 0;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #FFFFFF55;
+}
+
 #io {
     padding: 8px 8px 8px 8px;
     transition: 0.5s ease padding;
@@ -26,6 +42,8 @@ a:visited {
     align-items: center;
     font-family: 'Roboto Mono', monospace;
     box-sizing: border-box;
+    height: 100vh;
+    overflow-y: scroll;
 }
 
 #io.pushed {
@@ -195,6 +213,9 @@ button:hover .panel_header_icon {
 .panel_page {
     display: none;
     margin: 5px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: calc(100vh - 50px);
 }
 
 .panel_page_active {
