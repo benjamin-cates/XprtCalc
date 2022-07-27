@@ -31,11 +31,14 @@ a:visited {
 #io.pushed {
     padding-left: 408px;
 }
+#input,
+#output {
+    width: min(100%,max(50%,calc(100% - (100% - 600px) * 0.75)));
+}
 
 #input {
     background: rgb(13, 60, 32);
     background: linear-gradient(12deg, rgba(13, 60, 34, 1) 0%, rgba(11, 60, 75, 1) 100%);
-    width: 50%;
     position: relative;
     display: inline-block;
     min-height: 1.75em;
@@ -47,17 +50,12 @@ a:visited {
     margin-bottom: 10px;
 }
 
-.mobile>#input,
-.mobile>#output {
-    width: 100%;
-}
 
 #input:hover {
     box-shadow: 2px 2px 4px 4px #00000044;
 }
 
 #output {
-    width: 50%;
     word-wrap: break-word;
     font-size: 20pt;
     transition: width 0.5s ease;

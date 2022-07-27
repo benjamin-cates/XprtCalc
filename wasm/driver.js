@@ -77,11 +77,6 @@ function resize() {
         document.querySelector("#panel").classList.remove("open");
         document.querySelector("#io").classList.remove("pushed");
     }
-    let ioWidth = document.querySelector("#io").clientWidth - parseFloat(getComputedStyle(document.querySelector("#io")).paddingLeft);
-    if(ioWidth < 700)
-        document.querySelector("#io").classList.add("mobile");
-    else
-        document.querySelector("#io").classList.remove("mobile");
 }
 function helpSearch(event, queryBox) {
     if(event.key == "Enter") {
