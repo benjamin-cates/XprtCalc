@@ -151,8 +151,8 @@ pre {
 }
 
 #panel_open {
-    position: absolute;
-    left: min(400px, 100vw);
+    position: fixed;
+    left: 0;
     bottom: 0;
     opacity: 100%;
     transition: ease 0.5s opacity;
