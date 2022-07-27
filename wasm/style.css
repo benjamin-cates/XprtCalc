@@ -31,9 +31,10 @@ a:visited {
 #io.pushed {
     padding-left: 408px;
 }
+
 #input,
 #output {
-    width: min(100%,max(50%,calc(100% - (100% - 600px) * 0.75)));
+    width: min(100%, max(50%, calc(100% - (100% - 600px) * 0.75)));
 }
 
 #input {
@@ -108,7 +109,7 @@ pre {
     z-index: 10;
     position: absolute;
     top: 0;
-    left: calc(0px - min(400px,100vw));
+    left: calc(0px - min(400px, 100vw));
     height: 100vh;
     width: min(400px, 100vw);
     background: #333;
@@ -128,11 +129,12 @@ pre {
 
 .mobile.open>#cover {
     opacity: 35%;
+    pointer-events: all;
 }
 
 #panel_open {
     position: absolute;
-    left: min(400px,100vw);
+    left: min(400px, 100vw);
     bottom: 0;
     opacity: 100%;
     transition: ease 0.5s opacity;
