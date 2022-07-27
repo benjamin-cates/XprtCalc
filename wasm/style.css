@@ -138,11 +138,13 @@ pre {
     opacity: 0%;
     transition: 0.5s ease opacity;
     pointer-events: none;
+    background: #041a15;
     height: 100vh;
     width: 100vw;
-    background: #041a15;
-    position: absolute;
-    left: 100%;
+    left: 0;
+    top: 0;
+    z-index: -1;
+    position: fixed;
 }
 
 .mobile.open>#cover {
@@ -174,6 +176,7 @@ pre {
 }
 
 #panel_header {
+    position: relative;
     background: rgba(13, 60, 34, 1);
     box-shadow: -2px 4px 5px 0px rgba(5, 30, 10, 0.2);
     height: 50px;
@@ -211,8 +214,9 @@ button:hover .panel_header_icon {
 }
 
 .panel_page {
+    background: #333;
     display: none;
-    margin: 5px;
+    padding: 5px;
     overflow-y: auto;
     overflow-x: hidden;
     height: calc(100vh - 50px);
