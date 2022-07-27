@@ -54,9 +54,6 @@ function panelPage(open) {
         document.querySelector("#" + panelData.page + "_panel").classList.add("panel_page_active");
     }
     resize();
-    setTimeout(resize, 500 / 3);
-    setTimeout(resize, 500 * 2 / 3);
-    setTimeout(resize, 500);
 }
 
 function resize() {
