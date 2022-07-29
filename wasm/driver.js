@@ -10,7 +10,12 @@ function run_line(str, coloredInput = "") {
     if(coloredInput == "") coloredInput = Module.highlightExpression(str);
     let out = document.createElement("div");
     out.className = "output_element";
+    try {
     out.innerHTML = coloredInput + "<br>" + Module.runLineWithColor(str);
+    }
+    catch(e) {
+        out.innerHTML = coloredInput+"<br><span class='COLe'>Error:</span> unrecognizable error, please report to <a href='https://github.com/benjamin-cates/XprtCalc/issues'>https://github.com/benjamin-cates/XprtCalc/issues</a> with more information.";
+    }
     document.querySelector("#input_element").value = "";
     document.querySelector("#highlight_output").innerHTML = "";
     document.querySelector("#output").prepend(out);
