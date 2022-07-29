@@ -11,6 +11,18 @@ body {
     margin: 0;
 }
 
+svg path,
+svg circle {
+    fill: #FFF;
+    transition: fill 0.2s ease;
+}
+
+button:hover svg path,
+button:hover svg circle {
+    fill: #aaa;
+
+}
+
 a:link,
 a:visited {
     color: rgb(0, 162, 255);
@@ -91,7 +103,7 @@ pre {
     border: none;
     min-height: 1.75em;
     font-size: 24pt;
-    font-family: monospace;
+    font-family: "Roboto Mono", monospace;
     box-sizing: border-box;
     line-height: 1.2em;
     padding: 0.25em;
@@ -195,15 +207,6 @@ pre {
     border-radius: 4px;
 }
 
-.panel_header_icon {
-    fill: #FFF;
-    transition: fill 0.2s ease;
-}
-
-#panel_header button.header_button_active .panel_header_icon {
-    fill: #bbb;
-}
-
 #panel_header button.header_button_active {
     border-bottom: #bbb 4px solid;
 
@@ -261,6 +264,129 @@ button:hover .panel_header_icon {
 
 .search_result:hover {
     background: #FFFFFF10;
+}
+
+#keyboard {
+    display: flex;
+    flex-direction: row;
+    --keyboard-height: calc(max(35vh, 7rem));
+    --keyboard-width: calc(min(100vw,25vw + 650px));
+    height: var(--keyboard-height);
+    width: var(--keyboard-width);
+    transition: bottom 0.4s ease;
+    padding: 5px;
+    border-radius: 10px 10px 0px 0px;
+    box-sizing: border-box;
+    background: #333;
+    position: fixed;
+    z-index: 20;
+    bottom: calc(0px - var(--keyboard-height));
+    left:50%;
+    margin-left:calc(0px - var(--keyboard-width) * 0.5);
+    box-shadow: 0px -2px 8px 0px #00000044;
+}
+
+#keyboard.mobile {
+    --keyboard-width: calc(min(100vw,400px + 20vw));
+}
+
+#keyboard.shown {
+    bottom: 0;
+}
+
+#keyboard * {
+    font-family: "Roboto Mono", monospace;
+    font-size: 16pt;
+}
+
+#keyboard_open {
+    z-index: 15;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    background: rgba(13, 60, 34, 1);
+    width: 50px;
+    height: 50px;
+    border: 0;
+    padding: 7px 0px 0px 2px;
+    border-radius: 10px 0 0 0;
+}
+
+#keyboard_open_x {
+    opacity: 0;
+    transition: ease 0.4s opacity;
+}
+
+#keyboard_open_x.show {
+    opacity: 50;
+}
+
+#keyboard.page2.mobile > div.key_page1.page,
+#keyboard.page1.mobile > div.key_page2.page {
+    display:none;
+}
+
+.key_page1,
+.key_page2 {
+    display: grid;
+    place-items: center;
+    justify-content: stretch;
+    column-gap: 2%;
+    row-gap: 2%;
+}
+
+.key_page1 {
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+}
+
+.key_page2 {
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+}
+
+
+#keyboard.mobile>.page {
+    width: 100%;
+}
+
+#keyboard>.page {
+    width: 48%;
+    margin: 1%;
+}
+
+
+#keyboard>.no_shift {
+    display: grid;
+}
+
+#keyboard.shift>.no_shift {
+    display: none;
+}
+
+#keyboard.shift>.need_shift {
+    display: grid;
+}
+
+#keyboard>.need_shift {
+    display: none;
+}
+
+button.key {
+    border: none;
+    background: #3F3F3F;
+    width: 100%;
+    height: 100%;
+    border-radius: 0.4rem;
+}
+
+button.key:hover {
+    background: #444444;
+}
+
+.offset_key {
+    margin-left: 50%;
+    margin-right: -50%;
 }
 
 .COLn {
