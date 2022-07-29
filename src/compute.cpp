@@ -47,7 +47,10 @@ namespace Math {
 ComputeCtx::ComputeCtx() {
 
 }
-Value ComputeCtx::getArgument(int id)const { return *(argValue.begin() + id); }
+Value ComputeCtx::getArgument(int id)const {
+    if(id >= argValue.size()) throw string("internal argument out of bounds");
+    return *(argValue.begin() + id);
+}
 void ComputeCtx::pushArgs(const ValList& args) {
     //Replace self referential replacement args with proper pointer
     for(auto it = argValue.begin();it != argValue.end();it++) {
@@ -171,7 +174,7 @@ void Program::buildFunctionNameMap() {
 #define all 0b01111111
 Function::Domain::Domain(const ValList& input) {
     sig = 0;
-    for(int i = 0;i < std::min(input.size(),size_t(4));i++) {
+    for(int i = 0;i < std::min(input.size(), size_t(4));i++) {
         int id = input[i]->typeID();
         if(id >= Value::tre_t) { sig = -1;return; }
         sig += (1 << (id - 1)) * (1 << (8 * i));
@@ -267,7 +270,7 @@ auto applyVecLHS = [](inp) {
     else out = std::make_shared<Vector>(x->size());
     for(int i = 0;i < x->size();i++)
         out->vec[i] = Program::computeGlobal(self, ValList{ x->vec[i],input[1] }, ctx);
-        return Value(out);
+    return Value(out);
 };
 auto applyVecRHS = [](inp) {
     def(Vector, x, 1);
