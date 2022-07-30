@@ -211,6 +211,53 @@ namespace MatchingXpr {
         {"1e1","10"},
         {"[10e3]_4","4^4"},
         {"0e5","0"},
+        {"factors(30)","<2,3,5>"},
+        {"gcd(10,4)","2"},
+        {"lcm(10,4)","20"},
+        {"max(10,40)","40"},
+        {"getr(15-2i)","15"},
+        {"geti(15-2i)","-2"},
+        {"getu(15[kg*kg])","[kg]^2"},
+        {"min(10,40)","10"},
+        {"lerp(10,40,0)","10"},
+        {"lerp(10,40,0.5)","25"},
+        {"dist(0,3+4i)","5"},
+        {"sgn(1+i)","(sqrt(2)+i*sqrt(2))/2"},
+        {"10==10","1"},
+        {"10==2","0"},
+        {"10!=10","0"},
+        {"10!=2","1"},
+        {"ls(5,2)","20"},
+        {"pi","3.14159265358979323p15"},
+        {"inf","0-(-inf)"},
+        {"round(dint(x=>x^2,0,30))","9000"},
+        {"dint(x=>sin(x),0,pi/2)","1"},
+        {"normalize(<1,1>)","sqrt(<2,2>)/2"},
+        {"fill(x=>x,5)","<0,1,2,3,4>"},
+        {"{\"a\":10,5:20,<1,2>:5}[\"a\"]","10"},
+        {"{\"a\":10,5:20,<1,2>:5}[5]","20"},
+        {"{\"a\":10,5:20,<1,2>:5}[<1,2>]","5"},
+        {"every(<10,2,0,4>,x=>(x>=0))","1"},
+        {"every(<10,2,0,4>,x=>(x>0))","0"},
+        {"concat(<1,2>,<3,4>)","<1,2,3,4>"},
+        {"sort(<5,1,6.6,2,1>)","<1,1,2,5,6.6>"},
+        {"sort(<5,1,6.6,2,1>,(a,b)=>(a>b))","<6.6,5,2,1,1>"},
+        {"simplify(x=>x*x)","x=>x^2"},
+        {"substr(\"hello world\",2,3)","\"llo\""},
+        {"lowercase(\"AghsaSDGJA\")","\"aghsasdgja\""},
+        {"lowercase(\"AghsaSDGJA\")","\"AGHSASDGJA\""},
+        {"replace(\"hello world\",\"o\",\"n\")","\"helln wnrld\""},
+        {"indexof(\"lsadkjg\",\"ad\")","2"},
+        {"magnitude(normalize(<5,1,3,124,5,151>))","1"},
+        {"length({1:2,4:3,5:4,6:2})","4"},
+        {"simplify(x=>y=>x^y)","x=>y=>x^y"},
+        {"simplify(x=>x-x)","x=>0"},
+        {"simplify(x=>x^2*x*x)","x=>x^4"},
+        {"simplify(derivative(x=>x^2))","x=>2x"},
+        {"simplify(derivative(x=>sin(x)^cos(x)))","simplify(x=>sin(x)^cos(x)*(cos(x)^2/sin(x)+(-1)*sin(x)*ln(sin(x))))"},
+        {"simplify(derivative(x=>x/x))","x=>0"},
+        {"infinite_sum(n=>1/n!)","e"},
+
     };
     string validate(std::map<string, string>::iterator it) {
         const string& identifier = it->first;
@@ -239,13 +286,13 @@ namespace Zeroes {
         //Comparison
         "(10>4)-1","(-10>4)", "10!=10","(10=10)-1", "equal(10.3,10.3)-1", "min(4,5)-4", "min(5,4)-4", "max(5,4)-5", "max(4,5)-5", "lerp(-1,1,0.5)", "dist(0,3+4i)-5",
         //Binary Operators
-        //"not(1)+2", "and(0,5)", "or(0,5)-5", "xor(5,3)-6", "ls(5,1)-10", "rs(5,1)-2",
+        "and(0,5)", "or(0,5)-5", "xor(5,3)-6", "ls(5,1)-10", "rs(5,1)-2",
         //Variables
         "floor(1/(pi-3.14))-627", "floor(1/(e-2.71))-120", "floor(rand)", "ans",
         //Lambda
         "run(x=>x+1,-1)", "sum(x=>x,0,10,1)-55", "product(x=>x,1,10,1)-3628800",
         //Vectors
-        "length(<>)", "length(<1,1,1,1,>)-5", "get(<0,1>,0)", "get(<0,1,0>,2)", "magnitude(abs(fill(x=>0,4)))", "magnitude(map(<1,1,sqrt(0.5)*2>,x=>x/2))-1",
+        "length(<>)", "length(<1,1,1,1,>)-5", "get(<0,1>,0)", "get(<0,1,0>,2)", "magnitude(abs(fill(x=>0,4)))", "magnitude(map_vector(<1,1,sqrt(0.5)*2>,x=>x/2))-1",
         //Numerical parsing
         "1e-2-0.01","1e2-100","1e34-10000000000000000000000000000000000"
     };
