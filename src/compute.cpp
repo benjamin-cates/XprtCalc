@@ -24,6 +24,15 @@ namespace Math {
     double gamma(double x) { return tgamma(x); }
     double leftShift(double x, long shift) { return long(x) << shift; }
     double rightShift(double x, long shift) { return long(x) >> shift; }
+    std::complex<double> pow(std::complex<double> a, std::complex<double> b) {
+        if(a.imag() == 0 && b.imag() == 0) {
+            if(a.real() == std::floor(a.real()) && b.real() == std::floor(b.real())) {
+                return std::complex<double>(std::round(std::pow(a.real(), b.real())), 0.0);
+            }
+            return std::complex<double>(std::pow(a.real(), b.real()), 0.0);
+        }
+        return std::pow(a, b);
+    }
     #ifdef USE_ARB
     mppp::real abs(const mppp::real& x) { return mppp::abs(x); }
     mppp::real ln(const mppp::real& x) { return mppp::log(x); }
@@ -40,6 +49,16 @@ namespace Math {
     mppp::real isInf(const mppp::real& x) { return inf_p(x); }
     mppp::real NaN(int accu) { mppp::real r("0.0", Arb::digitsToPrecision(accu));set_nan(r); return r; }
     mppp::real Inf(int accu, bool negative) { mppp::real r("0.0", Arb::digitsToPrecision(accu));set_inf(r, negative); return r; }
+    std::complex<mppp::real> pow(std::complex<mppp::real> a, std::complex<mppp::real> b) {
+        if(a.imag().zero_p() && b.imag().zero_p()) {
+            if(a.real().integer_p() && b.real().integer_p()) {
+                return std::complex<mppp::real>(mppp::round(mppp::pow(a.real(),b.real())),mppp::real(0));
+            }
+            return std::complex<mppp::real>(mppp::pow(a.real(),b.real()),mppp::real(0));
+        }
+        return std::pow(a,b);
+
+    }
     #endif
 };
 #pragma endregion
@@ -343,7 +362,7 @@ std::vector<Function> Program::globalFunctions = {
     Binary("sub","a","b",num1 - num2),
     BinaryWithUnit("mul","a","b",num1 * num2,unit1 * unit2),
     BinaryWithUnit("div","a","b",num1 / num2,unit1 / unit2),
-    BinaryWithUnit("pow","a","b",pow(num1,num2),unit1 ^ double(num2.real())),
+    BinaryWithUnit("pow","a","b",Math::pow(num1,num2),unit1 ^ double(num2.real())),
     Binary("mod","a","b",fmod(num1.real(),num2.real())),
 
     UnaryWithUnit("sqrt",sqrt(num),unit ^ 0.5),
