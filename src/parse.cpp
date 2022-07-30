@@ -271,7 +271,7 @@ Value Expression::parseNumeral(const string& str, int base) {
     string digits = str.substr(start, ePos - start);
     #ifdef USE_ARB
         //If digits are longer than 15, default to arb
-    if(digits.length() > 15 && precision == 15)
+    if(digits.length() > 15 && precision == 15 && pPos == str.length())
         precision = digits.length() - (digits.find('.') != string::npos);
     //Parse as arb if precision is specified
     if(precision != 15) {
