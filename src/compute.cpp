@@ -486,7 +486,7 @@ std::vector<Function> Program::globalFunctions = {
     #pragma endregion
 #pragma region Binary logic
     Function("equal",{"a","b"},{},{{D(all,all),[](inp) {return input[0] == input[1] ? Value::one : Value::zero;}}}),
-    Function("not_equal",{"a","b"},{},{{D(all,all),[](inp) {return input[0] == input[1] ? Value::one : Value::zero;}}}),
+    Function("not_equal",{"a","b"},{},{{D(all,all),[](inp) {return input[0] == input[1] ? Value::zero : Value::one;}}}),
     BinaryBaseTemplate("lt", "a","b", num1.real() < num2.real() ? Value::one : Value::zero),
     BinaryBaseTemplate("gt", "a","b", num1.real() > num2.real() ? Value::one : Value::zero),
     BinaryBaseTemplate("lt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
