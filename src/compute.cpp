@@ -509,7 +509,7 @@ std::vector<Function> Program::globalFunctions = {
     BinaryBaseTemplate("lt", "a","b", num1.real() < num2.real() ? Value::one : Value::zero),
     BinaryBaseTemplate("gt", "a","b", num1.real() > num2.real() ? Value::one : Value::zero),
     BinaryBaseTemplate("lt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
-    BinaryBaseTemplate("gt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
+    BinaryBaseTemplate("gt_equal","a","b", (num1.real() > num2.real() || num1 == num2) ? Value::one : Value::zero),
     #define BitwiseOperator(name,operat) Function(name,{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {uint64_t a = std::abs(input[0]->getR() + 0.5), b = std::abs(input[1]->getR() + 0.5);return std::make_shared<Number>(a operat b);}},BinVecApply})
     Function("not",{"x"},{{D(arb),D(dub)}},{{D(dub),[](inp) {return input[0]->getR() == 0 ? Value::one : Value::zero;}}}),
     BitwiseOperator("or", | ),
