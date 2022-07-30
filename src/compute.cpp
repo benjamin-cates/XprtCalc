@@ -745,7 +745,9 @@ std::vector<Function> Program::globalFunctions = {
         ValList lambdaInput = ValList{index};
         for(int i = 0;i < count;i++) {
             index->num = {double(i),0.0};
-            out->vec.push_back((*func)(lambdaInput,ctx));
+            Value x=(*func)(lambdaInput,ctx);
+            if(x.get() == index.get()) x = x.deepCopy();
+            out->vec.push_back(x);
         }
         return out;
     }}}),
