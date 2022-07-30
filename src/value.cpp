@@ -416,7 +416,7 @@ string Number::componentToString(double x, int base) {
     x /= std::pow(base, exponent);
     //Floating point
     if(exponent > 9.0 || exponent < -7.0) {
-        return componentToString(x, base) + "e" + componentToString(double(exponent), base);
+        return (isNegative ? "-" : "") + componentToString(x, base) + "e" + componentToString(double(exponent), base);
     }
     string out;
     if(isNegative) out += "-";
@@ -540,9 +540,8 @@ string Arb::toStr(ParseCtx& ctx)const {
         else if(Math::isNan(num.real())) return "nan";
         else out += Arb::componentToString(num.real(), 10);
     }
-    bool imagNeg = num.imag() < 0;
-    if(num.imag()) if(imagNeg || num.real() != 0) out += imagNeg ? '-' : '+';
     if(num.imag() != 0) {
+        if(num.real() != 0 && num.imag() > 0) out += "+";
         if(Math::isInf(num.imag())) out += "inf*";
         else if(Math::isNan(num.imag())) out += "nan*";
         else out += Arb::componentToString(num.imag(), 10);
