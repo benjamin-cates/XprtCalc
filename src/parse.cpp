@@ -61,7 +61,7 @@ bool ParseCtx::variableExists(const string& name)const {
     return it->second > 0;
 }
 Value ParseCtx::getVariable(const string& name)const {
-    string san=Expression::sanitizeVariable(name);
+    string san = Expression::sanitizeVariable(name);
     for(auto it = argStack.begin();it != argStack.end();it++) {
         if(san == *it) return std::make_shared<Argument>(std::distance(argStack.begin(), it));
     }
@@ -981,7 +981,8 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             }
             else {
                 arrow = str.find('>');
-                arguments.push_back(Expression::sanitizeVariable(sect.substr(0, arrow - 1)));
+                string var = Expression::sanitizeVariable(sect.substr(0, arrow - 1));
+                if(var != "_") arguments.push_back(var);
             }
             ctx.push(arguments);
             Value tr;

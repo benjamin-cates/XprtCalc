@@ -680,11 +680,11 @@ std::vector<Function> Program::globalFunctions = {
         DefaultInp(1,Value::zero);
         ValList argDx(func->inputNames.size(),Value::zero);
         int wrt = input[0]->getR();
-        if(wrt >= func->inputNames.size()) wrt = func->inputNames.size() - 1;
+        if(wrt >= func->inputNames.size()) return Value::zero;
         if(wrt < 0) wrt = 0;
         argDx[wrt] = Value::one;
         Value tr = func->func.derivative(argDx).simplify();
-        return make_shared<Lambda>(func->inputNames,tr);
+        return Value(make_shared<Lambda>(func->inputNames,tr));
     }}}),
     Function("simplify",{"xpr"},{},{{D(all),[](inp) {
         return input[0].simplify();
