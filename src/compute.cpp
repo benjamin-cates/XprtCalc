@@ -52,11 +52,11 @@ namespace Math {
     std::complex<mppp::real> pow(std::complex<mppp::real> a, std::complex<mppp::real> b) {
         if(a.imag().zero_p() && b.imag().zero_p()) {
             if(a.real().integer_p() && b.real().integer_p()) {
-                return std::complex<mppp::real>(mppp::round(mppp::pow(a.real(),b.real())),mppp::real(0));
+                return std::complex<mppp::real>(mppp::round(mppp::pow(a.real(), b.real())), mppp::real(0));
             }
-            return std::complex<mppp::real>(mppp::pow(a.real(),b.real()),mppp::real(0));
+            return std::complex<mppp::real>(mppp::pow(a.real(), b.real()), mppp::real(0));
         }
-        return std::pow(a,b);
+        return std::pow(a, b);
 
     }
     #endif
@@ -255,7 +255,7 @@ string Function::Domain::toString()const {
 #define aa D(arb,arb)
 #define dd D(dub,dub)
 #define vv D(vec_t,vec_t)
-#define inp ValList input,ComputeCtx& ctx,const string& self
+#define inp ValList& input,ComputeCtx& ctx,const string& self
 #define def(type,name,index) std::shared_ptr<type> name = input[index].cast<type>()
 #define getV(type,index) input[index].cast<type>()
 #define ret(type) return std::make_shared<type>
@@ -334,8 +334,8 @@ std::vector<Function> Program::globalFunctions = {
     #ifdef USE_ARB
     #define ConstantArb(name,...) Function("name",{},{},{{D(dub),[](inp) {return ret(Arb)(__VA_ARGS__);}}})
     #define UnaryWithUnit(name,formula,unitF,...) Function(name,{"x"},{}, {\
-        {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);ret(Number)(formula,unitF);}},\
-        {D(arb),[](inp) {using T=mppp::real;std::complex<T> num = getArbN(0);Unit unit=getArbU(0);ret(Arb)(formula,unitF);}},\
+        {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);return Value::reuseIfUnique<Number>(input[0],formula,unitF);}},\
+        {D(arb),[](inp) {using T=mppp::real;std::complex<T> num = getArbN(0);Unit unit=getArbU(0);return Value::reuseIfUnique<Arb>(input[0],formula,unitF);}},\
         UnaryVecApply,__VA_ARGS__})
     #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},{D(arb),[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num=getArbN(0);Unit unit=getArbU(0);formula;}},BinVecApply,__VA_ARGS__})
     #define BinaryBaseTemplate(name,arg1,arg2,returnType,...) Function(name,{arg1,arg2},{samePrecision}, {\
@@ -343,7 +343,7 @@ std::vector<Function> Program::globalFunctions = {
         {aa,[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num1=getArbN(0);std::complex<T> num2=getArbN(1);Unit unit1=getArbU(0);Unit unit2=getArbU(1);return returnType;}},BinVecApply,__VA_ARGS__})
     #else
     #define UnaryWithUnit(name,formula,unitF,...) Function(name,{"x"},{}, {\
-        {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);ret(Number)(formula,unitF);}},\
+        {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);return Value::reuseIfUnique<Number>(input[0],formula,unitF);}},\
         UnaryVecApply,__VA_ARGS__})
     #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},UnaryVecApply,__VA_ARGS__})
     #define BinaryBaseTemplate(name,arg1,arg2,returnType,...) Function(name,{arg1,arg2},{samePrecision}, {\
@@ -351,7 +351,7 @@ std::vector<Function> Program::globalFunctions = {
     #endif
 
 
-    #define BinaryWithUnit(name,arg1,arg2,formula,unit,...) BinaryBaseTemplate(name,arg1,arg2,std::make_shared<R>(formula,unit),__VA_ARGS__)
+    #define BinaryWithUnit(name,arg1,arg2,formula,unit,...) BinaryBaseTemplate(name,arg1,arg2,Value::reuseAnyUnique<R>(input[0],input[1],formula,unit),__VA_ARGS__)
     #define Binary(name,arg1,arg2,formula,...) BinaryWithUnit(name,arg1,arg2,formula,unit1+unit2,__VA_ARGS__)
     #define Unary(name,formula,...) UnaryWithUnit(name,formula,unit,__VA_ARGS__)
     #define Unary3(name,real,imag,unitF,...) UnaryWithUnit(name,std::complex(real,imag),unitF,__VA_ARGS__)
@@ -583,19 +583,19 @@ std::vector<Function> Program::globalFunctions = {
         double step = 1.0;
         if(input.size() == 4) step = input[3]->getR();
         if(Program::smallCompute) if((end - begin) / step > 10.0) end = begin + step * 10.0;
-        shared_ptr<Number> n = make_shared<Number>(0);
-        ValList lambdaInput{n};
+        Value n = make_shared<Number>(0);
         Value out = make_shared<Number>(0);
         for(double index = begin;index <= end;index += step) {
-            n->num = {index,0.0};
-            out = Program::computeGlobal("add",ValList{out,(*func)(lambdaInput,ctx)},ctx);
+            n = Value::reuseIfUnique<Number>(n,index,0);
+            ValList add{std::move(out),(*func)({n},ctx)};
+            out = Program::globalFunctions[Program::globalFunctionMap["add"]](add,ctx);
         }
         return out;
     }},{D(vec_t),[](inp) {
         def(Vector,vec,0);
         Value out = Value::zero;
         for(int i = 0;i < vec->vec.size();i++)
-            out = Program::computeGlobal("add",ValList{out,vec->vec[i]},ctx);
+            out = Program::computeGlobal("add",ValList{std::move(out),vec->vec[i]},ctx);
         return out;
     }}}),
     Function("product",{"func","begin","end","step"},{},{{D(lmb,arb | dub,arb | dub,arb | dub | opt), [](inp) {
@@ -604,19 +604,19 @@ std::vector<Function> Program::globalFunctions = {
         double step = 1.0;
         if(input.size() == 4) step = input[3]->getR();
         if(Program::smallCompute) if((end - begin) / step > 10.0) end = begin + step * 10.0;
-        shared_ptr<Number> n = make_shared<Number>(0);
-        ValList lambdaInput{n};
+        Value n = make_shared<Number>(0);
         Value out = make_shared<Number>(1);
         for(double index = begin;index <= end;index += step) {
-            n->num = {index,0.0};
-            out = Program::computeGlobal("mul",ValList{out,(*func)(lambdaInput,ctx)},ctx);
+            n = Value::reuseIfUnique<Number>(n,index,0);
+            ValList mul{std::move(out),(*func)({n},ctx)};
+            out = Program::globalFunctions[Program::globalFunctionMap["mul"]](mul,ctx);
         }
         return out;
     }},{D(vec_t),[](inp) {
         def(Vector,vec,0);
         Value out = std::make_shared<Number>(1);
         for(int i = 0;i < vec->vec.size();i++)
-            out = Program::computeGlobal("mul",ValList{out,vec->vec[i]},ctx);
+            out = Program::computeGlobal("mul",ValList{std::move(out),vec->vec[i]},ctx);
         return out;
     }}}),
     Function("infinite_sum",{"func"},{},{{D(lmb,dub | arb | opt),[](inp) {
@@ -624,14 +624,15 @@ std::vector<Function> Program::globalFunctions = {
         DefaultInp(1,Value::zero);
         Value out = Value::zero;
         Value old = out;
-        shared_ptr<Number> n = make_shared<Number>(input[1]->getR());
-        ValList lambdaInput{n};
+        Value n = make_shared<Number>(input[1]->getR());
         while(true) {
+            ValList lambdaInput{n};
             Value inc = (*func)(lambdaInput,ctx);
-            out = Program::computeGlobal("add",{out,inc},ctx);
-            n->num = {n->num.real() + 1,0};
-            if(n->num.real() == 100000) return out;
-            if(Program::smallCompute) if(n->num.real() == 20) return out;
+            ValList add{std::move(out),inc};
+            out = Program::globalFunctions[Program::globalFunctionMap["add"]](add,ctx);
+            n = Value::reuseIfUnique<Number>(n,n.cast<Number>()->num.real() + 1);
+            if(n.cast<Number>()->num.real() == 100000) return out;
+            if(Program::smallCompute) if(n.cast<Number>()->num.real() == 20) return out;
             if(out == old) break;
             old = out;
         }
@@ -741,13 +742,12 @@ std::vector<Function> Program::globalFunctions = {
         int count = input[1]->getR();
         if(Program::smallCompute) if(count > 10) count = 10;
         shared_ptr<Vector> out = make_shared<Vector>();
-        shared_ptr<Number> index = make_shared<Number>(0);
-        ValList lambdaInput = ValList{index};
+        Value index = make_shared<Number>(0);
         for(int i = 0;i < count;i++) {
-            index->num = {double(i),0.0};
-            Value x=(*func)(lambdaInput,ctx);
-            if(x.get() == index.get()) x = x.deepCopy();
-            out->vec.push_back(x);
+            index = Value::reuseIfUnique<Number>(index,double(i),0.0);
+            ValList lambdaInput{index};
+            Value x = (*func)(lambdaInput,ctx);
+            out->vec.push_back(std::move(x));
         }
         return out;
     }}}),

@@ -320,7 +320,7 @@ class Function {
 
 public:
     //std::function that takes in a list of values and a context and returns a value
-    typedef std::function<Value(ValList, ComputeCtx&, const string&)> fobj;
+    typedef std::function<Value(ValList&, ComputeCtx&, const string&)> fobj;
     struct Domain {
         //Contains binary data on support for first four arguments
         uint32_t sig;
@@ -484,6 +484,26 @@ public:
         if(ptr) return *ptr;
         throw "Nullptr dereference";
     }
+    template<typename Type, typename... T>
+    static Value reuseIfUnique(Value& a, T&& ...args) {
+        if(a.ptr.unique()) {
+            *((Type*)(a.get())) = Type(std::forward<T>(args)...);
+            return a;
+        }
+        else return Value(std::make_shared<Type>(std::forward<T>(args)...));
+    }
+    template<typename Type, typename... T>
+    static Value reuseAnyUnique(Value& a, Value& b, T&& ...args) {
+        if(a.ptr.unique()) {
+            *((Type*)(a.get())) = Type(std::forward<T>(args)...);
+            return a;
+        }
+        else if(b.ptr.unique()) {
+            *((Type*)(b.get())) = Type(std::forward<T>(args)...);
+            return b;
+        }
+        else return Value(std::make_shared<Type>(std::forward<T>(args)...));
+    }
     friend bool operator<(const Value& lhs, const Value& rhs);
     bool operator==(std::nullptr_t n) { return ptr == nullptr; }
     template<typename T>
@@ -498,6 +518,7 @@ public:
         return std::dynamic_pointer_cast<T, ValueBaseClass>(ptr);
     }
     Value deepCopy()const;
+    bool unique()const {return ptr.unique();}
     //Returns true only if type is num or arb and real=1 and imag=0 and unit=0
     static bool isOne(const Value& x);
     //Returns true only if type is num or arb and real, imag, and unit are zero

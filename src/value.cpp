@@ -396,7 +396,7 @@ Value Tree::compute(ComputeCtx& ctx) {
     ValList computed(branches.size());
     bool computable = true;
     for(int i = 0;i < branches.size();i++) {
-        computed[i] = branches[i]->compute(ctx);
+        computed[i] = std::move(branches[i]->compute(ctx));
         if(computed[i]->typeID() >= Value::tre_t) computable = false;
     }
     if(computable) return Program::globalFunctions[op](computed, ctx);
