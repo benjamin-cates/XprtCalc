@@ -201,7 +201,7 @@ const keyboardConstructor = {
             for(let i = 0; i < keyList.length; i++) {
                 let k = "";
                 let keyClass = "key";
-                let otherAttributes = " onpointerout='keyboard.clearInterval()' ";
+                let otherAttributes = " onpointerout='keyboard.clearInterval()' onclick='textArea.focus()'";
                 if(keyList[i] == "") {
                     out += "<div></div>";
                     continue;
