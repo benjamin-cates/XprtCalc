@@ -13,7 +13,7 @@
         <link rel="stylesheet" href="wasm/style.css">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+        <link rel='preconnect' href='https://fonts.googleapis.com'><link rel='preconnect' href='https://fonts.gstatic.com' crossorigin><link href='https://fonts.googleapis.com/css2?family=Lato&family=Roboto+Mono:wght@500&display=swap' rel='stylesheet'>
     </head>
 
     <body>
@@ -96,12 +96,24 @@
                     </svg></button>
             </div>
             <div id="help_panel" class="panel_page">
-                <input type="text" id="help_search" placeholder="Search the docs..." onkeydown="helpSearch(event,this)">
+                <input type="text" id="help_search" placeholder="Search the docs..." onkeydown="helpSearch(event,this)" onclick="helpSearch(event,'!click')">
                 <div id="search_results">
-                    Search results
-
                 </div>
                 <iframe id="help_page" src="docs/help/index.html"></iframe>
+                <div id="help_page_front" class="page_help">
+                    Welcome to <span class='COLu'>XprtCalc</span>!<br>To get started, type an expression into the main box, if you are on mobile,
+                    make sure to enable the keyboard by using the button on the bottom right.<br>Please use the search
+                    bar to view the help pages or see these basic pages to understand the more advanced features of the
+                    program:<br><br>
+                    <div class="search_result" onclick="window.top.postMessage('openhelppage vector');">Vectors</div>
+                    <div class="search_result" onclick="window.top.postMessage('openhelppage lambda');">Lambda functions</div>
+                    <div class="search_result" onclick="window.top.postMessage('openhelppage list of operators');">List of operators</div>
+                    <div class="search_result" onclick="window.top.postMessage('openhelppage units');">Units</div>
+                    <div class="search_result" onclick="window.top.postMessage('openhelppage history');">History</div>
+                    <div class="search_result" onclick="window.top.postMessage('openhelppage include');">/include command</div>
+                    <br>
+                    This project was created by Benjamin Cates and is open source on <a href="https://github.com/benjamin-cates/XprtCalc">GitHub</a>. Visit the link to see an overview of the project
+                </div>
             </div>
             <div id="pref_panel" class="panel_page">
 

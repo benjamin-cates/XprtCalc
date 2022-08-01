@@ -256,8 +256,14 @@ button:hover .panel_header_icon {
     font-size: 16pt;
 }
 
+#help_page_front {
+    word-wrap: break-word;
+    font-family: "Lato", sans-serif;
+    font-size: 14pt;
+}
 
-#search_results {
+
+.search_result {
     font-family: "Roboto Mono", monospace;
     font-size: 14pt;
 }

@@ -131,10 +131,19 @@ function helpSearch(event, queryBox) {
             queryResults += "No results found for " + queryBox.value;
         document.querySelector("#search_results").innerHTML = queryResults;
         queryBox.value = "";
+        document.querySelector("#search_results").style.display = "block";
+        document.querySelector("#help_page_front").style.display = "none";
+    }
+    if(queryBox == "!click") {
+        document.querySelector("#help_page").classList.remove("shown");
+        document.querySelector("#help_page").contentWindow.postMessage("hide");
+        document.querySelector("#search_results").style.display = "none";
+        document.querySelector("#help_page_front").style.display = "block";
     }
 }
 function displayHelpPage(id) {
     document.querySelector("#search_results").style.display = "none";
+    document.querySelector("#help_page_front").style.display = "none";
     document.querySelector("#help_page").classList.add("shown");
     document.querySelector("#help_page").contentWindow.postMessage("hide");
     document.querySelector("#help_page").contentWindow.postMessage("show" + id);
@@ -323,9 +332,9 @@ function pressKey(x) {
         }
         else {
             let [start, finish] = [textArea.selectionStart, textArea.selectionEnd];
-            let [begin, end] = [Math.min(start,finish),Math.max(start,finish)];
-            textArea.value = textArea.value.substring(0,begin) + textArea.value.substring(end);
-            textArea.setSelectionRange(begin,begin);
+            let [begin, end] = [Math.min(start, finish), Math.max(start, finish)];
+            textArea.value = textArea.value.substring(0, begin) + textArea.value.substring(end);
+            textArea.setSelectionRange(begin, begin);
             update_highlight(textArea.value);
         }
     }
