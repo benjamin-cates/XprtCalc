@@ -41,9 +41,9 @@ window.addEventListener("click", event => {
     //Close keyboard if somewhere else is clicked
     if(keyboard.shown) {
         //If click is within bounding rectangle of keyboard, ignore it
-        if(event.clientY > document.body.clientHeight - keyboard.element.clientHeight) {
-            if(event.clientX > document.body.clientWidth / 2 + keyboard.element.clientWidth / 2);
-            else if(event.clientX < document.body.clientWidth / 2 - keyboard.element.clientWidth / 2);
+        if(event.clientY > window.innerHeight - keyboard.element.clientHeight) {
+            if(event.clientX > window.innerWidth / 2 + keyboard.element.clientWidth / 2);
+            else if(event.clientX < window.innerWidth / 2 - keyboard.element.clientWidth / 2);
             else return;
         }
         //Ignore if focus is in textArea
