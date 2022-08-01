@@ -315,13 +315,19 @@ function pressKey(x) {
     }
     else if(key == "backspace") {
         if(textArea.selectionStart == textArea.selectionEnd) {
-            textArea.value = textArea.value.substring(0, textArea.selectionStart - 1) + textArea.value.substring(textArea.selectionStart);
             let start = textArea.selectionStart;
+            textArea.value = textArea.value.substring(0, textArea.selectionStart - 1) + textArea.value.substring(textArea.selectionStart);
             if(textArea.value.length == start) textArea.setSelectionRange(start, start);
             else textArea.setSelectionRange(start - 1, start - 1);
             update_highlight(textArea.value);
         }
-        else window.getSelection().getRangeAt(0).deleteContents();
+        else {
+            let [start, finish] = [textArea.selectionStart, textArea.selectionEnd];
+            let [begin, end] = [Math.min(start,finish),Math.max(start,finish)];
+            textArea.value = textArea.value.substring(0,begin) + textArea.value.substring(end);
+            textArea.setSelectionRange(begin,begin);
+            update_highlight(textArea.value);
+        }
     }
     else if(key == "shift") {
         keyboard.shift = !keyboard.shift;
