@@ -178,6 +178,13 @@ const keyboard = {
     interval: null,
     intervalKey: "",
     intervalDelay: null,
+    clearInterval: _ => {
+        clearInterval(keyboard.interval);
+        clearTimeout(keyboard.intervalDelay);
+        keyboard.interval = null;
+        keyboard.intervalDelay = null;
+        keyboard.intervalKey = "";
+    },
     currentPage: "page1",
     svg: {
         rightArrow: "<svg width='1em' height='1em' viewbox='0 0 13 13'> <path d='M 3 3 L 3 2 L 4 1 L 5 1 L 10 6 L 10 7 L 5 12 L 4 12 L 3 11 L 3 10 L 6 7 L 6 6 L 3 3'></path> </svg>",
@@ -191,6 +198,7 @@ const keyboard = {
         enter: "E",
     }
 };
+window.addEventListener("pointerup", keyboard.clearInterval);
 const keyboardConstructor = {
     construct: _ => {
         let out = "";
@@ -200,7 +208,7 @@ const keyboardConstructor = {
             for(let i = 0; i < keyList.length; i++) {
                 let k = "";
                 let keyClass = "key";
-                let otherAttributes = " ";
+                let otherAttributes = " onpointerout='keyboard.clearInterval()' ";
                 if(keyList[i] == "") {
                     out += "<div></div>";
                     continue;
@@ -273,11 +281,11 @@ function pressKey(x) {
     else key = x.innerText;
     //Set interval if key continues being pressed
     if(keyboard.intervalKey != key) {
+        keyboard.clearInterval();
         keyboard.intervalKey = key;
-        clearInterval(keyboard.interval);
-        clearTimeout(keyboard.intervalDelay);
         keyboard.intervalDelay = setTimeout(_ => keyboard.interval = setInterval(_ => pressKey(key), 90), 250);
     }
+    //Parse key
     if(key.includes("arrow")) {
         if(key == "left arrow") {
             textArea.setSelectionRange(Math.max(textArea.selectionStart - 1, 0), Math.max(textArea.selectionStart - 1, 0));
