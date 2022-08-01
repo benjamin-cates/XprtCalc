@@ -229,8 +229,8 @@ std::vector<Page> Help::pages = {
     Page("Inverse cosine","acos","function","Returns the inverse ?cosine? of `x`. `acos(cos(x)) = x` for `0 < x < pi`",{"trigonometry","arccosine"},"https://en.wikipedia.org/wiki/Inverse_trigonometric_functions"),
     Page("Inverse tangent","atan","function","Returns the inverse ?tangent? of `x`. `atan(tan(x)) = x` for `-pi/2 < x < pi/2`",{"trigonometry","arctan"},"https://en.wikipedia.org/wiki/Inverse_trigonometric_functions"),
     Page("Inverse hyperbolic sine","asinh","function","Returns the inverse ?hyperbolic sine? of `x`. `asinh(sinh(x)) = x`.",{"trigonometry","hyperbolic arcsine"},"https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions"),
-    Page("Inverse hyperbolic cosine","asinh","function","Returns the inverse ?hyperbolic cosine? of `x`. `acosh(cosh(x)) = x` for `x >= 1`.",{"trigonometry","hyperbolic arccosine"},"https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions"),
-    Page("Inverse hyperbolic tangent","asinh","function","Returns the inverse ?hyperbolic tangent? of `x`. `atanh(tanh(x)) = x`.",{"trigonometry","hyperbolic arctangent"},"https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions"),
+    Page("Inverse hyperbolic cosine","acosh","function","Returns the inverse ?hyperbolic cosine? of `x`. `acosh(cosh(x)) = x` for `x >= 1`.",{"trigonometry","hyperbolic arccosine"},"https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions"),
+    Page("Inverse hyperbolic tangent","atanh","function","Returns the inverse ?hyperbolic tangent? of `x`. `atanh(tanh(x)) = x`.",{"trigonometry","hyperbolic arctangent"},"https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions"),
     #pragma endregion
     #pragma region Numeric
     Page("Round","round","function","Returns the nearest integer to `x`. If the decimal component of `x >= 0.5`, it will round up, else it will round down.",{},"https://en.wikipedia.org/wiki/Rounding#Round_half_up"),
@@ -268,7 +268,7 @@ std::vector<Page> Help::pages = {
     #pragma region Constants
     Page("True","true","function","Constant that returns 1. It is used for boolean logic because comparison operators return `1` on success. The `false` constant is the opposite of `true`.",{"binary","boolean"}),
     Page("False","false","function","Constant that returns `0`. It is used for boolean logic because comparison operators return `0` on failure. The `true` constant is the opposite of `false`.",{"binary","boolean"}),
-    Page("Imaginary number","i","function","Constant that returns the imaginary number `i`. `i^2` is equal to `-1`, and it is used a lot in higher level math and algebra.",{"constant"},"https://en.wikipedia.org/wiki/Imaginary_number"),
+    Page("Imaginary number","i","function","Constant that returns the imaginary number `i`. `i^2` is equal to `-1`, and it is used a lot in higher level math and algebra.",{"constant","imaginary"},"https://en.wikipedia.org/wiki/Imaginary_number"),
     Page("Pi","pi","function","Constant that retuns the number pi. Pi is the ratio between the circumference ofa circle and it's diameter. Pi is used a lot in ?trigonometry?. Pi returns a double precision float, see `arb_pi` for a more accurate calculation.",{"constant"},"https://en.wikipedia.org/wiki/Pi"),
     Page("Euler's number","e","function","Constant that retuns euler's number, which is the base of natural logarithms. `e` is used a lot in math past algebra. `e` returns a double precision float, see `arb_e` for a more accurate calculation.",{"constant"},"https://en.wikipedia.org/wiki/E_(mathematical_constant)"),
     Page("Arbitrary pi","arb_pi","function","Returns `pi` to `prec` decimal digits as an `arbitrary precision` float. See `pi` for the 15-digit approximation."),
@@ -384,12 +384,16 @@ std::vector<Page> Help::pages = {
 std::map<uint64_t, std::vector<std::pair<int, int>>> Help::queryHash;
 void Help::stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, const string& str, int basePriority = 1) {
     //X represents the position within a word
-    int x = 0;
+    int i = 0, x = 0;
     uint64_t hash = 0;
-    for(int i = 0;i < str.length();i++) {
+    for(i = 0;i < str.length();i++) {
         //If word separator has been reached
         if(std::strchr(" .,[]()-+`?;:\"", str[i])) {
-            if(hash != 0) hashOut.push_back({ hash,basePriority });
+            if(hash != 0) {
+                //If starts with, add extra priority
+                if(x == i) hashOut.push_back({ hash,basePriority + 2 });
+                else hashOut.push_back({ hash,basePriority });
+            }
             x = 0, hash = 0;
         }
         else {
@@ -399,7 +403,11 @@ void Help::stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, cons
             x++;
         }
     }
-    if(hash != 0) hashOut.push_back({ hash,basePriority });
+    if(hash != 0) {
+        //If exact match, add extra priority
+        if(x == i) hashOut.push_back({ hash,basePriority + 7 });
+        else hashOut.push_back({ hash,basePriority });
+    }
 }
 void Help::generateQueryHash() {
     queryHash.clear();
@@ -416,7 +424,7 @@ void Help::generateQueryHash() {
             queryHash[hashes[i].first].push_back({ page,hashes[i].second });
     }
     //Remove common words
-    static const string removedWords = "is the does coefficient are acceptable a b x with to that supports support see returns 1 2 3 4 5 6 7 8 9 0";
+    static const string removedWords = "is the does coefficient are acceptable a b x with to that supports support see returns 1 2 3 4 5 6 7 8 9 0 of ";
     std::vector<std::pair<uint64_t, int>> hashes;
     stringToHashList(hashes, removedWords, 1);
     for(int i = 0;i < hashes.size();i++)
