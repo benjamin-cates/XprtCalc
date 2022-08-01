@@ -37,9 +37,18 @@ textArea.addEventListener("focus", event => {
     keyboard.shown = keyboard.enabled;
     if(keyboard.shown) keyboard.element.classList.add("shown");
 });
-textArea.addEventListener("blur", event => {
+window.addEventListener("click", event => {
+    //Close keyboard if somewhere else is clicked
     if(keyboard.shown) {
-        if(event.relatedTarget && (event.relatedTarget.className.includes("key") || event.relatedTarget.className.includes("page"))) return;
+        //If click is within bounding rectangle of keyboard, ignore it
+        if(event.clientY > document.body.clientHeight - keyboard.element.clientHeight) {
+            if(event.clientX > document.body.clientWidth / 2 + keyboard.element.clientWidth / 2);
+            else if(event.clientX < document.body.clientWidth / 2 - keyboard.element.clientWidth / 2);
+            else return;
+        }
+        //Ignore if focus is in textArea
+        if(document.activeElement == textArea) return;
+        //Hide keyboard
         keyboard.element.classList.remove("shown");
         keyboard.shown = false;
     }
@@ -305,6 +314,9 @@ function pressKey(x) {
 }
 document.querySelector("#keyboard_open").addEventListener("click", event => {
     keyboard.enabled = !keyboard.enabled;
+    //Show/hide keyboard
+    if(keyboard.enabled) keyboard.element.classList.add("shown");
+    else keyboard.element.classList.remove("shown");
     //Set input mode
     if(keyboard.enabled) textArea.setAttribute("inputmode", "none");
     else textArea.setAttribute("inputmode", "text");
