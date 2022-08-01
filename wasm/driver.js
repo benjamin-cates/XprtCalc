@@ -74,8 +74,8 @@ window.onload = _ => {
     textArea.focus();
     resize();
     window.addEventListener("resize", resize);
-    update_highlight("");
     keyboardConstructor.construct();
+    update_highlight("");
 }
 
 var panelData = {
@@ -317,7 +317,7 @@ function pressKey(x) {
         if(textArea.selectionStart == textArea.selectionEnd) {
             let start = textArea.selectionStart;
             textArea.value = textArea.value.substring(0, textArea.selectionStart - 1) + textArea.value.substring(textArea.selectionStart);
-            if(textArea.value.length == start) textArea.setSelectionRange(start, start);
+            if(textArea.value.length == start - 1) textArea.setSelectionRange(start, start);
             else textArea.setSelectionRange(start - 1, start - 1);
             update_highlight(textArea.value);
         }
