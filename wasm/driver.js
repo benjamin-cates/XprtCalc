@@ -176,8 +176,8 @@ const keyboard = {
         downArrow: "<svg width='1em' height='1em' viewbox='0 0 13 13'> <g transform='translate(-1,2)rotate(90,7.5,7.5)'><path d='M 3 3 L 3 2 L 4 1 L 5 1 L 10 6 L 10 7 L 5 12 L 4 12 L 3 11 L 3 10 L 6 7 L 6 6 L 3 3'></path> </g> </svg>",
         backspace: "<svg width='1.5em' height='1em' viewbox='0 -1 20 14'><path d='M 2 7 L 7 2 L 17 2 L 17 3 L 7.5 3 L 3.5 7 L 7.5 11 L 16 11 L 16 3 L 17 3 L 17 12 L 7 12 L 2 7'/></svg>",
         backspaceFull: "<svg width='1.5em' height='1em' viewbox='0 -1 20 14'><path d='M 2 7 L 7 2 L 17 2 L 17 12 L 7 12 L 2 7'/></svg>",
-        shift: "<svg width='1.6ch' height='1.5em' style='margin:0 -0.3ch 0 -0.3ch' viewbox='2 0 8 9'><path d='M 3 5 L 6 2 L 9 5 L 7.8 5.2 L 7.8 8 L 4.2 8 L 4.2 5.2 L 3 5 L 4.8 4.8 L 4.8 7.4 L 7.2 7.4 L 7.2 4.8 L 7.9 4.66 L 6 2.9 L 4.1 4.66 L 4.8 4.8'/></svg>",
-        shiftFull: "<svg width='1.6ch' height='1.5em' style='margin:0 -0.3ch 0 -0.3ch' viewbox='2 0 8 9'><path d='M 3 5 L 6 2 L 9 5 L 7.8 5.2 L 7.8 8 L 4.2 8 L 4.2 5.2 L 3 5'/></svg>",
+        shift: "<svg width='1.6ch' height='1.3em' style='margin:0 -0.3ch 0 -0.3ch' viewbox='2 0 8 8'><path d='M 3 5 L 6 2 L 9 5 L 7.8 5.2 L 7.8 8 L 4.2 8 L 4.2 5.2 L 3 5 L 4.8 4.8 L 4.8 7.4 L 7.2 7.4 L 7.2 4.8 L 7.9 4.66 L 6 2.9 L 4.1 4.66 L 4.8 4.8'/></svg>",
+        shiftFull: "<svg width='1.6ch' height='1.3em' style='margin:0 -0.3ch 0 -0.3ch' viewbox='2 0 8 8'><path d='M 3 5 L 6 2 L 9 5 L 7.8 5.2 L 7.8 8 L 4.2 8 L 4.2 5.2 L 3 5'/></svg>",
         enter: "E",
     }
 };
