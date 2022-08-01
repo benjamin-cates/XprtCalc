@@ -235,10 +235,12 @@ int Function::Domain::minArgCount()const {
 string Function::Domain::toString()const {
     const static std::vector<string> names = { "num","arb","vec","lambda","str","map","set","opt" };
     string out = "(";
-    for(int i = 0;i < maxArgCount();i++) {
+    for(int i = 0;i < std::min(maxArgCount(), 4);i++) {
         int sec = sig >> (i * 8) & 0xff;
         bool orBool = false;
-        for(int x = 0;x < 8;x++) {
+        if(sec == (all | opt))
+            out += "any";
+        else for(int x = 0;x < 8;x++) {
             if(sec >> x & 1) {
                 if(orBool)out += "|";
                 else orBool = true;
@@ -247,7 +249,8 @@ string Function::Domain::toString()const {
         }
         if(i != maxArgCount() - 1) out += ",";
     }
-    return out + ";" + std::to_string(sig) + ")";
+    if(maxArgCount() > 4) out += "...";
+    return out + ")";
 }
 #pragma endregion
 #pragma region Preprocessor statements
