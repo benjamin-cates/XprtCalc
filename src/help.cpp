@@ -315,7 +315,7 @@ std::vector<Page> Help::pages = {
     Page("To Map","tomap","function","Returns `val` converted to ?map? type.",{"convert"}),
     Page("To String","tostring","function","Returns `val` converted to ?string? type.",{"convert"}),
     Page("To Lambda","tostring","function","Returns a constant ?lambda? type that returns `val`.",{"convert"}),
-    Page("Typeof","typeof","function","Returns an integer representing the type of the input `val`. Types are: 1-?number?, 2-?arb?, 3-?vec?, 4-?lambda?, 5-?string?, 6-?map?. If zero is returned, the type of `val` is null.",{"convert"}),
+    Page("Typeof","typeof","function","Returns an integer representing the type of the input `val`. Types are: 0-?number?, 1-?arb?, 2-?vec?, 3-?lambda?, 4-?string?, 5-?map?. If -1 is returned, the type of `val` is null.",{"convert"}),
     #pragma endregion
     #pragma endregion
     #pragma region Units
