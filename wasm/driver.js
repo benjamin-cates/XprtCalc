@@ -53,13 +53,6 @@ window.addEventListener("click", event => {
         keyboard.shown = false;
     }
 });
-window.addEventListener("pointerup", event => {
-    clearInterval(keyboard.interval);
-    clearTimeout(keyboard.intervalDelay);
-    keyboard.intervalKey = "";
-    keyboard.interval = null;
-    keyboard.intervalDelay = null;
-});
 
 
 function update_highlight(str) {
@@ -275,7 +268,14 @@ const keyboardConstructor = {
 };
 
 function pressKey(x) {
+    //Vibrate if key action actually does something
+    if((x === "backspace" || x === "clear" || x === "enter") && textArea.value == "");
+    else if(x === "left arrow" && textArea.selectionStart == 0);
+    else if(x === "right arrow" && textArea.selectionStart == textArea.value.length);
+    else window.navigator.vibrate(15);
+    //Focus on text area
     textArea.focus();
+    //Get key type
     let key;
     if(typeof x == "string") key = x;
     else key = x.innerText;
