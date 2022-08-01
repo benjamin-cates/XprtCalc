@@ -53,6 +53,13 @@ window.addEventListener("click", event => {
         keyboard.shown = false;
     }
 });
+window.addEventListener("pointerup", event => {
+    clearInterval(keyboard.interval);
+    clearTimeout(keyboard.intervalDelay);
+    keyboard.intervalKey = "";
+    keyboard.interval = null;
+    keyboard.intervalDelay = null;
+});
 
 
 function update_highlight(str) {
@@ -168,6 +175,9 @@ const keyboard = {
     shift: false,
     default: false,
     active: false,
+    interval: null,
+    intervalKey: "",
+    intervalDelay: null,
     currentPage: "page1",
     svg: {
         rightArrow: "<svg width='1em' height='1em' viewbox='0 0 13 13'> <path d='M 3 3 L 3 2 L 4 1 L 5 1 L 10 6 L 10 7 L 5 12 L 4 12 L 3 11 L 3 10 L 6 7 L 6 6 L 3 3'></path> </svg>",
@@ -197,11 +207,11 @@ const keyboardConstructor = {
                 }
                 if(typeof keyList[i] == "string") {
                     k = keyList[i];
-                    otherAttributes += "onclick='pressKey(this)'";
+                    otherAttributes += "onpointerdown='pressKey(this)'";
                 }
                 else {
                     k = keyList[i].k;
-                    if(keyList[i].n) otherAttributes += `onclick="pressKey('${keyList[i].n}')"`;
+                    if(keyList[i].n) otherAttributes += `onpointerdown="pressKey('${keyList[i].n}')"`;
                     if(keyList[i].col || keyList[i].row) {
                         otherAttributes += "style='";
                         if(keyList[i].col) otherAttributes += "grid-column: " + keyList[i].col;
@@ -261,6 +271,13 @@ function pressKey(x) {
     let key;
     if(typeof x == "string") key = x;
     else key = x.innerText;
+    //Set interval if key continues being pressed
+    if(keyboard.intervalKey != key) {
+        keyboard.intervalKey = key;
+        clearInterval(keyboard.interval);
+        clearTimeout(keyboard.intervalDelay);
+        keyboard.intervalDelay = setTimeout(_ => keyboard.interval = setInterval(_ => pressKey(key), 90), 250);
+    }
     if(key.includes("arrow")) {
         if(key == "left arrow") {
             textArea.setSelectionRange(Math.max(textArea.selectionStart - 1, 0), Math.max(textArea.selectionStart - 1, 0));

@@ -395,9 +395,10 @@ button.key:before {
     background: #3F3F3F;
     transition: background-color 0.1s linear, box-shadow 0.1s linear;
     box-shadow: 1px 1px 7px 0px #22222244;
+    pointer-events: none;
 }
 
-button.key:hover:before {
+button.key:active:before {
     background-color: #494949;
     box-shadow: 1px 1px 7px 0px #22222299;
 }
