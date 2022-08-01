@@ -129,6 +129,7 @@ namespace Help {
         void addUnitData();
         void addFunctionData();
         void addLibraryData();
+        void addListData();
     };
     extern std::map<uint64_t, std::vector<std::pair<int, int>>> queryHash;
     extern std::vector<Page> pages;

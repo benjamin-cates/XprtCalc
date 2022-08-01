@@ -164,7 +164,7 @@ string combineArgs(std::vector<string>& args) {
     string out;
     if(args.size() == 0) return "";
     int i = 0;
-    for(int i;i < args.size() - 1;i++) {
+    for(;i < args.size() - 1;i++) {
         out += args[i] + " ";
     }
     out += args[i];

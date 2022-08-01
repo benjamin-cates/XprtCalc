@@ -120,6 +120,7 @@ void Help::addPageData() {
         if(pages[i].type == "unit") pages[i].addUnitData();
         if(pages[i].type == "type") pages[i].addTypeData();
         if(pages[i].type == "library") pages[i].addLibraryData();
+        if(pages[i].type == "list") pages[i].addListData();
     }
 }
 void Page::addUnitData() {
@@ -171,20 +172,59 @@ void Page::addTypeData() {
     content = content.substr(1);
     content += " The ?typeof? function returns `" + type + "` for this type.";
 }
+void Page::addListData() {
+    if(name == "List of functions") {
+        string prevType = "";
+        for(int i = 0;i < Help::pages.size();i++) {
+            if(Help::pages[i].type == "function") {
+                //Add function category header if needed
+                if(prevType != Help::pages[i].aliases[0]) {
+                    prevType = Help::pages[i].aliases[0];
+                    content += "`" + prevType + "`\n";
+                }
+                content += "`- " + Help::pages[i].symbol + "` - ?" + Help::pages[i].name + "?\n";
+            }
+        }
+    }
+    else if(name == "List of units") {
+        for(int i = 0;i < Help::pages.size();i++) {
+            if(Help::pages[i].type == "unit") {
+                content += "`- " + Help::pages[i].symbol + " `?" + Help::pages[i].name + "? (" + Help::pages[i].aliases[0] + ")\n";
+            }
+        }
+    }
+    else if(name == "List of pages") {
+        string prevType;
+        for(int i = 0;i < Help::pages.size();i++) {
+            if(prevType != Help::pages[i].type) {
+                content += "`" + Help::pages[i].type + "`\n";
+                prevType = Help::pages[i].type;
+            }
+            content += "`-` `";
+            if(Help::pages[i].symbol != "")
+                content += Help::pages[i].symbol;
+            content += "`  ?";
+            content += Help::pages[i].name;
+            content += "?\n";
+        }
+    }
+    else if(name == "List of commands") {
+        for(int i = 0;i < Help::pages.size();i++) {
+            if(Help::pages[i].type == "command") {
+                content += "`-` `";
+                content += Help::pages[i].symbol;
+                content += "` - ?";
+                content += Help::pages[i].name;
+                content += "?\n";
+            }
+        }
+    }
+}
 #pragma endregion
 std::vector<Page> Help::pages = {
     #pragma region Introduction
     //Info
     Page("Welcome","","guide","Welcome to XprtCalc, use the \"/query\" command to search the help pages, or type \"/help introduction\" to read about the basic functionality, info can be found in the page called ?info?.",{"help"}),
-    #pragma endregion
-    #pragma region Types
-    Page("Number","num","type","0The number class has three components: a real decimal, and ?imaginary? decimal, and a ?unit?. These can be treated as a single package. Each of the two decimals is stored to `15` digits of precision. More precision can be stored in the ?arb? type. Examples: `2`, `-8i`, `2.5+4i[m]`, `2[kg]`, `inf-inf*i[mol]`.",{"floating","double"},"https://en.wikipedia.org/wiki/Floating-point_arithmetic"),
-    Page("Arb","arb","type","1The arb type is very similar to the ?number? type, except that the decimals are stored with arbitrary precision. Values can be casted to the arb type using the ?toarb? function, however it will be stuck at the default precision of 15. To cast from arb to a number, use the ?tonumber? function. They can also be created with the 'p' symbol in a decimal literal. Example: `1.5p20 = 1.50000000000000000000`. If the number of digits is more than 15 it will also store it with extra precision as in the previous example. When two arb types (or an arb and a number) are put together in a binary operation, the return value will have the highest precision of both. Example: `mul(1.5p20,2p5) = 3.0p20`. The 'p' symbol must come after the 'e' symbol for exponents. In the rare case that the application is compiled without arb support because it is not installed, the arb type does not exist.",{"p","precision","arbitrary","float"},"https://github.com/bluescarni/mppp"),
-    Page("Vector","vec","type","2The vector type stores an arbitrarily long list of values. The value elements can be of any type. They are created with the angle brackets `< and >` as is commonly used in linear algebra. Examples: `<1,2,3>`, `<1.5p20,x=>x+1>`. There are many different built in functions that handle vectors, and the complete list can be seen by running \"/query vector\". Some common ones are `get`, `fill`, `map`, `length`, `magnitude`, `normalize`, and `sort`. Vectors can be used to store Euclidian point positions, return multiple values from a function, or store a list. Vectors apply to many common functions like `sqrt`, `exp`, and every other elementary operation. Examples: `2+<4,8> = <6,10>`, `sqrt(<4,9>) = <2,3>`, `sin(<pi,pi/2>) = <0,1>`. See the pages for each function to see if they apply to vectors.",{"list","array","iterator","index"}),
-    Page("Lambda","lmb","type","3The lambda type stores a nameless function that can have any number of arguments, and a single output. They use arrow notation similar to JavaScript. Example: `x=>x+1` should be read as \"x goes to x plus one\". For zero argument lambdas, use an underscore character `_=>rand`, for more than one, use a comma separated list enclosed in parenthesis `(x,t)=>x*t`. As long as they follow the ?variable? naming conventions. Lambdas can also be nested and are dynamic types: `run(x=>y=>x+y,2) = y=>2+y`. There are many different functions that take advantage of lambdas, common ones are: `run`, `apply`, `sum`, `product`, `fill`, `map`, and `sort`.",{"anonymous function","=>"}),
-    Page("String","str","type","4The string type stores text (as a list of characters). Strings can be used to print information, create dynamic evaluations, or throw errors. They are enclosed by the double quotes \" (no other wrapping is available). Example: `\"Hello\"`. There are multiple different string methods, like: `eval`, `substr`, `lowercase`, `uppercase`, `error`, `print`, `indexof`, and `replace`. In order to prevent character conflict, double quotes within strings must be preceded by the \\ backslash character, backslashes must be escaped by another backslash. Example: `\"\\\\\"` -> \\. Other escaped characters are: `\"\\n\"` for a new line, and `\"\\t\"` for the tab character.",{"character","text","words"}),
-    Page("Map","map","type","5The map type stores key-value mappings, it is represented using the `{}` curly bracket syntax. Each pair is separeted by commas and the elements in the pair are separeted by the colon. Example: `{1:4,\"yes\":8}` means `1` maps to `4`, and `\"yes\"` maps to 8. Any value (even ?lambdas?) can be either a key or value. Maps are not used much in builtin functions, but they are extremely useful in storing data in a logical way. The map is internally stored as a binary search tree, however the different value types can obviously not be compared, so the ordering is more approximate. Functions that support the map are: `get`, `concat`, and `length`.",{"relation","dictionary","object","key"}),
-    #pragma endregion
     #pragma region Guides
     Page("List of operators","","guide","Operators are small character sequences that imply functions like add, subtract, etc. They can be binary (take two arguments) or unary (apply to one number). The binary operators are: \n`+ - add` (Addition) \n`- - sub` (Subtraction) \n`* - mul` (Multiplication) \n`/ - div` (Division) \n`^ - pow` (Exponentiation) \n`** - pow` (Exponentiation) \n`= - equal` \n`== - equal` \n`!= - not_equal` \n`> - gt` (Greater than) \n`>= - gt_equal` (Greater than or equal) \n`< - lt` (Less than) \n`<= - lt_equal` (Less than or equal) \nThe prefix unary operators (goes before expression) are:\n`- - neg` (Negative)\nThe suffix unary operators (goes after expression) are: \n`! - factorial`.\nExamples: `4*5!+2 = add(mul(4,factorial(5)),2)`."),
     Page("Units","","guide","Units store types of units of measurement. They must be referenced inside the `[]` square brackets (do not confuse them with the square brackets in ?accessor notation?). An example of a unit is meters, which stores length. Six metric base units are supported, and the `dollar` and `bit` are additionally added. Units are stored as a list of base units with their powers. For example area is stored as m^2. All units are stored in terms of metric base units, however converion support will be added eventually. Units interact with certain operators, like with multiplication, their powers are added, with division the powers are subtracted, etc. However, with most functions, the units are left untouched. The base units are: `m` for Meter, `kg` for kilogram, `s` for second, `A` for Amp, `K` for Kelvin, `mol` for mole, `b` for bits, and `$` for dollars. If the power ever goes above `127` or below `-127`, an overflow error will occur.",{"measurement"},"https://www.mathsisfun.com/measure/unit.html"),
@@ -197,23 +237,32 @@ std::vector<Page> Help::pages = {
     //Variables
     //Preferences
     #pragma endregion
+    #pragma endregion
+    #pragma region Types
+    Page("Number","num","type","0The number class has three components: a real decimal, and ?imaginary? decimal, and a ?unit?. These can be treated as a single package. Each of the two decimals is stored to `15` digits of precision. More precision can be stored in the ?arb? type. Examples: `2`, `-8i`, `2.5+4i[m]`, `2[kg]`, `inf-inf*i[mol]`.",{"floating","double"},"https://en.wikipedia.org/wiki/Floating-point_arithmetic"),
+    Page("Arb","arb","type","1The arb type is very similar to the ?number? type, except that the decimals are stored with arbitrary precision. Values can be casted to the arb type using the ?toarb? function, however it will be stuck at the default precision of 15. To cast from arb to a number, use the ?tonumber? function. They can also be created with the 'p' symbol in a decimal literal. Example: `1.5p20 = 1.50000000000000000000`. If the number of digits is more than 15 it will also store it with extra precision as in the previous example. When two arb types (or an arb and a number) are put together in a binary operation, the return value will have the highest precision of both. Example: `mul(1.5p20,2p5) = 3.0p20`. The 'p' symbol must come after the 'e' symbol for exponents. In the rare case that the application is compiled without arb support because it is not installed, the arb type does not exist.",{"p","precision","arbitrary","float"},"https://github.com/bluescarni/mppp"),
+    Page("Vector","vec","type","2The vector type stores an arbitrarily long list of values. The value elements can be of any type. They are created with the angle brackets `< and >` as is commonly used in linear algebra. Examples: `<1,2,3>`, `<1.5p20,x=>x+1>`. There are many different built in functions that handle vectors, and the complete list can be seen by running \"/query vector\". Some common ones are `get`, `fill`, `map`, `length`, `magnitude`, `normalize`, and `sort`. Vectors can be used to store Euclidian point positions, return multiple values from a function, or store a list. Vectors apply to many common functions like `sqrt`, `exp`, and every other elementary operation. Examples: `2+<4,8> = <6,10>`, `sqrt(<4,9>) = <2,3>`, `sin(<pi,pi/2>) = <0,1>`. See the pages for each function to see if they apply to vectors.",{"list","array","iterator","index"}),
+    Page("Lambda","lmb","type","3The lambda type stores a nameless function that can have any number of arguments, and a single output. They use arrow notation similar to JavaScript. Example: `x=>x+1` should be read as \"x goes to x plus one\". For zero argument lambdas, use an underscore character `_=>rand`, for more than one, use a comma separated list enclosed in parenthesis `(x,t)=>x*t`. As long as they follow the ?variable? naming conventions. Lambdas can also be nested and are dynamic types: `run(x=>y=>x+y,2) = y=>2+y`. There are many different functions that take advantage of lambdas, common ones are: `run`, `apply`, `sum`, `product`, `fill`, `map`, and `sort`.",{"anonymous function","=>"}),
+    Page("String","str","type","4The string type stores text (as a list of characters). Strings can be used to print information, create dynamic evaluations, or throw errors. They are enclosed by the double quotes \" (no other wrapping is available). Example: `\"Hello\"`. There are multiple different string methods, like: `eval`, `substr`, `lowercase`, `uppercase`, `error`, `print`, `indexof`, and `replace`. In order to prevent character conflict, double quotes within strings must be preceded by the \\ backslash character, backslashes must be escaped by another backslash. Example: `\"\\\\\"` -> \\. Other escaped characters are: `\"\\n\"` for a new line, and `\"\\t\"` for the tab character.",{"character","text","words"}),
+    Page("Map","map","type","5The map type stores key-value mappings, it is represented using the `{}` curly bracket syntax. Each pair is separeted by commas and the elements in the pair are separeted by the colon. Example: `{1:4,\"yes\":8}` means `1` maps to `4`, and `\"yes\"` maps to 8. Any value (even ?lambdas?) can be either a key or value. Maps are not used much in builtin functions, but they are extremely useful in storing data in a logical way. The map is internally stored as a binary search tree, however the different value types can obviously not be compared, so the ordering is more approximate. Functions that support the map are: `get`, `concat`, and `length`.",{"relation","dictionary","object","key"}),
+    #pragma endregion
     #pragma region Functions
     #pragma region Elementary
-    Page("Negate","neg","function","Returns the negative of `x`. It is also aliased by the prefix operator '`-`'.",{"-"}),
-    Page("Addition","add","function","Returns `a + b`. If both are strings, they will be concatenated. It is also aliased by the  operator '`+`'.",{"+","sum","plus"}),
-    Page("Subtraction","sub","function","Returns `a - b`. It is also aliased by the operator '`-`'.",{"-","difference","minus"}),
-    Page("Multiply","mul","function","Returns `a * b`. It is also aliased by the operator '`*`'.",{"*","product","times"}),
-    Page("Divide","div","function","Returns `a / b`. It is also aliased by the operator '`/`'.",{"/","over","quotient"}),
-    Page("Power","pow","function","Returns `a ^ b`. It is also aliased by the operators '`^`' and '`**`'.",{"**","^","exponent","exponentiation"},"https://en.wikipedia.org/wiki/Exponentiation"),
-    Page("Modulo","mod","function","Returns `a % b`, which is the remainder when `a` is divided by `b`. It is also aliased by the operator '`%`'.",{"%","modulus"},"https://en.wikipedia.org/wiki/Modulo_operation"),
-    Page("Square Root","sqrt","function","Returns the square root of `x`, which is equivalent to raising it by `0.5`.",{"power","exponent","root"},"https://en.wikipedia.org/wiki/Square_root"),
-    Page("Exponent","exp","function","Returns the `e ^ x`, which means ?Euler's number? raised to the power of `x`.",{"e","e^x","power","exponent",},"https://en.wikipedia.org/wiki/Exponential_function"),
-    Page("Natural log","ln","function","Returns the natural logarithm of `x`, it is the inverse of `exp`. For an arbitrary base, see the `logb` function.",{"logarithm"},"https://en.wikipedia.org/wiki/Natural_logarithm"),
-    Page("Logarithm","log","function","Returns the logarithm base 10 of `x`, which means `10^ln(x)` is `x`. For an arbitrary base, see the `logb` function.",{"log"},"https://en.wikipedia.org/wiki/Logarithm"),
-    Page("Logarithm base b","logb","function","Returns the logarithm base `b` of `x`, which means `b^logb(x,b)` is `x`. For specialized bases, see the `exp` and `log` functions.",{"log"},"https://en.wikipedia.org/wiki/Logarithm"),
-    Page("Gamma","gamma","function","Returns the gamma function of `x`. It currently does not support imaginary numbers. Equivalent to `factorial(x+1)`.",{},"https://en.wikipedia.org/wiki/Gamma_function"),
-    Page("Factorial","factorial","function","Returns the factorial of `x`. It currently does not support imaginary numbers. It is also aliased by the `!` operator. Example: `4!+2` means `factorial(4)+2`. Factorial is equivalent to `gamma(x-1)`.",{},"https://en.wikipedia.org/wiki/Gamma_function"),
-    Page("Error function","erf","function","Returns the error function of `x`. It currently does not support imaginary numbers. It does not have much use in simple mathematics, however support is there for who needs it.",{},"https://en.wikipedia.org/wiki/Error_function"),
+    Page("Negate","neg","function","Returns the negative of `x`. It is also aliased by the prefix operator '`-`'.",{"elementary","-"}),
+    Page("Addition","add","function","Returns `a + b`. If both are strings, they will be concatenated. It is also aliased by the  operator '`+`'.",{"elementary","+","sum","plus"}),
+    Page("Subtraction","sub","function","Returns `a - b`. It is also aliased by the operator '`-`'.",{"elementary","-","difference","minus"}),
+    Page("Multiply","mul","function","Returns `a * b`. It is also aliased by the operator '`*`'.",{"elementary","*","product","times"}),
+    Page("Divide","div","function","Returns `a / b`. It is also aliased by the operator '`/`'.",{"elementary","/","over","quotient"}),
+    Page("Power","pow","function","Returns `a ^ b`. It is also aliased by the operators '`^`' and '`**`'.",{"elementary","**","^","exponent","exponentiation"},"https://en.wikipedia.org/wiki/Exponentiation"),
+    Page("Modulo","mod","function","Returns `a % b`, which is the remainder when `a` is divided by `b`. It is also aliased by the operator '`%`'.",{"elementary","%","modulus"},"https://en.wikipedia.org/wiki/Modulo_operation"),
+    Page("Square Root","sqrt","function","Returns the square root of `x`, which is equivalent to raising it by `0.5`.",{"elementary","power","exponent","root"},"https://en.wikipedia.org/wiki/Square_root"),
+    Page("Exponent","exp","function","Returns the `e ^ x`, which means ?Euler's number? raised to the power of `x`.",{"elementary","e","e^x","power","exponent",},"https://en.wikipedia.org/wiki/Exponential_function"),
+    Page("Natural log","ln","function","Returns the natural logarithm of `x`, it is the inverse of `exp`. For an arbitrary base, see the `logb` function.",{"elementary","logarithm"},"https://en.wikipedia.org/wiki/Natural_logarithm"),
+    Page("Logarithm","log","function","Returns the logarithm base 10 of `x`, which means `10^ln(x)` is `x`. For an arbitrary base, see the `logb` function.",{"elementary","log"},"https://en.wikipedia.org/wiki/Logarithm"),
+    Page("Logarithm base b","logb","function","Returns the logarithm base `b` of `x`, which means `b^logb(x,b)` is `x`. For specialized bases, see the `exp` and `log` functions.",{"elementary","log"},"https://en.wikipedia.org/wiki/Logarithm"),
+    Page("Gamma","gamma","function","Returns the gamma function of `x`. It currently does not support imaginary numbers. Equivalent to `factorial(x+1)`.",{"elementary"},"https://en.wikipedia.org/wiki/Gamma_function"),
+    Page("Factorial","factorial","function","Returns the factorial of `x`. It currently does not support imaginary numbers. It is also aliased by the `!` operator. Example: `4!+2` means `factorial(4)+2`. Factorial is equivalent to `gamma(x-1)`.",{"elementary"},"https://en.wikipedia.org/wiki/Gamma_function"),
+    Page("Error function","erf","function","Returns the error function of `x`. It currently does not support imaginary numbers. It does not have much use in simple mathematics, however support is there for who needs it.",{"elementary"},"https://en.wikipedia.org/wiki/Error_function"),
     #pragma endregion
     #pragma region Trigonometry
     Page("Sine","sin","function","Returns the sine of `x`, which is the opposite side divided by hypotenuse of a right triangle with angle `x`",{"trigonometry"},"https://en.wikipedia.org/wiki/Sine_and_cosine"),
@@ -228,37 +277,37 @@ std::vector<Page> Help::pages = {
     Page("Inverse sine","asin","function","Returns the inverse ?sine? of `x`. `asin(sin(x)) = x` for `-pi/2 < x < pi/2`",{"trigonometry","arcsine"},"https://en.wikipedia.org/wiki/Inverse_trigonometric_functions"),
     Page("Inverse cosine","acos","function","Returns the inverse ?cosine? of `x`. `acos(cos(x)) = x` for `0 < x < pi`",{"trigonometry","arccosine"},"https://en.wikipedia.org/wiki/Inverse_trigonometric_functions"),
     Page("Inverse tangent","atan","function","Returns the inverse ?tangent? of `x`. `atan(tan(x)) = x` for `-pi/2 < x < pi/2`",{"trigonometry","arctan"},"https://en.wikipedia.org/wiki/Inverse_trigonometric_functions"),
+    Page("Arctangent 2","atan2","function","Returns the angle between the point `(y,x)` and `(0,1)`. It is similar to the `arg` function.",{"trigonometry","inverse tangent"},"https://en.wikipedia.org/wiki/Atan2"),
     Page("Inverse hyperbolic sine","asinh","function","Returns the inverse ?hyperbolic sine? of `x`. `asinh(sinh(x)) = x`.",{"trigonometry","hyperbolic arcsine"},"https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions"),
     Page("Inverse hyperbolic cosine","acosh","function","Returns the inverse ?hyperbolic cosine? of `x`. `acosh(cosh(x)) = x` for `x >= 1`.",{"trigonometry","hyperbolic arccosine"},"https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions"),
     Page("Inverse hyperbolic tangent","atanh","function","Returns the inverse ?hyperbolic tangent? of `x`. `atanh(tanh(x)) = x`.",{"trigonometry","hyperbolic arctangent"},"https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions"),
     #pragma endregion
     #pragma region Numeric
-    Page("Round","round","function","Returns the nearest integer to `x`. If the decimal component of `x >= 0.5`, it will round up, else it will round down.",{},"https://en.wikipedia.org/wiki/Rounding#Round_half_up"),
-    Page("Floor","floor","function","Returns the nearest integer that is less than `x`.",{"round"},"https://en.wikipedia.org/wiki/Floor_and_ceiling_functions"),
-    Page("Ceiling","ceil","function","Returns the nearest integer that is greater than `x`.",{"round"},"https://en.wikipedia.org/wiki/Floor_and_ceiling_functions"),
-    Page("Real component","getr","function","Returns the real component of an imaginary number. Example: `getr(2+i) = 2`. Use `geti` to get the imaginary component."),
-    Page("Imaginary component","geti","function","Returns the imaginary component of an imaginary number. Example: `geti(2+i) = 1`. Use `getr` to get the real component."),
-    Page("Unit component","getu","function","Returns the unit component of a number multiplied by 1. Example: `getu(2[m*kg]) = [m*kg]`."),
-    Page("Maximum","max","function","Returns the largest of `a` and `b`. The alternative input is if the first argument is a ?vector?, it will return the largest element."),
-    Page("Minimum","min","function","Returns the smallest of `a` and `b`. The alternative input is if the first argument is a ?vector?, it will return the smallest element."),
-    Page("Linear interpolation","lerp","function","Returns the linear interpolation from `a` to `b` with time `x`. It effectively returns `a + (b-a)*t`.",{"linear interpolate","linear extrapolat"},"https://en.cppreference.com/w/cpp/numeric/lerp"),
-    Page("Distance","dist","function","Returns the distance from `a` to `b`. If both a real, it is equivalent to `abs(a-b)`. For an ?imaginary? number or a ?vector? the Pythagorean theorem is used and they are treated as points.",{"hypotenuse"}),
-    Page("Sign","sgn","function","Returns the sign of the value `x`. If `x` is positive, it returns `1`. If it is negative, it returns `-1`. For ?imaginary? numbers, it returns the unit vector. `sgn` is equivalent to `x/abs(x)`.",{"signum"},"https://en.wikipedia.org/wiki/Sign_function"),
-    Page("Absolute value","abs","function","Returns the distance of `x` from zero. For ?imaginary? numbers it returns `sqrt(r^2 + i^2)`. The notation |x| is not supported.",{"distance"},"https://en.wikipedia.org/wiki/Absolute_value"),
-    Page("Argument","arg","function","Returns the angle between 1+0i and `x`. The function's range is from `-pi` to `pi`. It is equivalent to `atan2(geti(x),getr(x))`.",{"complex argument","angle between"},"https://en.wikipedia.org/wiki/Argument_(complex_analysis)"),
-    Page("Arctangent 2","atan2","function","Returns the angle between the point `(y,x)` and `(0,1)`. It is similar to the `arg` function.",{"inverse tangent"},"https://en.wikipedia.org/wiki/Atan2"),
-    Page("Greatest common divisor","gcd","function","Returns the greatest common divisor of `a` and `b`. The greatest common divisor is the largest integer that both numbers can be divided evenly by. Example: `gcd(5,15) = 5` because `5/5` and `15/5` are integers. If a fractional value is passed in, it will round down to the nearest integer. The ?arb? type is not supported, however it will be cast to a number and can be cast back to arb."),
-    Page("Least common multiple","lcm","function","Returns the least common multiple of `a` and `b`. The least common multiple is the smallest number that both numbers divide evenly into. Example: `lcm(8,12) = 24` because `24/8` and `24/12` are integers. If a fractional value is passed in, it will round down to the nearest integer. The ?arb? type is not supported, however it will be cast to a number and can be cast back to arb."),
-    Page("Prime factors","factors","function","Returns a list of prime factors of `x`. Example: `factors(60) = <2,2,3,5>` because `2*2*3*5 = 60`. This can be used to test for primality because it will return a list of size one if `x` is prime."),
+    Page("Round","round","function","Returns the nearest integer to `x`. If the decimal component of `x >= 0.5`, it will round up, else it will round down.",{"numeric"},"https://en.wikipedia.org/wiki/Rounding#Round_half_up"),
+    Page("Floor","floor","function","Returns the nearest integer that is less than `x`.",{"numeric","round"},"https://en.wikipedia.org/wiki/Floor_and_ceiling_functions"),
+    Page("Ceiling","ceil","function","Returns the nearest integer that is greater than `x`.",{"numeric","round"},"https://en.wikipedia.org/wiki/Floor_and_ceiling_functions"),
+    Page("Real component","getr","function","Returns the real component of an imaginary number. Example: `getr(2+i) = 2`. Use `geti` to get the imaginary component.",{"numeric"}),
+    Page("Imaginary component","geti","function","Returns the imaginary component of an imaginary number. Example: `geti(2+i) = 1`. Use `getr` to get the real component.",{"numeric"}),
+    Page("Unit component","getu","function","Returns the unit component of a number multiplied by 1. Example: `getu(2[m*kg]) = [m*kg]`.",{"numeric"}),
+    Page("Maximum","max","function","Returns the largest of `a` and `b`. The alternative input is if the first argument is a ?vector?, it will return the largest element.",{"numeric"}),
+    Page("Minimum","min","function","Returns the smallest of `a` and `b`. The alternative input is if the first argument is a ?vector?, it will return the smallest element.",{"numeric"}),
+    Page("Linear interpolation","lerp","function","Returns the linear interpolation from `a` to `b` with time `x`. It effectively returns `a + (b-a)*t`.",{"numeric","linear interpolate","linear extrapolat"},"https://en.cppreference.com/w/cpp/numeric/lerp"),
+    Page("Distance","dist","function","Returns the distance from `a` to `b`. If both a real, it is equivalent to `abs(a-b)`. For an ?imaginary? number or a ?vector? the Pythagorean theorem is used and they are treated as points.",{"numeric","hypotenuse"}),
+    Page("Sign","sgn","function","Returns the sign of the value `x`. If `x` is positive, it returns `1`. If it is negative, it returns `-1`. For ?imaginary? numbers, it returns the unit vector. `sgn` is equivalent to `x/abs(x)`.",{"numeric","signum"},"https://en.wikipedia.org/wiki/Sign_function"),
+    Page("Absolute value","abs","function","Returns the distance of `x` from zero. For ?imaginary? numbers it returns `sqrt(r^2 + i^2)`. The notation |x| is not supported.",{"numeric","distance"},"https://en.wikipedia.org/wiki/Absolute_value"),
+    Page("Argument","arg","function","Returns the angle between 1+0i and `x`. The function's range is from `-pi` to `pi`. It is equivalent to `atan2(geti(x),getr(x))`.",{"numeric","complex argument","angle between"},"https://en.wikipedia.org/wiki/Argument_(complex_analysis)"),
+    Page("Greatest common divisor","gcd","function","Returns the greatest common divisor of `a` and `b`. The greatest common divisor is the largest integer that both numbers can be divided evenly by. Example: `gcd(5,15) = 5` because `5/5` and `15/5` are integers. If a fractional value is passed in, it will round down to the nearest integer. The ?arb? type is not supported, however it will be cast to a number and can be cast back to arb.",{"numeric"}),
+    Page("Least common multiple","lcm","function","Returns the least common multiple of `a` and `b`. The least common multiple is the smallest number that both numbers divide evenly into. Example: `lcm(8,12) = 24` because `24/8` and `24/12` are integers. If a fractional value is passed in, it will round down to the nearest integer. The ?arb? type is not supported, however it will be cast to a number and can be cast back to arb.",{"numeric"}),
+    Page("Prime factors","factors","function","Returns a list of prime factors of `x`. Example: `factors(60) = <2,2,3,5>` because `2*2*3*5 = 60`. This can be used to test for primality because it will return a list of size one if `x` is prime.",{"numeric"}),
     #pragma endregion
     #pragma region Binary Functions
-    Page("Equal","equal","function","Returns `1` if `a` and `b` are equal, else returns `0`. It is aliased by the `==` and `=` operators.",{"equivalent","comparison","=="}),
-    Page("Not equal","not_equal","function","Returns `1` if `a` and `b` are not equal, else returns `0`. It is aliased by the `!=` operator.",{"equivalent","comparison","!="}),
+    Page("Equal","equal","function","Returns `1` if `a` and `b` are equal, else returns `0`. It is aliased by the `==` and `=` operators.",{"comparison","equivalent","=="}),
+    Page("Not equal","not_equal","function","Returns `1` if `a` and `b` are not equal, else returns `0`. It is aliased by the `!=` operator.",{"comparison","equivalent","!="}),
     Page("Less than","lt","function","Returns `1` if `a` is less than `b`, else returns `0`. It is aliased by the `<` operator. ?Imaginary? components are ignored.",{"comparison","<"}),
     Page("Greater than","gt","function","Returns `1` if `a` is greater than `b`, else returns `0`. It is aliased by the `>` operator. ?Imaginary? components are ignored",{"comparison",">"}),
     Page("Greater than or equal","gt_equal","function","Returns `1` if `a` is ?greater than? or ?equal? to `b`, else returns `0`. It is aliased by the `>=` operator. ?Imaginary? components are ignored",{"comparison",">="}),
     Page("Less than or equal","lt_equal","function","Returns `1` if `a` is ?less than? or ?equal? to `b`, else returns `0`. It is aliased by the `<=` operator. ?Imaginary? components are ignored",{"comparison","<="}),
-    Page("Not","not","function","Returns the boolean opposite of `x`. If `x` is a zero, it will return one. If `x` is any value other than zero, it will return zero."),
+    Page("Not","not","function","Returns the boolean opposite of `x`. If `x` is a zero, it will return one. If `x` is any value other than zero, it will return zero.",{"bitwise"}),
     Page("And","and","function","Returns the bitwise and of `a` and `b`. If `a` and `b` are either one or zero, it works like a boolean operator. Both arguments are rounded to integers before calculation.",{"bitwise"},"https://en.wikipedia.org/wiki/Bitwise_operation#AND"),
     Page("Or","or","function","Returns the bitwise or of `a` and `b`. If `a` and `b` are either one or zero, it works like a boolean operator. Both arguments are rounded to integers before calculation.",{"bitwise"},"https://en.wikipedia.org/wiki/Bitwise_operation#OR"),
     Page("Xor","xor","function","Returns the bitwise xor of `a` and `b`. If `a` and `b` are either one or zero, it works like a boolean operator. Both arguments are rounded to integers before calculation",{"bitwise","exclusive or"},"https://en.wikipedia.org/wiki/Bitwise_operation#XOR"),
@@ -266,46 +315,46 @@ std::vector<Page> Help::pages = {
     Page("Right shift","rs","function","Returns the bitwise right shift of `a` shifted by `b`. It is essentially equivalent to `a / 2^b`, however both arguments are rounded to integers before and after calculation. Right shift is an arithmetic shift, so if it overflows to the right, it will be cut off. The inverse is the left shift function `ls`.",{"bitwise","bit shift"},"https://en.wikipedia.org/wiki/Arithmetic_shift"),
     #pragma endregion
     #pragma region Constants
-    Page("True","true","function","Constant that returns 1. It is used for boolean logic because comparison operators return `1` on success. The `false` constant is the opposite of `true`.",{"binary","boolean"}),
-    Page("False","false","function","Constant that returns `0`. It is used for boolean logic because comparison operators return `0` on failure. The `true` constant is the opposite of `false`.",{"binary","boolean"}),
+    Page("True","true","function","Constant that returns 1. It is used for boolean logic because comparison operators return `1` on success. The `false` constant is the opposite of `true`.",{"constant","binary","boolean"}),
+    Page("False","false","function","Constant that returns `0`. It is used for boolean logic because comparison operators return `0` on failure. The `true` constant is the opposite of `false`.",{"constant","binary","boolean"}),
     Page("Imaginary number","i","function","Constant that returns the imaginary number `i`. `i^2` is equal to `-1`, and it is used a lot in higher level math and algebra.",{"constant","imaginary"},"https://en.wikipedia.org/wiki/Imaginary_number"),
     Page("Pi","pi","function","Constant that retuns the number pi. Pi is the ratio between the circumference ofa circle and it's diameter. Pi is used a lot in ?trigonometry?. Pi returns a double precision float, see `arb_pi` for a more accurate calculation.",{"constant"},"https://en.wikipedia.org/wiki/Pi"),
     Page("Euler's number","e","function","Constant that retuns euler's number, which is the base of natural logarithms. `e` is used a lot in math past algebra. `e` returns a double precision float, see `arb_e` for a more accurate calculation.",{"constant"},"https://en.wikipedia.org/wiki/E_(mathematical_constant)"),
-    Page("Arbitrary pi","arb_pi","function","Returns `pi` to `prec` decimal digits as an `arbitrary precision` float. See `pi` for the 15-digit approximation."),
-    Page("Arbitrary Euler's number","arb_e","function","Returns Euler's number to `prec` decimal digits as an `arbitrary precision` float. See `e` for the 15-digit approximation."),
-    Page("Random","rand","function","Returns a unique random number between zero and one every time it is calculated. See `srand` for seeding."),
-    Page("Random seed","srand","function","Takes in a float as a random seed and seeds the random number generator. If the same seed is provided, `rand` will return the exact same sequence of random numbers.",{},"https://en.wikipedia.org/wiki/Random_seed"),
-    Page("Undefined","undefined","function","Constant for a non-definable floating point exception. This constant is not meant for regular use but is returned by some functions in the case of an error.",{"nan"}),
-    Page("Infinity","inf","function","Constant for the floating point infinity. Please do not use this for calculations, only comparison with other infinities."),
-    Page("History length","histlen","function","Constant for the number of elements in the ?history?",{"memory"}),
-    Page("Answer","ans","function","Returns the previously calculated value. If an argument is provided, it returns the `x`th element in the ?history?, or if `x` is negative, `x` values in the past (negative one being the previous value).",{"history","memory"}),
+    Page("Arbitrary pi","arb_pi","function","Returns `pi` to `prec` decimal digits as an `arbitrary precision` float. See `pi` for the 15-digit approximation.",{"constant"}),
+    Page("Arbitrary Euler's number","arb_e","function","Returns Euler's number to `prec` decimal digits as an `arbitrary precision` float. See `e` for the 15-digit approximation.",{"constant"}),
+    Page("Random","rand","function","Returns a unique random number between zero and one every time it is calculated. See `srand` for seeding.",{"constant"}),
+    Page("Random seed","srand","function","Takes in a float as a random seed and seeds the random number generator. If the same seed is provided, `rand` will return the exact same sequence of random numbers.",{"constant"},"https://en.wikipedia.org/wiki/Random_seed"),
+    Page("Undefined","undefined","function","Constant for a non-definable floating point exception. This constant is not meant for regular use but is returned by some functions in the case of an error.",{"constant","nan"}),
+    Page("Infinity","inf","function","Constant for the floating point infinity. Please do not use this for calculations, only comparison with other infinities.",{"constant"}),
+    Page("History length","histlen","function","Constant for the number of elements in the ?history?",{"constant","memory"}),
+    Page("Answer","ans","function","Returns the previously calculated value. If an argument is provided, it returns the `x`th element in the ?history?, or if `x` is negative, `x` values in the past (negative one being the previous value).",{"constant","history","memory"}),
     #pragma endregion
     #pragma region Lambdas
-    Page("Run","run","function","Runs the ?lambda? function `func` with the arguments provided. If not enough arguments are provided, zeroes are filled in. Example: `run((x,y)=>x+y, 5, 4) = 9`. If you have a ?vector? of arguments, use the `apply` function.",{"compute","lambda"}),
-    Page("Apply","apply","function","Runs the ?lambda? function `func` on each element in the ?vector? `args` and returns the resultant vector. If `func` is a ?string?, it will run that global ?function? on each element. Example: `apply(x=>x/2,<4,8,9>) = <2,4,4.5>`.",{"vector","lambda"}),
-    Page("Sum","sum","function","Returns the sum of each ?lambda? `func` run from `begin` to `end` with an optional `step`. If a step is not included, `step` defaults to `1`. Example: `sum(x=>x+1,0,5,1) = 1+2+3+4+5+6 = 21`. Another definition takes a single ?vector? and finds the sum of every element.",{"addition","plus","series","lambda"},"https://en.wikipedia.org/wiki/Summation#Capital-sigma_notation"),
-    Page("Product","product","function","Returns the product of each ?lambda? `func` run from `begin` to `end` with an optional `step`. If a step is not included, `step` defaults to `1`. Example: `sum(x=>x+1,0,5,1) = 1*2*3*4*5*6 = 6! = 720`. Another definition takes a single ?vector? and finds the product of every element.",{"multiply","multiplication","times","series","lambda"},"https://en.wikipedia.org/wiki/Product_(mathematics)#Product_of_a_sequence"),
-    Page("Infinite series","infinite_sum","function","Returns the sum of the lambda as `n` goes to infinity. Example: `infinite_sum(n=>1/n!) = 1/0! + 1/1! + 1/2! + 1/3! + 1/4! + 1/5! ... = 2.71828183`. If a starting index is required, it can be the second argument. This can be used to execute the taylor series or test for convergence. The function will, however, return whatever result it got after `100000` iterations. Otherwise, the function will stop when the desired precision is reached, whether it is an ?arb? number or a regular one.",{"sum"},"https://en.wikipedia.org/wiki/Series_(mathematics)#Examples_of_numerical_series"),
-    Page("Definite integral","dint","function","Returns the definite integral of `func` from `a` to `b`. The definite integral is the area under the curve. This function uses Simpson's method to approximate the area, and successively increases the number of intervals until a desired accuracy is reached. If `a` and `b` are swapped, it will be the same answer but negative. Examples: `dint(x=>x^2,0,1) = 0.333333333`, `dint(x=>sin(x),0,pi/2) = 1`, `dint(x=>sqrt(x)+3x,1,4) = 27.16666667`,",{"calculus"},"https://math.libretexts.org/Courses/Mount_Royal_University/MATH_2200%3A_Calculus_for_Scientists_II/2%3A_Techniques_of_Integration/2.5%3A_Numerical_Integration_-_Midpoint%2C_Trapezoid%2C_Simpson's_rule"),
+    Page("Run","run","function","Runs the ?lambda? function `func` with the arguments provided. If not enough arguments are provided, zeroes are filled in. Example: `run((x,y)=>x+y, 5, 4) = 9`. If you have a ?vector? of arguments, use the `apply` function.",{"lambda","compute"}),
+    Page("Apply","apply","function","Runs the ?lambda? function `func` on each element in the ?vector? `args` and returns the resultant vector. If `func` is a ?string?, it will run that global ?function? on each element. Example: `apply(x=>x/2,<4,8,9>) = <2,4,4.5>`.",{"lambda","vector"}),
+    Page("Sum","sum","function","Returns the sum of each ?lambda? `func` run from `begin` to `end` with an optional `step`. If a step is not included, `step` defaults to `1`. Example: `sum(x=>x+1,0,5,1) = 1+2+3+4+5+6 = 21`. Another definition takes a single ?vector? and finds the sum of every element.",{"lambda","addition","plus","series"},"https://en.wikipedia.org/wiki/Summation#Capital-sigma_notation"),
+    Page("Product","product","function","Returns the product of each ?lambda? `func` run from `begin` to `end` with an optional `step`. If a step is not included, `step` defaults to `1`. Example: `sum(x=>x+1,0,5,1) = 1*2*3*4*5*6 = 6! = 720`. Another definition takes a single ?vector? and finds the product of every element.",{"lambda","multiply","multiplication","times","series"},"https://en.wikipedia.org/wiki/Product_(mathematics)#Product_of_a_sequence"),
+    Page("Infinite series","infinite_sum","function","Returns the sum of the lambda as `n` goes to infinity. Example: `infinite_sum(n=>1/n!) = 1/0! + 1/1! + 1/2! + 1/3! + 1/4! + 1/5! ... = 2.71828183`. If a starting index is required, it can be the second argument. This can be used to execute the taylor series or test for convergence. The function will, however, return whatever result it got after `100000` iterations. Otherwise, the function will stop when the desired precision is reached, whether it is an ?arb? number or a regular one.",{"lambda","calculus","sum"},"https://en.wikipedia.org/wiki/Series_(mathematics)#Examples_of_numerical_series"),
+    Page("Definite integral","dint","function","Returns the definite integral of `func` from `a` to `b`. The definite integral is the area under the curve. This function uses Simpson's method to approximate the area, and successively increases the number of intervals until a desired accuracy is reached. If `a` and `b` are swapped, it will be the same answer but negative. Examples: `dint(x=>x^2,0,1) = 0.333333333`, `dint(x=>sin(x),0,pi/2) = 1`, `dint(x=>sqrt(x)+3x,1,4) = 27.16666667`,",{"lambda","calculus"},"https://math.libretexts.org/Courses/Mount_Royal_University/MATH_2200%3A_Calculus_for_Scientists_II/2%3A_Techniques_of_Integration/2.5%3A_Numerical_Integration_-_Midpoint%2C_Trapezoid%2C_Simpson's_rule"),
     #pragma endregion
     #pragma region Vectors
-    Page("Length","length","function","Returns the number of elements in `obj` or the length of a ?string?. Example: `length(<1,2,4.5>) = 3`."),
-    Page("Magnitude","magnitude","function","Returns the magnitude of a vector, which is the distance from zero to that point.",{"distance"},"https://en.wikipedia.org/wiki/Magnitude_(mathematics)#Euclidean_vector_space"),
-    Page("Normalize","normalize","function","Returns a vector divided by it's magnitude, so the magnitude of the return value is `1`.",{},"https://en.wikipedia.org/wiki/Unit_vector"),
-    Page("Get element","get","function","Returns the element at `key` in `map`. If `map` is a vector, it returns the element with index `key`, with the first element having index `0`. If map is a ?map? type, it returns the value at that key. In either case, if the key is outside of bounds, `get` returns `0`.",{"access"}),
-    Page("Fill vector","fill","function","Returns a ?vector? with `count` elements generated by `func`. The first index is `0`. Example: `fill(x=>x/2,5) = <0,0.5,1,1.5,2>`",{"lambda","vector","generate"}),
-    Page("Map vector","map_vector","function","Returns a new ?vector? which is the result of each element in map being passed through `func`. Example: `map_vector(<4,0,-1>,x=>sqrt(x)) = <2,0,i>`."),
-    Page("Every","every","function","Returns `1` or `0` depending on whether all elements in the vector return true when passed through `func`. Example: `every(<1,2,3>,x=>(x>0))` returns `1` because every element in the vector is greater than zero.",{"all","vector","lambda"}),
-    Page("Concatenate","concat","function","Retuns the concatenation of the two ?vector? objects `a` and `b`. To concatenate ?string? objects, use the `add` function. Example: `concat(<1,2>,<4,3>) = <1,2,4,3>`.",{"addition","join"}),
-    Page("Sort","sort","function","Returns the sorted form of `vec` using the optional `comp` ?lambda? function. If `comp` is not passed, it defaults to the less than funcition `lt`. Examples: `sort(<4,-5,2.3>) = <-5,2.3,4>`, `sort(<\"abc\",\"b\",\"jh\">,(a,b)=>length(a)<length(b)) = <\"b\",\"jh\",\"abc\">`. Internally, this uses the merge sort algorithm.",{"order"}),
+    Page("Length","length","function","Returns the number of elements in `obj` or the length of a ?string?. Example: `length(<1,2,4.5>) = 3`.",{"vector","string"}),
+    Page("Magnitude","magnitude","function","Returns the magnitude of a vector, which is the distance from zero to that point.",{"vector","distance"},"https://en.wikipedia.org/wiki/Magnitude_(mathematics)#Euclidean_vector_space"),
+    Page("Normalize","normalize","function","Returns a vector divided by it's magnitude, so the magnitude of the return value is `1`.",{"vector"},"https://en.wikipedia.org/wiki/Unit_vector"),
+    Page("Get element","get","function","Returns the element at `key` in `map`. If `map` is a vector, it returns the element with index `key`, with the first element having index `0`. If map is a ?map? type, it returns the value at that key. In either case, if the key is outside of bounds, `get` returns `0`.",{"vector","access"}),
+    Page("Fill vector","fill","function","Returns a ?vector? with `count` elements generated by `func`. The first index is `0`. Example: `fill(x=>x/2,5) = <0,0.5,1,1.5,2>`",{"vector","lambda","generate"}),
+    Page("Map vector","map_vector","function","Returns a new ?vector? which is the result of each element in map being passed through `func`. Example: `map_vector(<4,0,-1>,x=>sqrt(x)) = <2,0,i>`.",{"vector","lambda"}),
+    Page("Every","every","function","Returns `1` or `0` depending on whether all elements in the vector return true when passed through `func`. Example: `every(<1,2,3>,x=>(x>0))` returns `1` because every element in the vector is greater than zero.",{"vector","all","lambda"}),
+    Page("Concatenate","concat","function","Retuns the concatenation of the two ?vector? objects `a` and `b`. To concatenate ?string? objects, use the `add` function. Example: `concat(<1,2>,<4,3>) = <1,2,4,3>`.",{"vector","addition","join"}),
+    Page("Sort","sort","function","Returns the sorted form of `vec` using the optional `comp` ?lambda? function. If `comp` is not passed, it defaults to the less than funcition `lt`. Examples: `sort(<4,-5,2.3>) = <-5,2.3,4>`, `sort(<\"abc\",\"b\",\"jh\">,(a,b)=>length(a)<length(b)) = <\"b\",\"jh\",\"abc\">`. Internally, this uses the merge sort algorithm.",{"vector","order"}),
     #pragma endregion
     #pragma region Strings
     Page("Evaluate","eval","function","Returns the calculation of the ?string? `str` in the global context. Eval is not aware of local variables or arguments, so `x=>eval(\"x\")` will not work. Example: `eval(\"4-2\") = 2`.",{"string","calculation","calculate"}),
-    Page("Error","error","function","Throws the error `str` and ends computation.",{"throw"}),
-    Page("Substring","substr","function","Returns a copy of the ?string? `str` starting from `begin` and continuing for `len` characters. The first character is at index zero, and if a length is not provided, it will copy until the end of the string. Example: `substr(\"Green apple\",2,5) = \"een a\"`.",{"slice"}),
-    Page("Lowercase","lowercase","function","Returns the ?string? `str` with each lowercase letter replaced with it's lowercase equivalent. Example: `lowercase(\"ABed\") = \"abed\"`.",{"uppercase","capital","string","format"}),
-    Page("Uppercase","uppercase","function","Returns the ?string? `str` with each lowercase letter replaced with it's uppercase equivalent. Example: `uppercase(\"ABed\") = \"ABED\"`.",{"lowercase","capital","string","format"}),
-    Page("Index of","indexof","function","Returns the index of `query` within the ?string? `str`. Searching is case-sensitive. The first character is index zero. Example: indexof(\"Red apple\",\"apple\") = 4`.",{"find","query","position","string"}),
+    Page("Error","error","function","Throws the error `str` and ends computation.",{"string","throw"}),
+    Page("Substring","substr","function","Returns a copy of the ?string? `str` starting from `begin` and continuing for `len` characters. The first character is at index zero, and if a length is not provided, it will copy until the end of the string. Example: `substr(\"Green apple\",2,5) = \"een a\"`.",{"string","slice"}),
+    Page("Lowercase","lowercase","function","Returns the ?string? `str` with each lowercase letter replaced with it's lowercase equivalent. Example: `lowercase(\"ABed\") = \"abed\"`.",{"string","uppercase","capital","format"}),
+    Page("Uppercase","uppercase","function","Returns the ?string? `str` with each lowercase letter replaced with it's uppercase equivalent. Example: `uppercase(\"ABed\") = \"ABED\"`.",{"string","lowercase","capital","format"}),
+    Page("Index of","indexof","function","Returns the index of `query` within the ?string? `str`. Searching is case-sensitive. The first character is index zero. Example: indexof(\"Red apple\",\"apple\") = 4`.",{"string","find","query","position"}),
     Page("Replace","replace","function","Returns the ?string? `str` with each instance of `find` replaced with `rep`. Example: `replace(\"heed\",\"e\",\"o\") = \"hood\"`.",{"string","query","find"}),
     #pragma endregion
     #pragma region Conversion
@@ -321,19 +370,19 @@ std::vector<Page> Help::pages = {
     #pragma region Units
     #pragma region Base units
     Page("","m","unit","Meter is a metric base unit representing length",{"length","distance","metre"},"https://en.wikipedia.org/wiki/Metre"),
-    Page("","kg","unit","Kilogram is a metric base unit representing mass or weight.",{"weight","mass","gram"},"https://en.wikipedia.org/wiki/Kilogram"),
+    Page("","kg","unit","Kilogram is a metric base unit representing mass or weight.",{"mass","weight","gram"},"https://en.wikipedia.org/wiki/Kilogram"),
     Page("","s","unit","Second is a metric base unit representing time.",{"time","second"},"https://en.wikipedia.org/wiki/Second"),
     Page("","A","unit","The Amp is a metric base unit representing electrical current.",{"current","amps"},"https://en.wikipedia.org/wiki/Ampere"),
     Page("","mol","unit","The mole is a metric base unit representing amount of substance. It is mainly used in chemistry",{"substance"},"https://en.wikipedia.org/wiki/Mole_unit"),
-    Page("","K","unit","The kelvin is a metric base unit representing temperature. The size of each degree Kelvin is equivalent to a degree Celsius, however zero Kelvin is set at absolute zero heat. It can be used as an alternative to Celsius.",{"celsius","heat","temperature"},"https://en.wikipedia.org/wiki/Kelvin"),
+    Page("","K","unit","The kelvin is a metric base unit representing temperature. The size of each degree Kelvin is equivalent to a degree Celsius, however zero Kelvin is set at absolute zero heat. It can be used as an alternative to Celsius.",{"temperature","heat","celsius"},"https://en.wikipedia.org/wiki/Kelvin"),
     Page("","$","unit","The dollar is a base unit representing currency. It is independent to any currency system and can be used to represent any currency.",{"currency"}),
     Page("","b","unit","The bit is a base unit representing information size.",{"information","byte"},"https://en.wikipedia.org/wiki/Bit"),
     Page("","N","unit","The Newton is a derived metric unit measuring force.",{"force"},"https://en.wikipedia.org/wiki/Newton_(unit)"),
     Page("","J","unit","The Joule is a derived metric unit measuring energy. It is equivalent to `1/3600` ?watt hour? units.",{"energy"},"https://en.wikipedia.org/wiki/Joule"),
     Page("","W","unit","The Watt is a derived metric unit measuring energy per second. It is equivalent to one ?Joule? per ?second?.",{"energy"},"https://en.wikipedia.org/wiki/Watt"),
-    Page("","V","unit","The Volt is a derived metric unit measuring electric potential. It is most commonly represented as one ?watt? per ?Amp?.",{"electric","potential"},"https://en.wikipedia.org/wiki/Volt"),
+    Page("","V","unit","The Volt is a derived metric unit measuring electric potential. It is most commonly represented as one ?watt? per ?Amp?.",{"electric potential",},"https://en.wikipedia.org/wiki/Volt"),
     Page("","Pa","unit","The pascal is a derived metric unit measuring pressure. Pascals are very small, and an ?atmosphere? is over `100000` pascals. It is equivalent to one ?Newton? per square ?meter?.",{"pressure"},"https://en.wikipedia.org/wiki/Pascal_(unit)"),
-    Page("","bps","unit","Bits per second is a derived metric unit measuring information speed. It is equivalent to one ?bit? per ?second?.",{"information","bytes per second"}),
+    Page("","bps","unit","Bits per second is a derived metric unit measuring information speed. It is equivalent to one ?bit? per ?second?.",{"information rate","bytes per second"}),
     Page("","Hz","unit","Hertz is a derived metric unit measuring frequency.",{"frequency"},"https://en.wikipedia.org/wiki/Hertz"),
     Page("","Wh","unit","The watt hour is the energy required to power one ?watt? for one ?hour?",{"energy"}),
     Page("","Ah","unit","The amp hour is the charge required to run one ?amp? of current for one ?hour?",{"charge"}),
@@ -346,21 +395,21 @@ std::vector<Page> Help::pages = {
     Page("","kph","unit","The kilometers per hour is a unit of velocity for `1000` ?meters? per ?hour?.",{"speed","velocity"}),
     Page("","tn","unit","The tonne is a unit of mass equal to `1000` ?kilogram?.",{"mass","weight"}),
     Page("","g","unit","The gram is a unit of mass equal to `0.001` ?kilogram?.",{"mass","weight"}),
-    Page("","c","unit","The speed of light is a constant unit of velocity equal to `299_792_458` ?meters? per ?second?.",{"speed","velocity","constant"},"https://en.wikipedia.org/wiki/Speed_of_light"),
+    Page("","c","unit","The speed of light is a constant unit of velocity equal to `299_792_458` ?meters? per ?second?.",{"velocity","speed","constant"},"https://en.wikipedia.org/wiki/Speed_of_light"),
     Page("","atm","unit","The atmosphere is a constant unit of perssure equal to the pressure of the Earth's atmosphere at sea level.",{"pressure"},"https://en.wikipedia.org/wiki/Standard_atmosphere_(unit)"),
-    Page("","eV","unit","The electron volt is a unit of charge equal to the charge of an electron.",{"charge"},"https://en.wikipedia.org/wiki/Electronvolt"),
+    Page("","eV","unit","The electron volt is a unit of charge equal to the charge of an electron.",{"electric charge"},"https://en.wikipedia.org/wiki/Electronvolt"),
     Page("","mach","unit","The mach is a unit of velocity equal to the speed of sound, approximately 340.3 ?meters? per ?second?.",{"velocity","speed"},"https://en.wikipedia.org/wiki/Mach_number"),
-    Page("","pc","unit","The parsec is a unit of distance commonly used in atronomical measurements.",{"distance","length"},"https://en.wikipedia.org/wiki/Parsec"),
+    Page("","pc","unit","The parsec is a unit of distance commonly used in atronomical measurements.",{"length","distance"},"https://en.wikipedia.org/wiki/Parsec"),
     Page("","acre","unit","The acre is a non-metric unit of area.",{"area"},"https://en.wikipedia.org/wiki/Acre"),
     Page("","btu","unit","The british thermal unit is a non-metric unit of energy.",{"energy"},"https://en.wikipedia.org/wiki/British_thermal_unit"),
-    Page("","ct","unit","The carat is a non-metric unit of weight.",{"weight","mass"},"https://en.wikipedia.org/wiki/Carat_(mass)"),
+    Page("","ct","unit","The carat is a non-metric unit of weight.",{"mass","weight"},"https://en.wikipedia.org/wiki/Carat_(mass)"),
     Page("","day","unit","The day is a unit of time.",{"time"}),
     Page("","floz","unit","The fluid ounce is a non-metric unit of volume.",{"volume"},"https://en.wikipedia.org/wiki/Fluid_ounce"),
     Page("","gallon","unit","The gallon is a non-metric unit of volume.",{"volume"},"https://en.wikipedia.org/wiki/Gallon"),
     Page("","in","unit","The inch is a non-metric unit of length.",{"length","distance"},"https://en.wikipedia.org/wiki/Inch"),
     Page("","lb","unit","The pound is a non-metric unit of mass or weight.",{"mass","weight"},"https://en.wikipedia.org/wiki/Pound_(mass)"),
     Page("","mi","unit","The mile is a non-metric unit of length.",{"length","distance"},"https://en.wikipedia.org/wiki/Mile"),
-    Page("","mph","unit","The ?mile? per ?hour? is a non-metric unit of speed.",{"speed","velocity"}),
+    Page("","mph","unit","The ?mile? per ?hour? is a non-metric unit of speed.",{"velocity","speed"}),
     Page("","nmi","unit","The nautical mile is a non-metric unit of distance.",{"length","distance"},"https://en.wikipedia.org/wiki/Nautical_mile"),
     Page("","oz","unit","The ounce is a non-metric unit of weight.",{"mass","weight"},"https://en.wikipedia.org/wiki/Ounce"),
     Page("","psi","unit","The ?pounds? per square ?inch? is a non-metric unit of pressure.",{"pressure"},"https://en.wikipedia.org/wiki/Pound_per_square_inch"),
@@ -378,6 +427,14 @@ std::vector<Page> Help::pages = {
     Page("Highlight","/highlight","command","The highlight command takes in an expression and returns the coloring data for it"),
     Page("Help","/help","command","The help command finds the most relevant help page to the search query and displays it."),
     Page("Query","/query","command","The query command creates a list of help pages from the query sorted by relevance. It can be rerun with the index to display. Example: `/query log 2`."),
+    #pragma endregion
+    #pragma region Lists
+    //Automatically generated in Page::addListData
+    Page("List of functions","","list","",{"builtin"}),
+    Page("List of units","","list",""),
+    Page("List of commands","","list",""),
+    Page("List of pages","","list",""),
+
     #pragma endregion
 };
 #pragma region Searching
@@ -457,8 +514,12 @@ std::vector<Page*> Help::search(const string& query, int maxResults) {
         //Iterate through upper and lower bound, summing up the priority in the results
         for(;lower != upper;lower++) {
             if((lower->first & hashSize) == hash[i].first)
-                for(int x = 0;x < lower->second.size();x++)
-                    results[lower->second[x].first].second += lower->second[x].second;
+                for(int x = 0;x < lower->second.size();x++) {
+                    int priority = lower->second[x].second;
+                    if(priority > 10 && i != 0) priority = 9;
+                    if(strcasecmp(query.c_str(), Help::pages[lower->second[x].first].name.c_str()) == 0) priority += 10;
+                    results[lower->second[x].first].second += priority;
+                }
         }
     }
     //Sort by priority
