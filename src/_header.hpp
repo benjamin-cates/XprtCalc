@@ -144,6 +144,7 @@ namespace Help {
 struct Command {
     //pointer to command
     ColoredString(*run)(std::vector<string>& inputs);
+    static string combineArgs(const std::vector<string>& inputs);
 };
 
 //Library functions are functions whose expressions are included via strings, but they are not compiled when the program starts, they can be added using the include command while the program is running. (program.cpp)

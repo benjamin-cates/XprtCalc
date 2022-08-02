@@ -31,10 +31,39 @@ ColoredString quitCommand(std::vector<string>& args) {
     exit(0);
     return ColoredString("");
 }
+ColoredString command_help(std::vector<string>& input) {
+    string inp = Command::combineArgs(input);
+    if(inp.length() == 0) inp = "welcome";
+    std::vector<Help::Page*> res = Help::search(inp, 1);
+    if(res.size() == 0) throw "Help page not found";
+    Help::Page& p = *res[0];
+    return res[0]->toColoredString();
+}
+ColoredString command_query(std::vector<string>& input) {
+    ColoredString out;
+    string inp = input[0];
+    //Print out results
+    std::vector<Help::Page*> res = Help::search(inp, 10);
+    for(int i = 0;i < res.size();i++) {
+        out.append({ {std::to_string(i),'n'},{": ","o "},{res[i]->name,'v'},"\n" });
+    }
+    //Message to rerun with index
+    if(input.size() == 1) {
+        out += "Rerun query with search and index to print help page\n";
+    }
+    //If index is provided, print the page
+    else {
+        int index = Expression::evaluate(input[1])->getR();
+        if(index < 0 || index >= res.size()) out.append({ {"Error: ",'e'},"Unable to print page, index out of bounds\n" });
+        else return res[index]->toColoredString();
+    }
+    return out;
+}
 
 void startup() {
     Program::commandList.insert(std::pair<string, Command>{"quit", { &quitCommand }});
-
+    Program::commandList.insert(std::pair<string, Command>{"help", { &command_help }});
+    Program::commandList.insert(std::pair<string, Command>{"query", { &command_query }});
 }
 
 int main(int argc, char** argv) {

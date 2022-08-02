@@ -37,7 +37,9 @@ html {
 }
 
 .help_content {
+    margin: 10px 0px 10px 0px;
     display: block;
+    line-height:1.3em;
 }
 
 .help_seemore {

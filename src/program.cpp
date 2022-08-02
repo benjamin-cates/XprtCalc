@@ -158,7 +158,7 @@ std::map<string, LibFunc> Library::functions = {
 using namespace std;
 #pragma endregion
 #pragma region Commands
-string combineArgs(std::vector<string>& args) {
+string Command::combineArgs(const std::vector<string>& args) {
     string out;
     if(args.size() == 0) return "";
     int i = 0;
@@ -296,11 +296,11 @@ string command_sections_internal(const string& inp, string tabbing) {
     return out;
 }
 ColoredString command_sections(std::vector<string>& input) {
-    string inp = combineArgs(input);
+    string inp = Command::combineArgs(input);
     return ColoredString(command_sections_internal(inp, ""));
 }
 ColoredString command_parse(vector<string>& input) {
-    string inp = combineArgs(input);
+    string inp = Command::combineArgs(input);
     ParseCtx ctx;
     Value tr = Tree::parseTree(inp, ctx);
     return ColoredString::fromXpr(tr->toString());
@@ -312,13 +312,13 @@ ColoredString command_meta(vector<string>& input) {
     return { out };
 }
 ColoredString command_def(vector<string>& input) {
-    string inp = combineArgs(input);
+    string inp = Command::combineArgs(input);
     std::tuple<string, ValList, string> assign = Expression::parseAssignment(inp);
     if(std::get<0>(assign) == "") throw "not an assignment";
     return Program::runLine(inp);
 }
 ColoredString command_pref(vector<string>& input) {
-    string inp = combineArgs(input);
+    string inp = Command::combineArgs(input);
     std::tuple<string, ValList, string> assign = Expression::parseAssignment(inp);
     string& name = std::get<0>(assign);
     //Just display
@@ -347,36 +347,8 @@ ColoredString command_ls(vector<string>& input) {
     return out;
 }
 ColoredString command_highlight(vector<string>& input) {
-    string inp = combineArgs(input);
+    string inp = Command::combineArgs(input);
     return { Expression::colorLine(inp,Program::parseCtx) };
-}
-ColoredString command_help(vector<string>& input) {
-    string inp = combineArgs(input);
-    if(inp.length() == 0) inp = "welcome";
-    std::vector<Help::Page*> res = Help::search(inp, 1);
-    if(res.size() == 0) throw "Help page not found";
-    Help::Page& p = *res[0];
-    return res[0]->toColoredString();
-}
-ColoredString command_query(vector<string>& input) {
-    ColoredString out;
-    string inp = input[0];
-    //Print out results
-    std::vector<Help::Page*> res = Help::search(inp, 10);
-    for(int i = 0;i < res.size();i++) {
-        out.append({ {std::to_string(i),'n'},{": ","o "},{res[i]->name,'v'},"\n" });
-    }
-    //Message to rerun with index
-    if(input.size() == 1) {
-        out += "Rerun query with search and index to print help page\n";
-    }
-    //If index is provided, print the page
-    else {
-        int index = Expression::evaluate(input[1])->getR();
-        if(index < 0 || index >= res.size()) out.append({ {"Error: ",'e'},"Unable to print page, index out of bounds\n" });
-        else return res[index]->toColoredString();
-    }
-    return out;
 }
 ColoredString command_debug_help(vector<string>& input) {
     if(Help::queryHash.size() == 0) Help::generateQueryHash();
@@ -405,8 +377,6 @@ map<string, Command> Program::commandList = {
     {"def",{&command_def}},
     {"ls",{&command_ls}},
     {"highlight",{&command_highlight}},
-    {"help",{&command_help}},
-    {"query",{&command_query}},
     {"debug_help",{&command_debug_help}},
     {"pref",{&command_pref}},
 };

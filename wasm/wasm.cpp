@@ -1,4 +1,5 @@
 #include "../src/_header.hpp"
+#include <emscripten.h>
 #include <emscripten/bind.h>
 
 namespace wasm {
@@ -47,6 +48,16 @@ namespace wasm {
         return out;
     }
 };
+ColoredString command_query(std::vector<string>& args) {
+    string inp = Command::combineArgs(args);
+    emscripten_run_script(("panelPage('help');helpSearch({'key':'Enter'},{'value':\"" + String::safeBackspaces(inp) + "\"})").c_str());
+    return ColoredString("");
+}
+ColoredString command_help(std::vector<string>& args) {
+    string inp = Command::combineArgs(args);
+    emscripten_run_script(("panelPage('help');window.top.postMessage(\"openhelppage " + String::safeBackspaces(inp) + "\")").c_str());
+    return ColoredString("");
+}
 
 using namespace emscripten;
 EMSCRIPTEN_BINDINGS(module) {
@@ -56,10 +67,17 @@ EMSCRIPTEN_BINDINGS(module) {
     function("highlightExpression", &wasm::highlightExpression);
     function("runLine", &wasm::runLine);
     function("runLineWithColor", &wasm::runLineWithColor);
-    function("query",&wasm::query);
+    function("query", &wasm::query);
+}
+
+void startup() {
+    Program::commandList.insert(std::pair<string, Command>{"query", { &command_query }});
+    Program::commandList.insert(std::pair<string, Command>{"help", { &command_help }});
+
 }
 
 int main() {
+    Program::implementationStartup = &startup;
     Program::startup();
     return 0;
 }
