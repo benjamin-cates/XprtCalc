@@ -695,7 +695,7 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             equal = Expression::findNext(sec, 0, '=');
             //Color arg list (a,b)
             if(sec[0] == '(') {
-                arguments = colorArgList(str, out, ctx);
+                arguments = colorArgList(sec, out, ctx);
             }
             //Else if single variable
             else {
