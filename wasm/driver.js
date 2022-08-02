@@ -11,7 +11,10 @@ function run_line(str, coloredInput = "") {
     let out = document.createElement("div");
     out.className = "output_element";
     try {
-        out.innerHTML = coloredInput + "<br>" + Module.runLineWithColor(str);
+        let output = Module.runLineWithColor(str).replace(/\n/g, "<br>");
+        if(output.includes("<span class='COLe'>Error:") || output == "")
+            out.classList.add("hide_on_next_xpr");
+        out.innerHTML = coloredInput + "<br>" + Module.runLineWithColor(str).replace(/\n/g, "<br>");
     }
     catch(e) {
         out.innerHTML = coloredInput + "<br><span class='COLe'>Error:</span> unrecognizable error, please report to <a href='https://github.com/benjamin-cates/XprtCalc/issues'>https://github.com/benjamin-cates/XprtCalc/issues</a> with more information.";
@@ -24,6 +27,8 @@ const textArea = document.querySelector("#input_element");
 
 function textAreaKeydown(event) {
     if(event.key == "Enter" && !event.shiftKey) {
+        let hidden = document.querySelector(".hide_on_next_xpr");
+        if(hidden) hidden.remove();
         if(textArea.value.length == 0)
             textArea.value = "";
         else {
