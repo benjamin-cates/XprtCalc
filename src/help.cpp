@@ -219,6 +219,26 @@ void Page::addListData() {
             }
         }
     }
+    else if(name == "List of includes") {
+        content += "Each of these functions can be included by running `/include {symbol}` on them. You can also batch include categories by running include on the category names shown in this document.\n";
+        std::map<string, std::vector<string>> categoryMap;
+        for(const std::pair<string, Library::LibFunc>& x : Library::functions) {
+            int colon1 = x.second.fullName.find(':');
+            int colon2 = x.second.fullName.find(':', colon1 + 1);
+            const string& symbol = x.first + x.second.inputs;
+            const string& name = x.second.fullName.substr(0, colon1);
+            const string& category = x.second.fullName.substr(colon1 + 1, colon2 - colon1);
+            const string& description = x.second.fullName.substr(colon2 + 1);
+            if(categoryMap.find(category) == categoryMap.end()) categoryMap.insert(std::pair<string, std::vector<string>>{category, {}});
+            categoryMap[category].push_back("`" + symbol + "` - " + name + ". " + description + "\nCompiles to: `" + x.first + "=" + x.second.inputs + "=>" + x.second.xpr + "`");
+        }
+        //Print out sorted by category
+        for(const std::pair<string, std::vector<string>>& x : categoryMap) {
+            content += "\n*** " + x.first + "\n\n";
+            for(int i = 0;i < x.second.size();i++)
+                content += x.second[i] + "\n\n";
+        }
+    }
 }
 #pragma endregion
 std::vector<Page> Help::pages = {
@@ -420,7 +440,7 @@ std::vector<Page> Help::pages = {
     #pragma endregion
     #pragma region Commands
     Page("Define","/def","command","The def command defines a global variable. It can be used in two ways, as either `/def a 12` or as `/def a=12`. Def can also define a variable as a ?lambda? function, which can then be run like a built in function. See the ?include? command for something similar to this.",{"set"}),
-    Page("Include","/include","command","The include command includes functions from a predetermined list. Example: `/include mean`. Search for ?library functions? to see them all."),
+    Page("Include","/include","command","The include command includes functions from a predetermined list. Example: `/include mean`. Several names can be given separated by spaces. Search for ?List of includes? to see them all."),
     Page("Parse","/parse","command","The parse command parses the expression to a tree and then returns it without computing. Example: `/parse add(1,2)` -> `1+2`."),
     Page("Metadata","/meta","command","The meta command returns a list of metadata for the program like author name and version."),
     Page("List","/ls","command","The ls command lists every ?variable? in the global scope. Variables can be defined with the ?def? command."),
@@ -433,6 +453,7 @@ std::vector<Page> Help::pages = {
     Page("List of functions","","list","",{"builtin"}),
     Page("List of units","","list",""),
     Page("List of commands","","list",""),
+    Page("List of includes","","list",""),
     Page("List of pages","","list",""),
 
     #pragma endregion
