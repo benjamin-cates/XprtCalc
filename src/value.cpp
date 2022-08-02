@@ -83,17 +83,13 @@ Value Lambda::operator()(ValList inputs, ComputeCtx& ctx) {
 #pragma endregion
 #pragma region String
 string String::safeBackspaces(const string& str) {
-    string out = str;
-    out.resize(out.size() * 2);
-    int offset = 0;
-    const static std::unordered_map<char, char> escapes = { {'\\','\\'},{'"','"'},{'\n','n'},{'\t','t'} };
+    string out = "";
     for(int i = 0;i < str.length();i++) {
-        if(escapes.at(str[i]) != 0) {
-            out[i + offset] = '\\';
-            out[i + offset + 1] = escapes.at(str[i]);
-            offset++;
-        }
-        else out[i + offset] = str[i];
+        if(str[i] == '\\') out += "\\\\";
+        else if(str[i] == '"') out += "\\\"";
+        else if(str[i] == '\n') out += "\\n";
+        else if(str[i] == '\t') out += "\\t";
+        else out += str[i];
     }
     return out;
 }
@@ -563,7 +559,7 @@ string Vector::toStr(ParseCtx& ctx)const {
     return out + ">";
 }
 string String::toStr(ParseCtx& ctx)const {
-    return "\"" + str + "\"";
+    return "\"" + String::safeBackspaces(str) + "\"";
 }
 string Lambda::toStr(ParseCtx& ctx)const {
     string out;
