@@ -307,7 +307,7 @@ button:hover .panel_header_icon {
 }
 
 #keyboard_open {
-    z-index: 15;
+    z-index: 5;
     position: fixed;
     right: 0;
     bottom: 0;
