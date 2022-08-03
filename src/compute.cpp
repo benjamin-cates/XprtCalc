@@ -45,22 +45,69 @@ namespace Math {
     mppp::real gamma(const mppp::real& x) { return mppp::gamma(x); }
     int sgn(const mppp::real& x) { if(nan_p(x)) return 0;return x.sgn(); }
     int getAccu(const mppp::real& x) { return Arb::precisionToDigits(x.get_prec()); }
-    mppp::real isNan(const mppp::real& x) { return nan_p(x); }
-    mppp::real isInf(const mppp::real& x) { return inf_p(x); }
+    int isNan(const mppp::real& x) { return nan_p(x); }
+    int isInf(const mppp::real& x) { return inf_p(x); }
     mppp::real NaN(int accu) { mppp::real r("0.0", Arb::digitsToPrecision(accu));set_nan(r); return r; }
     mppp::real Inf(int accu, bool negative) { mppp::real r("0.0", Arb::digitsToPrecision(accu));set_inf(r, negative); return r; }
-    std::complex<mppp::real> pow(std::complex<mppp::real> a, std::complex<mppp::real> b) {
-        if(a.imag().zero_p() && b.imag().zero_p()) {
-            if(a.real().integer_p() && b.real().integer_p()) {
-                return std::complex<mppp::real>(mppp::round(mppp::pow(a.real(), b.real())), mppp::real(0));
-            }
-            return std::complex<mppp::real>(mppp::pow(a.real(), b.real()), mppp::real(0));
+    mppp::real pow(mppp::real a, mppp::real b) {
+        if(a.integer_p() && b.integer_p()) {
+            return mppp::round(mppp::pow(a, b));
         }
-        return std::pow(a, b);
-
+        return mppp::pow(a, b);
     }
     #endif
+    #ifdef GMP_WASM
+    mpfr_t ln(const mpfr_t& x) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_log',$0); }, x.get())); }
+    mpfr_t log(const mpfr_t& x, const mpfr_t& b) { return Math::ln(x) / Math::ln(b); }
+    mpfr_t getE_arb(int accuracy) { return mpfr_t::asPtr(EM_ASM_INT({ return arbConstant('mpfr_const_euler',$0) }, accuracy)); }
+    mpfr_t getPi_arb(int accuracy) { return mpfr_t::asPtr(EM_ASM_INT({ return arbConstant('mpfr_const_pi',$0) }, accuracy)); }
+    mpfr_t gamma(const mpfr_t& x) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_gamma',$0); }, x.get())); }
+    int sgn(const mpfr_t& x) { return EM_ASM_INT({ return arbProperty('mpfr_sgn',$0); }, x.get()); }
+    int isNan(const mpfr_t& x) { return EM_ASM_INT({ return arbProperty('mpfr_nan_p',$0); }, x.get()); }
+    int isInf(const mpfr_t& x) { return EM_ASM_INT({ return arbProperty('mpfr_inf_p',$0); }, x.get()); }
+    mpfr_t NaN(int accu) { return mpfr_t::asPtr(EM_ASM_INT({ return arbConstant('mpfr_set_nan',$0) }, accu)); }
+    mpfr_t Inf(int accu, bool negative) { return mpfr_t::asPtr(EM_ASM_INT({ return arbConstant('mpfr_set_inf',$0,$1) }, accu, negative)); }
+    mpfr_t pow(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_pow',$0,$1); }, a.get(), b.get())); }
+    #endif
 };
+#ifdef GMP_WASM
+mpfr_t operator+(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_add',$0,$1); }, a.get(), b.get())); }
+mpfr_t operator-(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_sub',$0,$1); }, a.get(), b.get())); }
+mpfr_t operator*(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_mul',$0,$1); }, a.get(), b.get())); }
+mpfr_t operator/(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_div',$0,$1); }, a.get(), b.get())); }
+bool operator<(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_less_p',$0,$1); }, a.get(), b.get()); }
+bool operator>(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_greater_p',$0,$1); }, a.get(), b.get()); }
+bool operator<=(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_lessequal_p',$0,$1); }, a.get(), b.get()); }
+bool operator>=(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_greaterequal_p',$0,$1); }, a.get(), b.get()); }
+bool operator==(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_less_p',$0,$1); }, a.get(), b.get()); }
+bool operator!=(mpfr_t a, mpfr_t b) { return !operator==(a, b); }
+namespace std {
+    mpfr_t abs(const mpfr_t& x) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_abs',$0); }, x.get())); }
+    mpfr_t arg(const mpfr_t& x) { if(x < mpfr_t(0.0)) return mpfr_t(0.0) - Math::getPi_arb(x.prec()); return mpfr_t(0.0); }
+    mpfr_t pow(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_pow',$0,$1); }, a.get(), b.get())); }
+    mpfr_t fmod(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_fmod',$0,$1); }, a.get(), b.get())); }
+    mpfr_t erf(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_erf',$0); }, a.get())); }
+    mpfr_t round(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_round',$0); }, a.get())); }
+    mpfr_t floor(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_floor',$0); }, a.get())); }
+    mpfr_t ceil(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_ceil',$0); }, a.get())); }
+    mpfr_t sqrt(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_sqrt',$0); }, a.get())); }
+    mpfr_t exp(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_exp',$0); }, a.get())); }
+    mpfr_t log(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_log10',$0); }, a.get())); }
+    mpfr_t ln(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_log',$0); }, a.get())); }
+    mpfr_t sin(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_sin',$0); }, a.get())); }
+    mpfr_t cos(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_cos',$0); }, a.get())); }
+    mpfr_t tan(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_tan',$0); }, a.get())); }
+    mpfr_t sinh(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_sinh',$0); }, a.get())); }
+    mpfr_t cosh(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_cosh',$0); }, a.get())); }
+    mpfr_t tanh(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_tanh',$0); }, a.get())); }
+    mpfr_t asin(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_asin',$0); }, a.get())); }
+    mpfr_t acos(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_acos',$0); }, a.get())); }
+    mpfr_t atan(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_atan',$0); }, a.get())); }
+    mpfr_t asinh(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_asinh',$0); }, a.get())); }
+    mpfr_t acosh(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_acosh',$0); }, a.get())); }
+    mpfr_t atanh(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_atanh',$0); }, a.get())); }
+}
+#endif
 #pragma endregion
 #pragma region ComputeCtx
 ComputeCtx::ComputeCtx() {
@@ -335,15 +382,23 @@ std::vector<Function> Program::globalFunctions = {
     #define DefaultInp(id,value) if(input.size()<=id) {input.resize(id+1,Value::zero);input[id]=value;}
 
     #ifdef USE_ARB
-    #define ConstantArb(name,...) Function("name",{},{},{{D(dub),[](inp) {return ret(Arb)(__VA_ARGS__);}}})
     #define UnaryWithUnit(name,formula,unitF,...) Function(name,{"x"},{}, {\
         {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);return Value::reuseIfUnique<Number>(input[0],formula,unitF);}},\
-        {D(arb),[](inp) {using T=mppp::real;std::complex<T> num = getArbN(0);Unit unit=getArbU(0);return Value::reuseIfUnique<Arb>(input[0],formula,unitF);}},\
+        {D(arb),[](inp) {using T=mppp::real;T num = getArbN(0);Unit unit=getArbU(0);return Value::reuseIfUnique<Arb>(input[0],formula,unitF);}},\
         UnaryVecApply,__VA_ARGS__})
-    #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},{D(arb),[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num=getArbN(0);Unit unit=getArbU(0);formula;}},BinVecApply,__VA_ARGS__})
+    #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},{D(arb),[](inp) {using T=mppp::real;using R=Arb;T num=getArbN(0);Unit unit=getArbU(0);formula;}},BinVecApply,__VA_ARGS__})
     #define BinaryBaseTemplate(name,arg1,arg2,returnType,...) Function(name,{arg1,arg2},{samePrecision}, {\
         {dd,[](inp) {using T=double;using R=Number;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);return returnType;}},\
-        {aa,[](inp) {using T=mppp::real;using R=Arb;std::complex<T> num1=getArbN(0);std::complex<T> num2=getArbN(1);Unit unit1=getArbU(0);Unit unit2=getArbU(1);return returnType;}},BinVecApply,__VA_ARGS__})
+        {aa,[](inp) {using T=mppp::real;using R=Arb;T num1=getArbN(0);T num2=getArbN(1);Unit unit1=getArbU(0);Unit unit2=getArbU(1);return returnType;}},BinVecApply,__VA_ARGS__})
+    #elif defined (GMP_WASM)
+    #define UnaryWithUnit(name,formula,unitF,...) Function(name,{"x"},{}, {\
+        {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);return Value::reuseIfUnique<Number>(input[0],formula,unitF);}},\
+        {D(arb),[](inp) {using T=mpfr_t;T num = getArbN(0);Unit unit=getArbU(0);return Value::reuseIfUnique<Arb>(input[0],formula,unitF);}},\
+        UnaryVecApply,__VA_ARGS__})
+    #define DoubleArbTemplate(name,formula,...) Function(name,{"x"},{},{{D(dub),[](inp) {using T=double;using R=Number;std::complex<T> num=getN(0);Unit unit=getU(0);formula;}},{D(arb),[](inp) {using T=mpfr_t;using R=Arb;T num=getArbN(0);Unit unit=getArbU(0);formula;}},BinVecApply,__VA_ARGS__})
+    #define BinaryBaseTemplate(name,arg1,arg2,returnType,...) Function(name,{arg1,arg2},{samePrecision}, {\
+        {dd,[](inp) {using T=double;using R=Number;std::complex<T> num1=getN(0);std::complex<T> num2=getN(1);Unit unit1=getU(0);Unit unit2=getU(1);return returnType;}},\
+        {aa,[](inp) {using T=mpfr_t;using R=Arb;T num1=getArbN(0);T num2=getArbN(1);Unit unit1=getArbU(0);Unit unit2=getArbU(1);return returnType;}},BinVecApply,__VA_ARGS__})
     #else
     #define UnaryWithUnit(name,formula,unitF,...) Function(name,{"x"},{}, {\
         {D(dub),[](inp) {using T=double;std::complex<T> num=getN(0);Unit unit=getU(0);return Value::reuseIfUnique<Number>(input[0],formula,unitF);}},\
@@ -374,17 +429,17 @@ std::vector<Function> Program::globalFunctions = {
     Unary("log",log10(num)),
 
     Binary("logb","x","b",log(num1) / log(num2)),
-    DoubleArbTemplate("gamma",if(num.imag() != 0) throw "Gamma function does not support complex";ret(R)(Math::gamma(num.real()),unit)),
-    DoubleArbTemplate("factorial",if(num.imag() != 0) throw "Factorial function does not support complex";ret(R)(Math::gamma(num.real() + 1),unit)),
-    DoubleArbTemplate("erf",if(num.imag() != 0) throw "Error function does not support complex";ret(R)(erf(num.real()),unit)),
+    DoubleArbTemplate("gamma",if(num.imag() != T(0.0)) throw "Gamma function does not support complex";ret(R)(Math::gamma(num.real()),unit)),
+    DoubleArbTemplate("factorial",if(num.imag() != T(0.0)) throw "Factorial function does not support complex";ret(R)(Math::gamma(num.real() + T(1.0)),unit)),
+    DoubleArbTemplate("erf",if(num.imag() != T(0.0)) throw "Error function does not support complex";ret(R)(erf(num.real()),unit)),
 #pragma endregion
 #pragma region Trig
     Unary("sin",sin(num)),
     Unary("cos",cos(num)),
     Unary("tan",tan(num)),
-    Unary("csc",std::complex<T>(1,0) / sin(num)),
-    Unary("sec",std::complex<T>(1,0) / cos(num)),
-    Unary("cot",std::complex<T>(1,0) / tan(num)),
+    Unary("csc",T(1.0) / sin(num)),
+    Unary("sec",T(1.0) / cos(num)),
+    Unary("cot",T(1.0) / tan(num)),
     Unary("sinh",sinh(num)),
     Unary("cosh",cosh(num)),
     Unary("tanh",tanh(num)),
@@ -399,9 +454,9 @@ std::vector<Function> Program::globalFunctions = {
     Unary("round",std::complex<T>(round(num.real()),round(num.imag()))),
     Unary("floor",std::complex<T>(floor(num.real()),floor(num.imag()))),
     Unary("ceil",std::complex<T>(ceil(num.real()),ceil(num.imag()))),
-    UnaryWithUnit("getr",std::complex<T>(num.real(),0),0),
-    UnaryWithUnit("geti",std::complex<T>(num.imag(),0),0),
-    UnaryWithUnit("getu",std::complex<T>(1.0,0.0),unit),
+    UnaryWithUnit("getr",num.real(),Unit(0)),
+    UnaryWithUnit("geti",num.imag(),Unit(0)),
+    UnaryWithUnit("getu",1.0,unit),
     Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,{D(vec_t),[](inp) {
         def(Vector,v,0);
         Value max = Value::zero;
@@ -527,10 +582,12 @@ std::vector<Function> Program::globalFunctions = {
     Constant("i",0,1.0),
     Constant("pi",3.14159265358979323),
     #define downscale {D(arb),D(dub)}
+    #if defined(USE_ARB) || defined(GMP_WASM)
+    Function("arb_e",{"prec"},{downscale},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(Math::getE_arb(prec));}}}),
+    Function("arb_pi",{"prec"},{downscale},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(Math::getPi_arb(prec));}}}),
+    #endif
     #ifdef USE_ARB
-    Function("arb_pi",{"prec"},{},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(mppp::real_pi(Arb::digitsToPrecision(prec)));}}}),
-    Function("arb_e",{"prec"},{},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(mppp::exp(mppp::real(1.0,Arb::digitsToPrecision(prec))));}}}),
-    Function("arb_rand",{"prec"},{},{{D(dub),[](inp) {
+    Function("arb_rand",{"prec"},{downscale},{{D(dub),[](inp) {
         double prec = input[0]->getR();
         if(Program::smallCompute) prec = std::min(prec,50.0);
         mpfr_prec_t p = Arb::digitsToPrecision(prec);
@@ -546,6 +603,29 @@ std::vector<Function> Program::globalFunctions = {
             i++;
             mppp::real cur{(unsigned long)(0xfff & rand()),mpfr_exp_t(-i * 12),p};
             out += cur;
+        }
+        return std::make_shared<Arb>(out);
+    }}}),
+    #endif
+    #ifdef GMP_WASM
+    Function("arb_rand",{"prec"},{downscale},{{D(dub),[](inp) {
+        double prec = input[0]->getR();
+        if(Program::smallCompute) prec = std::min(prec,50.0);
+        mpfr_t out(0,prec);
+        int binDigits = prec * std::log(10) / std::log(2);
+        std::cout << "bindig " << binDigits << std::endl;
+        int i = 0;
+        if(RAND_MAX >= 0xffffffff) while(i * 32 < binDigits) {
+            i++;
+            mpfr_t cur((unsigned long)(0xfff & rand()),prec);
+            cur.set_exp(-i * 32);
+            out = out + cur;
+        }
+        else while(i * 12 < binDigits) {
+            i++;
+            mpfr_t cur((unsigned long)(0xfff & rand()),prec);
+            cur.set_exp(-i * 12);
+            out = out + cur;
         }
         return std::make_shared<Arb>(out);
     }}}),

@@ -330,7 +330,7 @@ ColoredString command_pref(vector<string>& input) {
     else {
         if(Preferences::pref.find(name) == Preferences::pref.end()) throw "preference " + name + " not found";
         Value& val = Preferences::pref[name].first;
-        Value set=Expression::evaluate(std::get<2>(assign));
+        Value set = Expression::evaluate(std::get<2>(assign));
         Value::set(val, std::get<1>(assign), set);
         if(Preferences::pref[name].second) Preferences::pref[name].second(Preferences::pref[name].first);
     }

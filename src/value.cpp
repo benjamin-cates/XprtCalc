@@ -117,6 +117,9 @@ bool operator==(const Value& lhs, const Value& rhs) {
     #ifdef USE_ARB
     std::shared_ptr<Arb> a1, a2;
     #endif
+    #ifdef GMP_WASM
+    std::shared_ptr<Arb> a1, a2;
+    #endif
     std::shared_ptr<Vector> v1, v2;
     std::shared_ptr<Lambda> l1, l2;
     std::shared_ptr<String> s1, s2;
@@ -130,6 +133,11 @@ bool operator==(const Value& lhs, const Value& rhs) {
         return false;
     case Value::arb_t:
         #ifdef USE_ARB
+        cast(Arb, a1, a2)
+            if(!(a1->unit == a2->unit)) return false;
+        if(a1->num == a2->num) return true;
+        #endif
+        #ifdef GMP_WASM
         cast(Arb, a1, a2)
             if(!(a1->unit == a2->unit)) return false;
         if(a1->num == a2->num) return true;
@@ -195,7 +203,10 @@ Value Value::convertTo(int type) {
     if(type == curType) return *this;
     if(type == num_t) {
         #ifdef USE_ARB
-        if(curType == arb_t) { std::shared_ptr<Arb> a = cast<Arb>(); return std::make_shared<Number>(double(a->num.real()), double(a->num.imag()), a->unit); }
+        if(curType == arb_t) { std::shared_ptr<Arb> a = cast<Arb>(); return std::make_shared<Number>(double(a->num), 0.0, a->unit); }
+        #endif
+        #ifdef GMP_WASM
+        if(curType == arb_t) { std::shared_ptr<Arb> a = cast<Arb>(); return std::make_shared<Number>(double(a->num), 0.0, a->unit); }
         #endif
         if(curType == lmb_t) throw "Cannot convert lambda to number";
         else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str, 10);
@@ -203,9 +214,17 @@ Value Value::convertTo(int type) {
     }
     #ifdef USE_ARB
     else if(type == arb_t) {
-        if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(n->num.real(), n->num.imag(), n->unit); }
+        if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(n->num.real(), n->unit); }
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
-        else if(curType == str_t) return Expression::parseNumeral("0a" + cast<String>()->str, 10);
+        else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str + "p" + std::to_string(cast<String>()->str.length()), 10);
+        else if(curType == map_t) throw "Cannot convert map to arb";
+    }
+    #endif
+    #ifdef GMP_WASM
+    else if(type == arb_t) {
+        if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(n->num.real(), n->unit); }
+        else if(curType == lmb_t) throw "Cannot convert lambda to arb";
+        else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str + "p" + std::to_string(cast<String>()->str.length()), 10);
         else if(curType == map_t) throw "Cannot convert map to arb";
     }
     #endif
@@ -325,7 +344,10 @@ void Value::set(Value& val, ValList indicies, Value setTo) {
 #pragma region flatten
 double Number::flatten()const { return num.real() * 4.59141 + num.imag() * 2.12941 + double(unit.getBits()); }
 #ifdef USE_ARB
-double Arb::flatten()const { return double(num.real() * 5.132441 + num.imag() * 7.14441 + double(unit.getBits())); }
+double Arb::flatten()const { return double(num) * 5.132441 + double(unit.getBits()); }
+#endif
+#ifdef GMP_WASM
+double Arb::flatten()const { return double(num) * 5.132441 + double(unit.getBits()); }
 #endif
 double Vector::flatten()const {
     double out = 0;
@@ -476,8 +498,14 @@ string Number::toStr(ParseCtx& ctx)const {
     }
     return out;
 }
-#ifdef USE_ARB
-string Arb::componentToString(mppp::real x, int base) {
+#if defined( USE_ARB) || defined(GMP_WASM)
+string Arb::componentToString(
+    #ifdef USE_ARB
+    mppp::real x
+    #elif defined(GMP_WASM)
+    mpfr_t x
+    #endif
+    , int base) {
     string str = x.to_string(base);
     int e = 0;
     for(int i = 0;i < str.length();i++) {
@@ -531,19 +559,9 @@ string Arb::componentToString(mppp::real x, int base) {
 }
 string Arb::toStr(ParseCtx& ctx)const {
     string out;
-    if(num.real() != 0) {
-        if(Math::isInf(num.real())) out += "inf";
-        else if(Math::isNan(num.real())) return "nan";
-        else out += Arb::componentToString(num.real(), 10);
-    }
-    if(num.imag() != 0) {
-        if(num.real() != 0 && num.imag() > 0) out += "+";
-        if(Math::isInf(num.imag())) out += "inf*";
-        else if(Math::isNan(num.imag())) out += "nan*";
-        else out += Arb::componentToString(num.imag(), 10);
-        out += 'i';
-    }
-    if(out == "") out = "0";
+    if(Math::isInf(num)) out += "inf";
+    else if(Math::isNan(num)) return "nan";
+    else out += Arb::componentToString(num, 10);
     if(!unit.isUnitless()) {
         out += "[" + unit.toString() + "]";
     }
@@ -610,22 +628,12 @@ bool Value::isOne(const Value& x) {
     if(std::shared_ptr<Number> n = x.cast<Number>()) {
         if(n->num == std::complex<double>(1)) return true;
     }
-    #ifdef USE_ARB
-    else if(std::shared_ptr<Arb> n = x.cast<Arb>()) {
-        if(n->num == std::complex<mppp::real>(1)) return true;
-    }
-    #endif
     return false;
 }
 bool Value::isZero(const Value& x) {
     if(std::shared_ptr<Number> n = x.cast<Number>()) {
         if(n->num == std::complex<double>(0)) return true;
     }
-    #ifdef USE_ARB
-    else if(std::shared_ptr<Arb> n = x.cast<Arb>()) {
-        if(n->num == std::complex<mppp::real>(0)) return true;
-    }
-    #endif
     return false;
 }
 

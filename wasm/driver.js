@@ -80,6 +80,7 @@ window.onload = _ => {
     resize();
     window.addEventListener("resize", resize);
     keyboardConstructor.construct();
+    loadArb();
     update_highlight("");
 }
 

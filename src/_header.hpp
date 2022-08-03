@@ -24,12 +24,18 @@
 #include <mp++/mp++.hpp>
 #include <mp++/real.hpp>
 #endif
+#ifdef GMP_WASM
+#include <emscripten.h>
+#endif
 #pragma endregion
 
 #pragma region Forward declarations
 class ValueBaseClass;
 class Value;
 class Tree;
+#ifdef GMP_WASM
+class mpfr_t;
+#endif
 class Unit;
 class Function;
 struct Command;
@@ -381,13 +387,24 @@ namespace Math {
     bool isInf(double x);
     #ifdef USE_ARB
     //Tests if x is NaN
-    mppp::real isNan(const mppp::real& x);
+    int isNan(const mppp::real& x);
     //Tests if x is an infinite type
-    mppp::real isInf(const mppp::real& x);
+    int isInf(const mppp::real& x);
     //Returns NaN given accuracy in decimal digits
     mppp::real NaN(int accu);
     //Returns inifity given accuracy in decimal digits and positive/negative bool
     mppp::real Inf(int accu, bool negative);
+    #endif
+    #ifdef GMP_WASM
+    //Tests if x is NaN
+    int isNan(const mpfr_t& x);
+    //Tests if x is an infinite type
+    int isInf(const mpfr_t& x);
+    //Returns NaN given accuracy in decimal digits
+    mpfr_t NaN(int accu);
+    //Returns inifity given accuracy in decimal digits and positive/negative bool
+    mpfr_t Inf(int accu, bool negative);
+
     #endif
 
 };
@@ -520,7 +537,7 @@ public:
         return std::dynamic_pointer_cast<T, ValueBaseClass>(ptr);
     }
     Value deepCopy()const;
-    bool unique()const {return ptr.unique();}
+    bool unique()const { return ptr.unique(); }
     //Returns true only if type is num or arb and real=1 and imag=0 and unit=0
     static bool isOne(const Value& x);
     //Returns true only if type is num or arb and real, imag, and unit are zero
@@ -578,7 +595,7 @@ public:
 //value.cpp
 class Arb : public ValueBaseClass {
 public:
-    std::complex<mppp::real> num;
+    mppp::real num;
     Unit unit;
     Arb(mppp::real r, mppp::real i = 0.0, Unit u = Unit());
     Arb(std::complex<mppp::real> n, Unit u = Unit());
@@ -594,6 +611,59 @@ public:
     double getR()const { return double(num.real()); }
     int typeID()const { return Value::arb_t; }
 };
+#endif
+#ifdef GMP_WASM
+class mpfr_link {
+public:
+    int ptr;
+    mpfr_link(int ptr) { this->ptr = ptr; }
+    ~mpfr_link() { EM_ASM({ freeArb($0) }, ptr); }
+};
+class mpfr_t {
+public:
+    //The data heap is stored in JS
+    std::shared_ptr<mpfr_link> ptr;
+    int get()const { return ptr->ptr; }
+    template<typename T = double>
+    mpfr_t(T v = 0.0, int prec = 15) { this->ptr = std::make_shared<mpfr_link>(EM_ASM_INT({ return doubleToArb($0,$1); }, v, prec)); }
+    mpfr_t(int p, bool isPtr) { this->ptr = std::make_shared<mpfr_link>(p); }
+    //Casts an integer to a mpfr_t pointer
+    static mpfr_t asPtr(int p) { return mpfr_t(p, true); }
+    //Parses a string with digits, base, and precision to mpfr_t
+    static mpfr_t stringToArb(string digits, int precision, int base) { return mpfr_t(EM_ASM_INT({ return arbBindStringToArb($0,$1,$2); }, digits.c_str(), precision, base), true); }
+    //Converts mpfr_t to a double
+    double toDouble()const { return EM_ASM_DOUBLE({ return arbToDouble($0) }, get()); }
+    operator double()const { return toDouble(); }
+    void set_exp(int exp)const { EM_ASM({ arbSetExp($0,$1) }, get(), exp); }
+    //Convert mpfr_t
+    string to_string(int base = 10) {
+        const char* str = (const char*)(EM_ASM_PTR({ return bindArbToString($0,$1); }, get(), base));
+        return string(str);
+    }
+    //Real and imag are solely for compatability, the Arb class does not have complex numbers
+    mpfr_t real()const { return *this; }
+    mpfr_t imag()const { return mpfr_t(0.0); }
+    //Get precision of this in bits
+    int prec()const { return EM_ASM_INT({ return arbProperty('mpfr_get_prec',$0); }, get()); }
+};
+//value.cpp
+class Arb : public ValueBaseClass {
+public:
+    mpfr_t num;
+    Unit unit;
+    Arb(double r, double i, Unit u = Unit()) { num = mpfr_t(r); unit = u; }
+    Arb(double r, Unit u = Unit()) { num = mpfr_t(r); unit = u; }
+    Arb(mpfr_t r, Unit u = Unit()) { num = r; unit = u; }
+    Arb(std::complex<mpfr_t> n, Unit u = Unit()) { num = n.real(); unit = u; }
+    static string componentToString(mpfr_t x, int base);
+    //Virtual functions
+    double flatten()const;
+    string toStr(ParseCtx& ctx)const;
+    double getR()const { return num.real().toDouble(); }
+    int typeID()const { return Value::arb_t; }
+};
+
+
 #endif
 //value.cpp
 class Vector : public ValueBaseClass {

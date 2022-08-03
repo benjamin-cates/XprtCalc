@@ -269,14 +269,20 @@ Value Expression::parseNumeral(const string& str, int base) {
     else ePos = pPos;
     //Get digits
     string digits = str.substr(start, ePos - start);
-    #ifdef USE_ARB
+    #if defined( USE_ARB) || defined(GMP_WASM)
         //If digits are longer than 15, default to arb
     if(digits.length() > 15 && precision == 15 && pPos == str.length())
         precision = digits.length() - (digits.find('.') != string::npos);
     //Parse as arb if precision is specified
     if(precision != 15) {
+        #ifdef USE_ARB
         mppp::real out(digits, base, Arb::digitsToPrecision(precision));
-        if(exponent != 0) out *= mppp::pow(mppp::real{ base }, mppp::real{ exponent,Arb::digitsToPrecision(precision + 10) });
+        if(exponent != 0) out = out * mppp::pow(mppp::real{ base }, mppp::real{ exponent,Arb::digitsToPrecision(precision + 10) });
+        #endif
+        #ifdef GMP_WASM
+        mpfr_t out = mpfr_t::stringToArb(digits, precision, base);
+        if(exponent != 0) out = out * std::pow(mpfr_t(double(base), precision + 10), mpfr_t(double(exponent), precision + 10));
+        #endif
         return std::make_shared<Arb>(out);
     }
     #else

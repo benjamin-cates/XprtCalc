@@ -5,6 +5,7 @@ set(CMAKE_AR emar)
 project(webxprtcalc)
 file(GLOB_RECURSE SRC_FILES ../src/*.cpp)
 add_library(xprt STATIC ${SRC_FILES})
+add_definitions(-DGMP_WASM=1)
 target_compile_options(xprt PUBLIC -fwasm-exceptions)
 target_precompile_headers(xprt PUBLIC "../src/_header.hpp")
 
