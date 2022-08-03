@@ -139,6 +139,8 @@ std::map<string, LibFunc> Library::functions = {
         "stddev(data)*sqrt(length(data)-1)/sqrt(length(data))",{"stddev"})},
     {"prob_complement",LibFunc("prob_complement","(p)","Probability complement:Statistics:Returns the complement of `p`. This is equal to `1-p`.",
         "1-p",{})},
+    {"z",LibFunc("z","(x)","Z table:Statistics:Returns the area to the left of the z-score `x`. Example: `z(0) = 0.5`.",
+        "(erf(x/sqrt(2))+1)/2",{})},
     //Not working rinht now
     //{"covariance",LibFunc("covariance","(datax,datay)","Covariance",
     //    "run((ux,uy,count)=>sum(i=>(datax[i]-ux)*(datay[i]-uy),0,count-1)/(count-1),mean(datax),mean(datay),max(length(datax),length(datay)))",{"mean"})},
