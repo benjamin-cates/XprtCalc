@@ -39,7 +39,7 @@ string Page::toHTML() {
         for(int i = 0;i < aliases.size();i++) out += (i == 0 ? "" : ", ") + aliases[i];
         out += "</span>";
     }
-    out += "<span class='help_content'>";
+    out += "\n<span class='help_content'>";
     for(int i = 0;i < content.length();i++) {
         if(content[i] == '?') {
             int end = i + 1;
@@ -71,10 +71,10 @@ string Page::toHTML() {
         else if(content[i] == '&') out += "&amp;";
         else if(content[i] == '<') out += "&lt;";
         else if(content[i] == '>') out += "&gt;";
-        else if(content[i] == '\n') out += "<br>";
+        else if(content[i] == '\n') out += "<br>\n";
         else out += content[i];
     }
-    out += "</span>";
+    out += "</span>\n";
     if(seeMore.length() != 0) {
         string humanReadable = seeMore;
         if(humanReadable.substr(0, 8) == "https://") humanReadable = humanReadable.substr(8);
