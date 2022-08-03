@@ -14,7 +14,7 @@ function run_line(str, coloredInput = "") {
         let output = Module.runLineWithColor(str).replace(/\n/g, "<br>");
         if(output.includes("<span class='COLe'>Error:") || output == "")
             out.classList.add("hide_on_next_xpr");
-        out.innerHTML = coloredInput + "<br>" + Module.runLineWithColor(str).replace(/\n/g, "<br>");
+        out.innerHTML = coloredInput + "<br>" + output;
     }
     catch(e) {
         out.innerHTML = coloredInput + "<br><span class='COLe'>Error:</span> unrecognizable error, please report to <a href='https://github.com/benjamin-cates/XprtCalc/issues'>https://github.com/benjamin-cates/XprtCalc/issues</a> with more information.";
