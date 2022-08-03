@@ -1,5 +1,6 @@
 #include "_header.hpp"
 
+
 #pragma region namespace Math
 namespace Math {
     //Returns vector of integer factors
@@ -73,19 +74,22 @@ namespace Math {
 #ifdef GMP_WASM
 mpfr_t operator+(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_add',$0,$1); }, a.get(), b.get())); }
 mpfr_t operator-(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_sub',$0,$1); }, a.get(), b.get())); }
+mpfr_t operator-(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_sub',$0,$1); }, mpfr_t(0.0).get(), a.get())); }
 mpfr_t operator*(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_mul',$0,$1); }, a.get(), b.get())); }
 mpfr_t operator/(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_div',$0,$1); }, a.get(), b.get())); }
+bool operator==(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_less_p',$0,$1); }, a.get(), b.get()); }
+bool operator!=(mpfr_t a, mpfr_t b) { return !operator==(a, b); }
 bool operator<(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_less_p',$0,$1); }, a.get(), b.get()); }
 bool operator>(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_greater_p',$0,$1); }, a.get(), b.get()); }
 bool operator<=(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_lessequal_p',$0,$1); }, a.get(), b.get()); }
 bool operator>=(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_greaterequal_p',$0,$1); }, a.get(), b.get()); }
-bool operator==(mpfr_t a, mpfr_t b) { return EM_ASM_INT({ return arbCompare('mpfr_less_p',$0,$1); }, a.get(), b.get()); }
-bool operator!=(mpfr_t a, mpfr_t b) { return !operator==(a, b); }
 namespace std {
-    mpfr_t abs(const mpfr_t& x) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_abs',$0); }, x.get())); }
-    mpfr_t arg(const mpfr_t& x) { if(x < mpfr_t(0.0)) return mpfr_t(0.0) - Math::getPi_arb(x.prec()); return mpfr_t(0.0); }
     mpfr_t pow(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_pow',$0,$1); }, a.get(), b.get())); }
+    mpfr_t log10(const mpfr_t& x) { return Math::ln(x) / Math::ln(mpfr_t(10.0, x.prec())); }
+    mpfr_t abs(const mpfr_t& x) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_abs',$0); }, x.get())); }
     mpfr_t fmod(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_fmod',$0,$1); }, a.get(), b.get())); }
+    mpfr_t hypot(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_hypot',$0,$1); }, a.get(), b.get())); }
+    mpfr_t atan2(mpfr_t a, mpfr_t b) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_atan2',$0,$1); }, a.get(), b.get())); }
     mpfr_t erf(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_erf',$0); }, a.get())); }
     mpfr_t round(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_round',$0); }, a.get())); }
     mpfr_t floor(mpfr_t a) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_floor',$0); }, a.get())); }
@@ -308,7 +312,7 @@ string Function::Domain::toString()const {
 #define inp ValList& input,ComputeCtx& ctx,const string& self
 #define def(type,name,index) std::shared_ptr<type> name = input[index].cast<type>()
 #define getV(type,index) input[index].cast<type>()
-#define ret(type) return std::make_shared<type>
+#define ret(type) return (Value)std::make_shared<type>
 
 #define getN(index) getV(Number,index)->num
 #define getArbN(index) getV(Arb,index)->num
@@ -376,6 +380,24 @@ Value Program::computeGlobal(string name, ValList input, ComputeCtx& ctx) {
     if(index == 0) throw "function " + name + " not found";
     return Program::globalFunctions[index](input, ctx);
 }
+double getR(const std::complex<double>& num) { return num.real(); }
+double getI(const std::complex<double>& num) { return num.imag(); }
+#ifdef USE_ARB
+mppp::real getR(mppp::real& num) { return num; }
+mppp::real getI(mppp::real& num) { return mppp::real(0); }
+#endif
+#ifdef GMP_WASM
+mpfr_t getR(mpfr_t num) { return num; }
+mpfr_t getI(mpfr_t num) { return mpfr_t(0.0, num.prec()); }
+#endif
+
+bool hasImaginary(const std::complex<double>& num) { return num.imag() != 0.0; }
+#ifdef USE_ARB
+bool hasImaginary(const mppp::real& num) { return false; }
+#elif defined(GMP_WASM)
+bool hasImaginary(const mpfr_t& num) { return false; }
+#endif
+
 using namespace std;
 std::vector<Function> Program::globalFunctions = {
     #define Constant(name,...) Function(name,{},{},{{D(),[](inp) {return std::make_shared<Number>(__VA_ARGS__);}}})
@@ -420,8 +442,8 @@ std::vector<Function> Program::globalFunctions = {
     Binary("sub","a","b",num1 - num2),
     BinaryWithUnit("mul","a","b",num1 * num2,unit1 * unit2),
     BinaryWithUnit("div","a","b",num1 / num2,unit1 / unit2),
-    BinaryWithUnit("pow","a","b",Math::pow(num1,num2),unit1 ^ double(num2.real())),
-    Binary("mod","a","b",fmod(num1.real(),num2.real())),
+    BinaryWithUnit("pow","a","b",Math::pow(num1,num2),unit1 ^ double(input[2]->getR())),
+    Binary("mod","a","b",fmod(getR(num1),getR(num2))),
 
     UnaryWithUnit("sqrt",sqrt(num),unit ^ 0.5),
     Unary("exp",exp(num)),
@@ -429,9 +451,9 @@ std::vector<Function> Program::globalFunctions = {
     Unary("log",log10(num)),
 
     Binary("logb","x","b",log(num1) / log(num2)),
-    DoubleArbTemplate("gamma",if(num.imag() != T(0.0)) throw "Gamma function does not support complex";ret(R)(Math::gamma(num.real()),unit)),
-    DoubleArbTemplate("factorial",if(num.imag() != T(0.0)) throw "Factorial function does not support complex";ret(R)(Math::gamma(num.real() + T(1.0)),unit)),
-    DoubleArbTemplate("erf",if(num.imag() != T(0.0)) throw "Error function does not support complex";ret(R)(erf(num.real()),unit)),
+    DoubleArbTemplate("gamma",if(hasImaginary(num)) throw "Gamma function does not support complex";ret(R)(Math::gamma(getR(num)),unit)),
+    DoubleArbTemplate("factorial",if(hasImaginary(num)) throw "Factorial function does not support complex";ret(R)(Math::gamma(getR(num) + T(1.0)),unit)),
+    DoubleArbTemplate("erf",if(hasImaginary(num)) throw "Error function does not support complex";ret(R)(erf(getR(num)),unit)),
 #pragma endregion
 #pragma region Trig
     Unary("sin",sin(num)),
@@ -451,13 +473,18 @@ std::vector<Function> Program::globalFunctions = {
     Unary("atanh",atanh(num)),
 #pragma endregion
 #pragma region Numeric Properties
-    Unary("round",std::complex<T>(round(num.real()),round(num.imag()))),
-    Unary("floor",std::complex<T>(floor(num.real()),floor(num.imag()))),
-    Unary("ceil",std::complex<T>(ceil(num.real()),ceil(num.imag()))),
-    UnaryWithUnit("getr",num.real(),Unit(0)),
-    UnaryWithUnit("geti",num.imag(),Unit(0)),
+    #if defined(USE_ARB) || defined(GMP_WASM)
+    #define RoundingType(name,func) Function(name,{"x"},{},{{D(dub),[](inp) {def(Number,n,0);ret(Number)(std::complex<double>(func(n->num.real()),func(n->num.real())),n->unit);}},{D(arb),[](inp) {def(Arb,n,0);ret(Arb)(func(n->num),n->unit);}}})
+    #else
+    #define RoundingType(name,func) Function(name,{"x"},{},{{D(dub),[](inp) {def(Number,n,0);ret(Number)(std::complex<double>(func(n->num.real()),func(n->num.real())),n->unit);}}})
+    #endif
+    RoundingType("round",round),
+    RoundingType("floor",floor),
+    RoundingType("ceil",ceil),
+    UnaryWithUnit("getr",getR(num),Unit(0)),
+    UnaryWithUnit("geti",getI(num),Unit(0)),
     UnaryWithUnit("getu",1.0,unit),
-    Binary("max","a","b",num1.real() > num2.real() ? num1 : num2,{D(vec_t),[](inp) {
+    Binary("max","a","b",getR(num1) > getR(num2) ? num1 : num2,{D(vec_t),[](inp) {
         def(Vector,v,0);
         Value max = Value::zero;
         for(int i = 0;i < v->vec.size();i++) {
@@ -467,7 +494,7 @@ std::vector<Function> Program::globalFunctions = {
         }
         return max;
     }}),
-    Binary("min","a","b",num1.real() > num2.real() ? num2 : num1,{D(vec_t),[](inp) {
+    Binary("min","a","b",getR(num1) > getR(num2) ? num2 : num1,{D(vec_t),[](inp) {
         def(Vector,v,0);
         Value min = make_shared<Number>(INFINITY);
         for(int i = 0;i < v->vec.size();i++) {
@@ -482,7 +509,7 @@ std::vector<Function> Program::globalFunctions = {
         #define CptBin(name,input0,input1) Program::computeGlobal(name,ValList{input0,input1},ctx)
         return CptBin("add",CptBin("mul",input[0],CptBin("sub",Value::one,input[2])),CptBin("mul",input[1],input[2]));
     }}}),
-    Binary("dist","a","b",hypot(num1.real() - num2.real(),num1.imag() - num2.imag()),{vv,[](inp) {
+    Binary("dist","a","b",hypot(getR(num1) - getR(num2),getI(num1) - getI(num2)),{vv,[](inp) {
         //running total = d1^2 + d2^2 + d3^2 ....
         def(Vector,v1,0);def(Vector,v2,1);
         Value runningTotal = std::make_shared<Number>(0);
@@ -494,16 +521,22 @@ std::vector<Function> Program::globalFunctions = {
     }}),
     Unary("sgn", num / abs(num)),
     Unary("abs",abs(num)),
-    Unary("arg",arg(num)),
-    UnaryWithUnit("atan2",atan2(num.imag(),num.real()),unit,{D(dub | arb,dub | arb),[](inp) {
+    Function("arg",{"z"},{},{{D(dub),[](inp) {ret(Number)(arg(input[0].cast<Number>()->num));}}}),
+    UnaryWithUnit("atan2",atan2(getI(num),getR(num)),unit,{D(dub | arb,dub | arb),[](inp) {
         if(input[0]->typeID() == Value::num_t && input[1]->typeID() == Value::num_t) {
             double i = getN(0).real(), r = getN(1).real();
             return Program::computeGlobal("atan2",ValList{make_shared<Number>(complex<double>(r,i))},ctx);
         }
         #ifdef USE_ARB
         else {
-            mppp::real i = getArbN(0).real(), r = getArbN(1).real();
-            return Program::computeGlobal("atan2",ValList{make_shared<Arb>(complex<mppp::real>(r,i))},ctx);
+            mppp::real i = getArbN(0), r = getArbN(1);
+            ret(Arb)(atan2(i, r));
+        }
+        #endif
+        #ifdef GMP_WASM
+        else {
+            mpfr_t i = getArbN(0), r = getArbN(1);
+            ret(Arb)(atan2(i, r));
         }
         #endif
         return Value::zero;
@@ -564,10 +597,10 @@ std::vector<Function> Program::globalFunctions = {
 #pragma region Binary logic
     Function("equal",{"a","b"},{},{{D(all,all),[](inp) {return input[0] == input[1] ? Value::one : Value::zero;}}}),
     Function("not_equal",{"a","b"},{},{{D(all,all),[](inp) {return input[0] == input[1] ? Value::zero : Value::one;}}}),
-    BinaryBaseTemplate("lt", "a","b", num1.real() < num2.real() ? Value::one : Value::zero),
-    BinaryBaseTemplate("gt", "a","b", num1.real() > num2.real() ? Value::one : Value::zero),
-    BinaryBaseTemplate("lt_equal","a","b", (num1.real() < num2.real() || num1 == num2) ? Value::one : Value::zero),
-    BinaryBaseTemplate("gt_equal","a","b", (num1.real() > num2.real() || num1 == num2) ? Value::one : Value::zero),
+    BinaryBaseTemplate("lt", "a","b", getR(num1) < getR(num2) ? Value::one : Value::zero),
+    BinaryBaseTemplate("gt", "a","b", getR(num1) > getR(num2) ? Value::one : Value::zero),
+    BinaryBaseTemplate("lt_equal","a","b", (getR(num1) < getR(num2) || num1 == num2) ? Value::one : Value::zero),
+    BinaryBaseTemplate("gt_equal","a","b", (getR(num1) > getR(num2) || num1 == num2) ? Value::one : Value::zero),
     #define BitwiseOperator(name,operat) Function(name,{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {uint64_t a = std::abs(input[0]->getR() + 0.5), b = std::abs(input[1]->getR() + 0.5);return std::make_shared<Number>(a operat b);}},BinVecApply})
     Function("not",{"x"},{{D(arb),D(dub)}},{{D(dub),[](inp) {return input[0]->getR() == 0 ? Value::one : Value::zero;}}}),
     BitwiseOperator("or", | ),

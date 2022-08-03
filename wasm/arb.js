@@ -3,6 +3,7 @@
 var arbIsLoaded = false;
 var arb;
 var mp;
+var exp_ptr;
 function loadArb() {
     if(!arbIsLoaded) {
         let script = document.createElement("script");
@@ -15,6 +16,7 @@ function loadArb() {
                 console.log("Arb is loaded successfully");
                 arb = g.binding;
                 arbIsLoaded = true;
+                exp_ptr = arb.malloc(4);
             });
         }, false);
     }
@@ -27,14 +29,14 @@ var round = 0;//MPFR_RNDN (round nearest)
 function runArb(name, arg1, arg2 = -1) {
     let outPtr;
     try {
-    if(arg2 == -1) {
-        outPtr = mallocArb(arb.mpfr_get_prec(arg1));
-        arb[name](outPtr, arg1, round);
-    }
-    else {
-        outPtr = mallocArb(Math.max(arb.mpfr_get_prec(arg1), arb.mpfr_get_prec(arg2)));
-        if(arb[name](outPtr, arg1, arg2, round)) console.log("eror in operation");
-    }
+        if(arg2 == -1) {
+            outPtr = mallocArb(arb.mpfr_get_prec(arg1), true);
+            arb[name](outPtr, arg1, round);
+        }
+        else {
+            outPtr = mallocArb(Math.max(arb.mpfr_get_prec(arg1), arb.mpfr_get_prec(arg2)), true);
+            if((err = arb[name](outPtr, arg1, arg2, round))) console.log("error in operation: " + err);
+        }
     } catch(e) {console.error(e);}
     return outPtr;
 }
@@ -46,30 +48,36 @@ function arbCompare(name, arg1, arg2) {
 function arbProperty(name, arg1) {
     return arb[name](arg1);
 }
-function arbConstant(name, prec = 50) {
-    const outPtr = mallocArb(prec)
+function arbConstant(name, prec) {
+    const outPtr = mallocArb(prec,false)
     arb[name](outPtr, round);
     return outPtr;
 }
 function freeArb(ptr) {
     arb.free(ptr);
 }
-function mallocArb(prec) {
+function mallocArb(prec, isBinary = false) {
     const out = arb.mpfr_t();
-    arb.mpfr_init2(out, gmp.precisionToBits(prec));
+    if(isBinary) arb.mpfr_init2(out, prec);
+    else arb.mpfr_init2(out, gmp.precisionToBits(prec));
     return out;
 }
 function arbToString(ptr, base = 10) {
-    let str = arb.mpfr_to_string(ptr, base, round);
-    return str;
+    let n = 1 + Math.ceil(arb.mpfr_get_prec(ptr) * Math.log(2) / Math.log(base));
+    let strPtr = arb.mpfr_get_str(0, exp_ptr, base, n, ptr, round);
+    let exp = arb.memView.getInt32(exp_ptr, true);
+    let str = new TextDecoder().decode(arb.memView.buffer.slice(strPtr, strPtr + n));
+    str = str.substring(0, 1) + "." + str.substring(1);
+    if(exp == 1) return str;
+    return str + "e" + (exp > 0 ? "+" : "") + (exp - 1);
 }
 function bindArbToString(ptr, base) {
     return allocateUTF8OnStack(arbToString(ptr, base));
 }
 function stringToArb(str, prec, base = 10) {
-    const outPtr = mallocArb(prec)
+    const outPtr = mallocArb(prec,false);
     const strPtr = arb.malloc_cstr(str);
-    arb.mpfr_init_set_str(outPtr, strPtr, base, round);
+    arb.mpfr_set_str(outPtr, strPtr, base, round);
     return outPtr;
 }
 function arbBindStringToArb(strPtr, prec, base = 10) {
@@ -78,8 +86,8 @@ function arbBindStringToArb(strPtr, prec, base = 10) {
 function arbToDouble(ptr) {
     return arb.mpfr_get_d(ptr, round);
 }
-function doubleToArb(dub, prec = 15) {
-    const outPtr = mallocArb(prec);
+function doubleToArb(dub, prec) {
+    const outPtr = mallocArb(prec,false);
     arb.mpfr_set_d(outPtr, dub, round);
     return outPtr;
 }

@@ -597,8 +597,8 @@ class Arb : public ValueBaseClass {
 public:
     mppp::real num;
     Unit unit;
-    Arb(mppp::real r, mppp::real i = 0.0, Unit u = Unit());
-    Arb(std::complex<mppp::real> n, Unit u = Unit());
+    Arb(mppp::real r, double i, Unit u = Unit());
+    Arb(mppp::real n, Unit u = Unit());
     //Get the mpfr precision given decimal digits
     static mpfr_prec_t digitsToPrecision(int digits);
     //Get decimal digits given binary precision
@@ -608,7 +608,7 @@ public:
     //Virtual functions
     double flatten()const;
     string toStr(ParseCtx& ctx)const;
-    double getR()const { return double(num.real()); }
+    double getR()const { return double(num); }
     int typeID()const { return Value::arb_t; }
 };
 #endif
@@ -633,7 +633,7 @@ public:
     static mpfr_t stringToArb(string digits, int precision, int base) { return mpfr_t(EM_ASM_INT({ return arbBindStringToArb($0,$1,$2); }, digits.c_str(), precision, base), true); }
     //Converts mpfr_t to a double
     double toDouble()const { return EM_ASM_DOUBLE({ return arbToDouble($0) }, get()); }
-    operator double()const { return toDouble(); }
+    explicit operator double()const { return toDouble(); }
     void set_exp(int exp)const { EM_ASM({ arbSetExp($0,$1) }, get(), exp); }
     //Convert mpfr_t
     string to_string(int base = 10) {
@@ -652,7 +652,6 @@ public:
     mpfr_t num;
     Unit unit;
     Arb(double r, double i, Unit u = Unit()) { num = mpfr_t(r); unit = u; }
-    Arb(double r, Unit u = Unit()) { num = mpfr_t(r); unit = u; }
     Arb(mpfr_t r, Unit u = Unit()) { num = r; unit = u; }
     Arb(std::complex<mpfr_t> n, Unit u = Unit()) { num = n.real(); unit = u; }
     static string componentToString(mpfr_t x, int base);
@@ -661,6 +660,16 @@ public:
     string toStr(ParseCtx& ctx)const;
     double getR()const { return num.real().toDouble(); }
     int typeID()const { return Value::arb_t; }
+};
+mpfr_t operator+(mpfr_t a, mpfr_t b);
+mpfr_t operator-(mpfr_t a, mpfr_t b);
+mpfr_t operator-(mpfr_t a);
+mpfr_t operator*(mpfr_t a, mpfr_t b);
+mpfr_t operator/(mpfr_t a, mpfr_t b);
+bool operator==(mpfr_t a, mpfr_t b);
+bool operator!=(mpfr_t a, mpfr_t b);
+namespace std {
+    mpfr_t pow(mpfr_t a, mpfr_t b);
 };
 
 

@@ -13,11 +13,11 @@ Number::Number(std::complex<double> n, Unit u) {
 #pragma endregion
 #pragma region Arb
 #ifdef USE_ARB
-Arb::Arb(mppp::real r, mppp::real i, Unit u) {
-    num = std::complex<mppp::real>(r, i);
+Arb::Arb(mppp::real r, double i, Unit u) {
+    num = r;
     unit = u;
 }
-Arb::Arb(std::complex<mppp::real> n, Unit u) {
+Arb::Arb(mppp::real n, Unit u) {
     num = n;
     unit = u;
 }
@@ -269,7 +269,7 @@ Value Value::deepCopy()const {
     int type = ptr->typeID();
     if(type == num_t)
         return std::make_shared<Number>(cast<Number>()->num, cast<Number>()->unit);
-    #ifdef USE_ARB
+    #if defined(USE_ARB) || defined(GMP_WASM)
     else if(type == arb_t)
         return std::make_shared<Arb>(cast<Arb>()->num, cast<Arb>()->unit);
     #endif
