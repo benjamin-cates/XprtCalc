@@ -303,25 +303,27 @@ Value Value::simplify(bool useAddGroup, bool useMultGroup) {
     }
     return *this;
 }
-Value Value::derivative(ValList argDerivatives) {
+Value Value::derivative(int wrt) {
     int type = ptr->typeID();
     if(type == vec_t) {
         ValList& vec = cast<Vector>()->vec;
         std::shared_ptr<Vector> out = std::make_shared<Vector>();
-        for(int i = 0;i < vec.size();i++) out->vec.push_back(vec[i].derivative(argDerivatives));
+        for(int i = 0;i < vec.size();i++) out->vec.push_back(vec[i].derivative(wrt));
         return out;
     }
     else if(type == map_t) {
         std::map<Value, Value>& map = cast<Map>()->getMapObj();
         std::shared_ptr<Map> out = std::make_shared<Map>();
-        for(auto p : map) out->append(p.first.deepCopy().derivative(argDerivatives), p.second.derivative(argDerivatives));
+        for(auto p : map) out->append(p.first.deepCopy().derivative(wrt), p.second.derivative(wrt));
         return out;
     }
-    else if(type == arg_t)
-    //Other's are treated as constants (preliminary, hopefully they can return dy/dx or something later)
-        return argDerivatives[cast<Argument>()->id];
+    else if(type == arg_t) {
+        if(cast<Argument>()->id == wrt) return Value::one;
+        return Value::zero;
+    }
     else if(type == lmb_t) {
-
+        std::shared_ptr<Lambda> lam = cast<Lambda>();
+        return std::make_shared<Lambda>(lam->inputNames, lam->func.derivative(wrt + lam->inputNames.size()));
     }
     else if(type == tre_t) {
         #define TimesDU(statement) return construct("mul",(statement),dx[0])
@@ -329,7 +331,7 @@ Value Value::derivative(ValList argDerivatives) {
         int op = cast<Tree>()->op;
         string name = Program::globalFunctions[op].getName();
         ValList dx;
-        for(int i = 0;i < branch.size();i++) dx.push_back(branch[i].derivative(argDerivatives));
+        for(int i = 0;i < branch.size();i++) dx.push_back(branch[i].derivative(wrt));
         //Add,  subtract, neg
         if(name == "add" || name == "sub") return construct(op, dx[0], dx[1]);
         if(name == "neg") return construct(op, dx[0]);
@@ -343,7 +345,7 @@ Value Value::derivative(ValList argDerivatives) {
             MUL(construct("ln", branch[0]), dx[1])));
     //Logarithmic/exponential
         if(name == "ln") return DIV(dx[0], branch[0]);
-        if(name == "logb") return Value(DIV(construct("ln", branch[0]), construct("ln", branch[1]))).derivative(argDerivatives);
+        if(name == "logb") return Value(DIV(construct("ln", branch[0]), construct("ln", branch[1]))).derivative(wrt);
         if(name == "log") return DIV(dx[0], construct("mul", branch[0], construct("ln", std::make_shared<Number>(10))));
         if(name == "sqrt") return construct("div", dx[0], construct("mul", TWO, construct("sqrt", branch[0])));
         if(name == "abs") TimesDU(DIV(dx[0], construct("abs", branch[0])));
@@ -371,7 +373,33 @@ Value Value::derivative(ValList argDerivatives) {
             else if(branch.size() == 3) return construct("sum", dx[0], branch[1], branch[2]);
             else return construct("sum", dx[0], branch[1], branch[2], branch[3]);
         }
-
+        if(name == "run") {
+            Value val;
+            try {
+                val = branch[0]->compute(Program::computeCtx);
+                if(val->typeID() != Value::lmb_t) throw;
+            }
+            catch(...) {
+                throw "first child of run must evaluate to a lambda";
+            }
+            std::shared_ptr<Lambda> func = val.cast<Lambda>();
+            if(func->inputNames.size() == 0) return Value::zero;
+            //Copy run inputs. e.g: run(dx[0],branch[1],branch[2],...) to retain normal function input
+            ValList runArgs(branch.size());
+            runArgs[0] = val.derivative(wrt);
+            std::copy(branch.begin() + 1, branch.begin() + branch.size(), runArgs.begin() + 1);
+            Value out = std::make_shared<Tree>("run", std::move(runArgs));
+            dx.resize(func->inputNames.size() + 1, Value::zero);
+            for(int i = 0;i < func->inputNames.size();i++) {
+            //Copy run inputs. e.g: run(dx[0],branch[1],branch[2],...) to retain normal function input
+                ValList runArgs(branch.size());
+                //Partial derivative
+                runArgs[0] = val.derivative(i - func->inputNames.size());
+                std::copy(branch.begin() + 1, branch.begin() + branch.size(), runArgs.begin() + 1);
+                out = ADD(MUL(std::make_shared<Tree>("run", std::move(runArgs)), dx[i + 1]), out);
+            }
+            return out;
+        }
         //Componentual
         if(name == "getr" || name == "geti" || name == "getu")
             return construct(op, dx[0]);

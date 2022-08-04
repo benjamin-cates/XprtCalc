@@ -549,7 +549,7 @@ public:
     static const std::vector<string> typeNames;
     double evaluateToReal();
     bool isInteger();
-    Value derivative(ValList argDerivatives);
+    Value derivative(int wrt);
     Value simplify(bool useAddGroup = true, bool useMultGroup = true);
     //Converts value into the return type with given type, throws error if incompatible
     Value convertTo(int type);
