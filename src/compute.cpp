@@ -442,7 +442,7 @@ std::vector<Function> Program::globalFunctions = {
     Binary("sub","a","b",num1 - num2),
     BinaryWithUnit("mul","a","b",num1 * num2,unit1 * unit2),
     BinaryWithUnit("div","a","b",num1 / num2,unit1 / unit2),
-    BinaryWithUnit("pow","a","b",Math::pow(num1,num2),unit1 ^ double(input[2]->getR())),
+    BinaryWithUnit("pow","a","b",Math::pow(num1,num2),unit1 ^ double(input[1]->getR())),
     Binary("mod","a","b",fmod(getR(num1),getR(num2))),
 
     UnaryWithUnit("sqrt",sqrt(num),unit ^ 0.5),
@@ -474,9 +474,9 @@ std::vector<Function> Program::globalFunctions = {
 #pragma endregion
 #pragma region Numeric Properties
     #if defined(USE_ARB) || defined(GMP_WASM)
-    #define RoundingType(name,func) Function(name,{"x"},{},{{D(dub),[](inp) {def(Number,n,0);ret(Number)(std::complex<double>(func(n->num.real()),func(n->num.real())),n->unit);}},{D(arb),[](inp) {def(Arb,n,0);ret(Arb)(func(n->num),n->unit);}}})
+    #define RoundingType(name,func) Function(name,{"x"},{},{{D(dub),[](inp) {def(Number,n,0);ret(Number)(std::complex<double>(func(n->num.real()),func(n->num.imag())),n->unit);}},{D(arb),[](inp) {def(Arb,n,0);ret(Arb)(func(n->num),n->unit);}}})
     #else
-    #define RoundingType(name,func) Function(name,{"x"},{},{{D(dub),[](inp) {def(Number,n,0);ret(Number)(std::complex<double>(func(n->num.real()),func(n->num.real())),n->unit);}}})
+    #define RoundingType(name,func) Function(name,{"x"},{},{{D(dub),[](inp) {def(Number,n,0);ret(Number)(std::complex<double>(func(n->num.real()),func(n->num.imag())),n->unit);}}})
     #endif
     RoundingType("round",round),
     RoundingType("floor",floor),
