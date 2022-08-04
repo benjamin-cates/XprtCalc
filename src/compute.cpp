@@ -39,7 +39,7 @@ namespace Math {
     mppp::real ln(const mppp::real& x) { return mppp::log(x); }
     mppp::real log(const mppp::real& x, const mppp::real& b) { return mppp::log(x) / mppp::log(b); }
     //Variables
-    mppp::real getE_arb(int accuracy) { return mppp::real_euler(Arb::digitsToPrecision(accuracy)); }
+    mppp::real getE_arb(int accuracy) { return mppp::exp(mppp::real(1.0,Arb::digitsToPrecision(accuracy))); }
     mppp::real getPi_arb(int accuracy) { return mppp::real_pi(Arb::digitsToPrecision(accuracy)); }
     mppp::real leftShift(const mppp::real& x, long shift) { return mul_2si(x, shift); }
     mppp::real rightShift(const mppp::real& x, long shift) { return div_2si(x, shift); }
@@ -60,7 +60,7 @@ namespace Math {
     #ifdef GMP_WASM
     mpfr_t ln(const mpfr_t& x) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_log',$0); }, x.get())); }
     mpfr_t log(const mpfr_t& x, const mpfr_t& b) { return Math::ln(x) / Math::ln(b); }
-    mpfr_t getE_arb(int accuracy) { return mpfr_t::asPtr(EM_ASM_INT({ return arbConstant('mpfr_const_euler',$0) }, accuracy)); }
+    mpfr_t getE_arb(int accuracy) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_exp',doubleToArb(1.0,$0)); }, accuracy)); }
     mpfr_t getPi_arb(int accuracy) { return mpfr_t::asPtr(EM_ASM_INT({ return arbConstant('mpfr_const_pi',$0) }, accuracy)); }
     mpfr_t gamma(const mpfr_t& x) { return mpfr_t::asPtr(EM_ASM_INT({ return runArb('mpfr_gamma',$0); }, x.get())); }
     int sgn(const mpfr_t& x) { return EM_ASM_INT({ return arbProperty('mpfr_sgn',$0); }, x.get()); }
