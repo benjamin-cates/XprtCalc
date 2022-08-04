@@ -38,6 +38,7 @@ int ParseCtx::getBase()const {
     return bases.top();
 }
 string ParseCtx::getArgName(int index)const {
+    if(index >= argStack.size()) return "{\"arg\" :" + std::to_string(index) + "}";
     return *(argStack.begin() + index);
 }
 void ParseCtx::pushVariable(const string& name) {
