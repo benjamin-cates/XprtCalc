@@ -39,7 +39,7 @@ namespace Math {
     mppp::real ln(const mppp::real& x) { return mppp::log(x); }
     mppp::real log(const mppp::real& x, const mppp::real& b) { return mppp::log(x) / mppp::log(b); }
     //Variables
-    mppp::real getE_arb(int accuracy) { return mppp::exp(mppp::real(1.0,Arb::digitsToPrecision(accuracy))); }
+    mppp::real getE_arb(int accuracy) { return mppp::exp(mppp::real(1.0, Arb::digitsToPrecision(accuracy))); }
     mppp::real getPi_arb(int accuracy) { return mppp::real_pi(Arb::digitsToPrecision(accuracy)); }
     mppp::real leftShift(const mppp::real& x, long shift) { return mul_2si(x, shift); }
     mppp::real rightShift(const mppp::real& x, long shift) { return div_2si(x, shift); }
@@ -898,6 +898,9 @@ std::vector<Function> Program::globalFunctions = {
         for(auto p : a->getMapObj()) out->append(p.first,p.second);
         for(auto p : b->getMapObj()) out->append(p.first,p.second);
         return out;
+    }},{D(str_t,str_t),[](inp) {
+        def(String,a,0);def(String,b,1);
+        ret(String)(a->str + b->str);
     }}}),
     Function("sort",{"vec","comp"},{},{{D(vec_t),[](inp) {
         def(Vector,v,0);
