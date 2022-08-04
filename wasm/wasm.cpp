@@ -79,5 +79,6 @@ void startup() {
 int main() {
     Program::implementationStartup = &startup;
     Program::startup();
+    EM_ASM(onProgramInitialized());
     return 0;
 }

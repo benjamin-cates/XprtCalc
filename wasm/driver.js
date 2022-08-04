@@ -1,3 +1,18 @@
+function onProgramInitialized() {
+    update_highlight("");
+    //parse url arguments
+    const params = new URLSearchParams(window.location.search);
+    //init url arguments
+    if(params.has("init")) {
+        //Hide welcome message
+        document.querySelectorAll(".hide_on_next_xpr").forEach(x => x.remove());
+        //Split by semicolons and run each as a line
+        const init = params.get("init").split(";");
+        console.log(init);
+        for(let i = 0; i < init.length; i++)
+            run_line(init[i]);
+    }
+};
 function evaluate(xpr) {
     try {
         return Module.evaluate(xpr);
@@ -7,7 +22,7 @@ function evaluate(xpr) {
     }
 }
 function run_line(str, coloredInput = "") {
-    if(coloredInput == "") coloredInput = Module.highlightExpression(str);
+    if(coloredInput == "") coloredInput = Module.highlightLine(str);
     let out = document.createElement("div");
     out.className = "output_element";
     try {
@@ -27,8 +42,8 @@ const textArea = document.querySelector("#input_element");
 
 function textAreaKeydown(event) {
     if(event.key == "Enter" && !event.shiftKey) {
-        let hidden = document.querySelector(".hide_on_next_xpr");
-        if(hidden) hidden.remove();
+        //Hide previous result if it is an error or non-returning command
+        document.querySelectorAll(".hide_on_next_xpr").forEach(x => x.remove());
         if(textArea.value.length == 0)
             textArea.value = "";
         else {
@@ -81,7 +96,6 @@ window.onload = _ => {
     window.addEventListener("resize", resize);
     keyboardConstructor.construct();
     loadArb();
-    update_highlight("");
 }
 
 var panelData = {
