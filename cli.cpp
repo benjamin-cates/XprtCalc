@@ -1,5 +1,7 @@
 #include "src/_header.hpp"
 #include <iostream>
+#include <filesystem>
+#include <fstream>
 std::map<char, string> AnsiColors = {
     {Expression::hl_argument,"36"},
     {Expression::hl_delimiter,"37"},
@@ -59,11 +61,44 @@ ColoredString command_query(std::vector<string>& input) {
     }
     return out;
 }
+ColoredString command_createhelphtml(std::vector<string>& input) {
+    string currentPath(std::filesystem::current_path().c_str());
+    std::transform(currentPath.begin(), currentPath.end(), currentPath.begin(), ::tolower);
+    if(currentPath.substr(currentPath.length() - 8) != "xprtcalc") throw "must be within the root directory of xprtcalc";
+    using namespace Help;
+    string out;
+    out += "<html lang='en'>\n";
+    out += "<head>\n";
+    out += "<title>XprtCalc Help</title>\n";
+    out += "<meta charset='utf-8'>\n";
+    out += "<meta name='description' content='Help pages for XprtCalc.' />\n";
+    out += "<script src='help.js'></script>";
+    out += "<link rel='stylesheet' href='../../wasm/style.css'>\n";
+    out += "<link rel='stylesheet' href='help.css'>\n";
+    out += "<link rel='preconnect' href='https://fonts.googleapis.com'>";
+    out += "<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>";
+    out += "<link href='https://fonts.googleapis.com/css2?family=Lato&family=Roboto+Mono:wght@500&display=swap' rel='stylesheet'>\n";
+    out += "</head>\n";
+    out += "<body>\n";
+    for(int i = 0;i < pages.size();i++) {
+        out += "<div class='page_help' id='help_" + std::to_string(i) + "'>";
+        out += pages[i].toHTML();
+        out += "</div>\n";
+    }
+    out += "</body>\n";
+    std::ofstream file;
+    std::filesystem::path p = std::filesystem::path("docs") / "help" / "index.html";
+    file.open(p, std::ofstream::trunc);
+    file << out << std::endl;
+    file.close();
+    return ColoredString("Writing to " + string(p.c_str()) + "\nHelp pages written successfully");
+}
 
 void startup() {
     Program::commandList.insert(std::pair<string, Command>{"quit", { &quitCommand }});
     Program::commandList.insert(std::pair<string, Command>{"help", { &command_help }});
     Program::commandList.insert(std::pair<string, Command>{"query", { &command_query }});
+    Program::commandList.insert(std::pair<string, Command>{"createhelphtml", { &command_createhelphtml }});
 }
 
 int main(int argc, char** argv) {

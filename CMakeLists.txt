@@ -36,7 +36,3 @@ add_executable(xprttest ../test.cpp)
 target_link_libraries(xprttest PUBLIC xprt)
 target_precompile_headers(xprttest REUSE_FROM xprt)
 add_test(tests xprttest)
-
-add_executable(createhelphtml ../docs/help/helpPageGenerator.cpp)
-target_link_libraries(createhelphtml PUBLIC xprt)
-target_precompile_headers(createhelphtml REUSE_FROM xprt)
