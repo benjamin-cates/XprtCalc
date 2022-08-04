@@ -49,7 +49,7 @@ function arbProperty(name, arg1) {
     return arb[name](arg1);
 }
 function arbConstant(name, prec) {
-    const outPtr = mallocArb(prec,false)
+    const outPtr = mallocArb(prec, false)
     arb[name](outPtr, round);
     return outPtr;
 }
@@ -63,19 +63,25 @@ function mallocArb(prec, isBinary = false) {
     return out;
 }
 function arbToString(ptr, base = 10) {
+    //Get string length
     let n = 1 + Math.ceil(arb.mpfr_get_prec(ptr) * Math.log(2) / Math.log(base));
+    //Print string
     let strPtr = arb.mpfr_get_str(0, exp_ptr, base, n, ptr, round);
+    //Parse exponenet and string from mpfr memory
     let exp = arb.memView.getInt32(exp_ptr, true);
     let str = new TextDecoder().decode(arb.memView.buffer.slice(strPtr, strPtr + n));
-    str = str.substring(0, 1) + "." + str.substring(1);
+    //Add period to string
+    if(str[0] == '-') str = str.substring(0, 2) + "." + str.substring(2);
+    else str = str.substring(0, 1) + "." + str.substring(1);
+    //Return string with or without exponent suffix
     if(exp == 1) return str;
-    return str + "e" + (exp > 0 ? "+" : "") + (exp - 1);
+    return str + "@" + (exp > 0 ? "+" : "") + (exp - 1);
 }
 function bindArbToString(ptr, base) {
     return allocateUTF8OnStack(arbToString(ptr, base));
 }
 function stringToArb(str, prec, base = 10) {
-    const outPtr = mallocArb(prec,false);
+    const outPtr = mallocArb(prec, false);
     const strPtr = arb.malloc_cstr(str);
     arb.mpfr_set_str(outPtr, strPtr, base, round);
     return outPtr;
@@ -87,7 +93,7 @@ function arbToDouble(ptr) {
     return arb.mpfr_get_d(ptr, round);
 }
 function doubleToArb(dub, prec) {
-    const outPtr = mallocArb(prec,false);
+    const outPtr = mallocArb(prec, false);
     arb.mpfr_set_d(outPtr, dub, round);
     return outPtr;
 }

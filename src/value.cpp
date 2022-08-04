@@ -507,6 +507,13 @@ string Arb::componentToString(
     #endif
     , int base) {
     string str = x.to_string(base);
+    //Test if negative
+    bool negative = false;
+    if(str[0] == '-') {
+        negative = true;
+        str = str.substr(1);
+    }
+    //Find exponent and set characters to uppercase
     int e = 0;
     for(int i = 0;i < str.length();i++) {
         //Find exponent
@@ -555,6 +562,7 @@ string Arb::componentToString(
         i--;
     }
     if(str[i] == '.') str.erase(str.begin() + i);
+    if(negative) str = "-" + str;
     return str;
 }
 string Arb::toStr(ParseCtx& ctx)const {
