@@ -391,7 +391,7 @@ Value Vector::compute(ComputeCtx& ctx) {
 }
 Value Lambda::compute(ComputeCtx& ctx) {
     if(ctx.argValue.size() == 0) return shared_from_this();
-    ValList unreplacedArgs{inputNames.size(),Value(nullptr)};
+    ValList unreplacedArgs{ inputNames.size(),Value(nullptr) };
     //Push arguments to stack
     ctx.pushArgs(unreplacedArgs);
     Value newLambda;
@@ -399,6 +399,9 @@ Value Lambda::compute(ComputeCtx& ctx) {
     catch(...) { ctx.popArgs(unreplacedArgs);throw; }
     ctx.popArgs(unreplacedArgs);
     return std::make_shared<Lambda>(inputNames, newLambda);
+}
+Value Lambda::replaceArgs(ComputeCtx& ctx) {
+    return std::make_shared<Lambda>(inputNames, func->compute(ctx));
 }
 Value Map::compute(ComputeCtx& ctx) {
     std::map<Value, Value> newMap;

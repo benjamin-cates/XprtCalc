@@ -708,6 +708,7 @@ public:
     Lambda(std::vector<string> inputs, Value funcTree);
     //Computes with argument list
     Value operator()(ValList inputs, ComputeCtx& ctx);
+    Value replaceArgs(ComputeCtx& ctx);
     //Virtual functions
     Value compute(ComputeCtx& ctx);
     double flatten()const;

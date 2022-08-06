@@ -257,7 +257,7 @@ namespace MatchingXpr {
         {"simplify(derivative(x=>sin(x)^cos(x)))","simplify(x=>sin(x)^cos(x)*(cos(x)^2/sin(x)+(-1)*sin(x)*ln(sin(x))))"},
         {"simplify(derivative(x=>x/x))","x=>0"},
         {"infinite_sum(n=>1/n!)","e"},
-
+        {"derivative(x=>run((y,z)=>y^2+z^2,x,3x))","x=>20x"},
     };
     string validate(std::map<string, string>::iterator it) {
         const string& identifier = it->first;

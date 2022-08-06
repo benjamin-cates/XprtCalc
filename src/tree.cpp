@@ -379,25 +379,30 @@ Value Value::derivative(int wrt) {
                 val = branch[0]->compute(Program::computeCtx);
                 if(val->typeID() != Value::lmb_t) throw;
             }
-            catch(...) {
-                throw "first child of run must evaluate to a lambda";
-            }
+            catch(...) { throw "first branch of run must evaluate to a lambda"; }
             std::shared_ptr<Lambda> func = val.cast<Lambda>();
-            if(func->inputNames.size() == 0) return Value::zero;
+            int inputCount = func->inputNames.size();
+            branch.resize(inputCount + 1, Value::zero);
+            dx.resize(inputCount + 1, Value::zero);
+            if(inputCount == 0) return Value::zero;
+            Value out;
             //Copy run inputs. e.g: run(dx[0],branch[1],branch[2],...) to retain normal function input
-            ValList runArgs(branch.size());
-            runArgs[0] = val.derivative(wrt);
-            std::copy(branch.begin() + 1, branch.begin() + branch.size(), runArgs.begin() + 1);
-            Value out = std::make_shared<Tree>("run", std::move(runArgs));
-            dx.resize(func->inputNames.size() + 1, Value::zero);
-            for(int i = 0;i < func->inputNames.size();i++) {
-            //Copy run inputs. e.g: run(dx[0],branch[1],branch[2],...) to retain normal function input
-                ValList runArgs(branch.size());
-                //Partial derivative
-                runArgs[0] = val.derivative(i - func->inputNames.size());
-                std::copy(branch.begin() + 1, branch.begin() + branch.size(), runArgs.begin() + 1);
-                out = ADD(MUL(std::make_shared<Tree>("run", std::move(runArgs)), dx[i + 1]), out);
+            ValList computeArgs(inputCount);
+            std::copy(branch.begin() + 1, branch.begin() + inputCount + 1, computeArgs.begin());
+            Program::computeCtx.pushArgs(computeArgs);
+            try {
+                //Derivative of run equals normal derivative of the lambda plus the sum of all partial derivatives multiplied by the derivatives of their input factors
+                //Example: d/dx run((y,z)=>(x+y+z),4x,5x)) = partial d/dx(x+y+z) + partial d/dy(x+y+z) * d/dx(4x) + partial d/dz(x+y+z) * d/dx(5x) = 1 + 4 + 5 = 10
+                //Using normal substitution, this would become x+4x+5x = 10x, d/dx(10x) = 10
+                Value partialwrt = val.derivative(wrt).cast<Lambda>()->replaceArgs(Program::computeCtx);
+                out = partialwrt.cast<Lambda>()->func;
+                for(int i = 0;i < inputCount;i++) {
+                    Value partial = val.derivative(i - inputCount).cast<Lambda>()->replaceArgs(Program::computeCtx);
+                    out = ADD(MUL(partial.cast<Lambda>()->func, dx[i + 1]), out);
+                }
             }
+            catch(...) { Program::computeCtx.popArgs(computeArgs);throw; }
+            Program::computeCtx.popArgs(computeArgs);
             return out;
         }
         //Componentual
