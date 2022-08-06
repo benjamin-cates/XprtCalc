@@ -391,10 +391,7 @@ Value Vector::compute(ComputeCtx& ctx) {
 }
 Value Lambda::compute(ComputeCtx& ctx) {
     if(ctx.argValue.size() == 0) return shared_from_this();
-    ValList unreplacedArgs;
-    for(int i = 0;i < inputNames.size();i++) {
-        unreplacedArgs.push_back(std::make_shared<Argument>(i));
-    }
+    ValList unreplacedArgs{inputNames.size(),Value(nullptr)};
     //Push arguments to stack
     ctx.pushArgs(unreplacedArgs);
     Value newLambda;

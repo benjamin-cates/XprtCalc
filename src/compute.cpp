@@ -118,16 +118,15 @@ ComputeCtx::ComputeCtx() {
 
 }
 Value ComputeCtx::getArgument(int id)const {
-    if(id >= argValue.size()) throw string("internal argument out of bounds");
+    //Return self if out of bounds
+    if(id >= argValue.size()) return std::make_shared<Argument>(id);
+    auto arg=argValue.begin() + id;
+    //Return self if nullptr
+    if(*arg==nullptr) return std::make_shared<Argument>(id);
+    //Else return proper value
     return *(argValue.begin() + id);
 }
 void ComputeCtx::pushArgs(const ValList& args) {
-    //Replace self referential replacement args with proper pointer
-    for(auto it = argValue.begin();it != argValue.end();it++) {
-        if((*it)->typeID() == Value::arg_t) {
-            it->cast<Argument>()->id += args.size();
-        }
-    }
     //Push args to front
     for(int i = args.size() - 1;i >= 0;i--)
         argValue.push_front(args[i]);
@@ -136,12 +135,6 @@ void ComputeCtx::popArgs(const ValList& args) {
     //Delete front args
     for(int i = 0;i < args.size();i++)
         argValue.pop_front();
-    //Replace self referential args with proper pointer
-    for(auto it = argValue.begin();it != argValue.end();it++) {
-        if((*it)->typeID() == Value::arg_t) {
-            it->cast<Argument>()->id -= args.size();
-        }
-    }
 }
 void ComputeCtx::setVariable(const string& n, Value value) {
     std::map<string, std::vector<Value>>::iterator it = variables.find(n);
