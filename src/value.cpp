@@ -597,8 +597,8 @@ string Lambda::toStr(ParseCtx& ctx)const {
         out += inputNames.back() + ")";
     }
     ctx.push(inputNames);
-    out += "=>(";
-    out += func->toStr(ctx) + ")";
+    out += "=>";
+    out += func->toStr(ctx);
     ctx.pop();
     return out;
 }
@@ -618,6 +618,83 @@ string Map::toStr(ParseCtx& ctx)const {
 }
 string Tree::toStr(ParseCtx& ctx)const {
     string out = Program::globalFunctions[op].getName();
+    //Reduce run(a,1,2,3) to a(1,2,3) if a is a variable
+    if(out == "run") {
+        if(branches[0]->typeID() == Value::var_t || branches[0]->typeID() == Value::arg_t) {
+            out = branches[0]->toStr(ctx);
+            out += "(";
+            for(int i = 1;i < branches.size();i++) {
+                out += branches[i]->toStr(ctx);
+                if(i != branches.size() - 1) out += ",";
+            }
+            out += ")";
+            return out;
+        }
+    }
+    //Negation
+    if(out == "neg") {
+        //Complex numbers
+        if(branches[0]->typeID() == Value::num_t && branches[0].cast<Number>()->num.imag() != 0)
+            return "neg(" + branches[0]->toStr(ctx) + ")";
+        else if(branches[0]->typeID() == Value::tre_t) {
+            string opName = Program::globalFunctions[branches[0].cast<Tree>()->op].getName();
+            if(opName != "add" && opName != "sub") {
+                return "-" + branches[0]->toStr(ctx);
+            }
+            else return "neg(" + branches[0]->toStr(ctx) + ")";
+        }
+        else return "-" + branches[0]->toStr(ctx);
+    }
+    //Operators
+    if(out == "add" || out == "sub" || out == "mul" || out == "div" || out == "pow") {
+        const static std::map<string, char> ops = { {"add",'+'},{"sub",'-'},{"mul",'*'},{"div",'/'},{"pow",'^'} };
+        char operatorSymbol = ops.at(out);
+        bool lhsParenthesis = false, rhsParenthesis = false;
+        int lhsType = branches[0]->typeID();
+        int rhsType = branches[1]->typeID();
+        //Parenthesis on complex numbers
+        if(out != "add" && out != "sub")
+            if(lhsType == Value::num_t && branches[0].cast<Number>()->num.imag() != 0) lhsParenthesis = true;
+        if(out != "add")
+            if(rhsType == Value::num_t && branches[1].cast<Number>()->num.imag() != 0) rhsParenthesis = true;
+        //left hand side parenthesis
+        if(lhsType == Value::tre_t) {
+            string name = Program::globalFunctions[branches[0].cast<Tree>()->op].getName();
+            if(out == "mul" && (name == "add" || name == "sub")) lhsParenthesis = true;
+            if(out == "div" && (name == "add" || name == "sub")) lhsParenthesis = true;
+            if(out == "pow" && (name == "add" || name == "sub" || name == "mul" || name == "div")) lhsParenthesis = true;
+        }
+        //right hand side parenthesis
+        if(rhsType == Value::tre_t) {
+            string name = Program::globalFunctions[branches[1].cast<Tree>()->op].getName();
+            if(out == "sub" && (name == "add" || name == "sub")) rhsParenthesis = true;
+            if(out == "mul" && (name == "add" || name == "sub")) rhsParenthesis = true;
+            if(out == "div" && (name == "add" || name == "sub" || name == "mul" || name == "div")) rhsParenthesis = true;
+            if(out == "pow" && (name == "add" || name == "sub" || name == "mul" || name == "div" || name == "pow")) rhsParenthesis = true;
+        }
+        //Convert number and variable multiplication, 20*x -> 20x
+        if(out == "mul") if(lhsType == Value::num_t) {
+            std::shared_ptr<Number> n = branches[0].cast<Number>();
+            if(n->num.imag() == 0 && n->unit.isUnitless())
+                if(rhsType == Value::var_t || rhsType == Value::arg_t)
+                    return branches[0]->toStr(ctx) + branches[1]->toStr(ctx);
+        }
+        out = "";
+        if(lhsParenthesis) out += "(";
+        out += branches[0]->toStr(ctx);
+        if(lhsParenthesis) out += ")";
+        out += operatorSymbol;
+        if(rhsParenthesis) out += "(";
+        out += branches[1]->toStr(ctx);
+        if(rhsParenthesis) out += ")";
+        return out;
+    }
+    //Comparison operators
+    if(out == "equal" || out == "not_equal" || out == "lt" || out == "lt_equal" || out == "gt" || out == "gt_equal") {
+        const static std::map<string, string> ops = { {"equal","=="},{"not_equal","!="},{"lt","<"},{"lt_equal","<="},{"gt",">"},{"gt_equal",">="} };
+        string symbol = ops.at(out);
+        return "(" + branches[0]->toStr(ctx) + symbol + branches[1]->toStr(ctx) + ")";
+    }
     if(branches.size() == 0) return out;
     out += "(";
     for(int i = 0;i < branches.size();i++) {
