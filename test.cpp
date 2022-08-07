@@ -258,6 +258,7 @@ namespace MatchingXpr {
         {"simplify(derivative(x=>x/x))","x=>0"},
         {"infinite_sum(n=>1/n!)","e"},
         {"derivative(x=>run((y,z)=>y^2+z^2,x,3x))","x=>20x"},
+        {"derivative(x=>apply((y,z)=>x*y*z,<2x,4x>))","x=>24x^2"}
     };
     string validate(std::map<string, string>::iterator it) {
         const string& identifier = it->first;
