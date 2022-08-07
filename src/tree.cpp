@@ -405,6 +405,21 @@ Value Value::derivative(int wrt) {
             Program::computeCtx.popArgs(computeArgs);
             return out;
         }
+        //Apply derivative (wrapper of the run derivative)
+        if(name == "apply") {
+            Value vec;
+            try {
+                vec = branch[1]->compute(Program::computeCtx);
+                if(vec->typeID() != Value::vec_t) throw;
+            }
+            catch(...) { throw "second branch of apply must evaluate to vector"; }
+            ValList args = vec.cast<Vector>()->vec;
+            args.insert(args.begin(), branch[0]);
+            return Value(std::make_shared<Tree>("run", std::move(args))).derivative(wrt);
+        }
+        if(name == "infinite_sum") return construct("infinite_sum", dx[0]);
+        if(name == "fill") return construct("fill", dx[0], branch[1]);
+
         //Componentual
         if(name == "getr" || name == "geti" || name == "getu")
             return construct(op, dx[0]);
