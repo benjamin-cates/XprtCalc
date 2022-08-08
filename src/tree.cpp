@@ -440,6 +440,11 @@ Value Value::derivative(int wrt) {
         //Min and max
         if(name == "max" || name == "min" || name == "concat")
             return construct(op, dx[0], dx[1]);
+        //Derivatives that are not supported, but constant expressions are allowed
+        if(name == "gamma" || name == "factorial" || name == "erf") {
+            if(dx[0] == Value::zero) return Value::zero;
+            throw "Function " + name + " does not support derivative";
+        }
         //Constants
         if(name == "ans" || name == "pi" || name == "round" || name == "floor" || name == "ceil" || name == "i" || name == "true" || name == "false" || name == "arb_pi" || name == "arb_e" || name == "rand" || name == "e" || name == "nan" || name == "inf" || name == "histlen") return Value::zero;
         //Comparison
