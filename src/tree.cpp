@@ -141,8 +141,21 @@ public:
         if(positiveCoef != 1 && positiveCoef / negativeCoef == std::floor(positiveCoef / negativeCoef))
             positives.push_front(std::make_shared<Number>(positiveCoef / negativeCoef));
         else {
-            if(positiveCoef != 1) positives.push_front(std::make_shared<Number>(positiveCoef));
-            if(negativeCoef != 1) negatives.push_front(std::make_shared<Number>(negativeCoef));
+            uint64_t gcd = 1;
+            if(positiveCoef != 1) {
+                //Find greatest common denominator if both are integers
+                if(positiveCoef == std::floor(positiveCoef) && negativeCoef == std::floor(negativeCoef)) {
+                    gcd = positiveCoef;
+                    uint64_t neg = negativeCoef;
+                    //Euclidian algorithm
+                    while(neg != 0) {
+                        std::swap(gcd, neg);
+                        neg = neg % gcd;
+                    }
+                }
+                positives.push_front(std::make_shared<Number>(positiveCoef / gcd));
+            }
+            if(negativeCoef != 1) negatives.push_front(std::make_shared<Number>(negativeCoef / gcd));
         }
         combineValueList(positives, "mul");
         combineValueList(negatives, "mul");
