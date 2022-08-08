@@ -381,12 +381,12 @@ std::vector<Page> Help::pages = {
     Page("Replace","replace","function","Returns the ?string? `str` with each instance of `find` replaced with `rep`. Example: `replace(\"heed\",\"e\",\"o\") = \"hood\"`.",{"string","query","find"}),
     #pragma endregion
     #pragma region Conversion
-    Page("To Number","tonumber","function","Returns `val` converted to a 15-digit floating point ?number?.",{"convert"}),
-    Page("To Arb","toarb","function","Returns `val` converted to an ?arbitrary precision? number, the second argument specifies the number of decimals of precision.",{"convert"}),
-    Page("To Vector","tovec","function","Returns `val` converted to a single element ?vector?.",{"convert"}),
-    Page("To Map","tomap","function","Returns `val` converted to ?map? type.",{"convert"}),
-    Page("To String","tostring","function","Returns `val` converted to ?string? type.",{"convert"}),
-    Page("To Lambda","tostring","function","Returns a constant ?lambda? type that returns `val`.",{"convert"}),
+    Page("To Number","tonumber","function","Returns `val` converted to a 15-digit floating point ?number?. If the input is a ?vector? or ?map?, it will return the zeroeth index. Conversions from ?lambda? are not supported.",{"convert"}),
+    Page("To Arb","toarb","function","Returns `val` converted to an ?arbitrary precision? number, the second argument specifies the number of decimals of precision. If the input is a ?vector? or ?map?, it will return the zeroeth index. Conversions from ?lambda? are not supported.",{"convert"}),
+    Page("To Vector","tovec","function","Returns `val` converted to a single element ?vector?. If the current type is a ?map?, it will look for keys that are indicies from 0 to 1000 and fill them in the vector, any other type of key is ignored. If the current type is any other, it will be converted to a vector of size one with the value at the zeroeth index. Example: `tovector({0:1,5:23}) = <1,0,0,0,0,23>`\n`tovector(14) = <14>`",{"convert"}),
+    Page("To Map","tomap","function","Returns `val` converted to ?map? type. If the current type is a vector, it will pair each value with it's index. Any other type will be converted to `{0:x}`. Example: `tomap(<4,5,2.4>) = {0:4,1:5,2:2.4}`\n`tomap(16) = {0:16}`",{"convert"}),
+    Page("To String","tostring","function","Returns `val` converted to ?string? type. This is the same as if it were printed.",{"convert"}),
+    Page("To Lambda","tostring","function","Returns a constant ?lambda? type that returns `val`. For any input `x`, the return value is `_=>x`. Example: `tolambda(45) = _=>45`.",{"convert"}),
     Page("Typeof","typeof","function","Returns an integer representing the type of the input `val`. Types are: 0-?number?, 1-?arb?, 2-?vec?, 3-?lambda?, 4-?string?, 5-?map?. If -1 is returned, the type of `val` is null.",{"convert"}),
     #pragma endregion
     #pragma endregion
