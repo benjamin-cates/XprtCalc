@@ -198,7 +198,7 @@ bool Value::isInteger() {
 
 #pragma endregion
 #pragma region Value conversion
-Value Value::convertTo(int type) {
+Value Value::convertTo(int type, int precision) {
     int curType = ptr->typeID();
     if(type == curType) return *this;
     if(type == num_t) {
@@ -214,7 +214,7 @@ Value Value::convertTo(int type) {
     }
     #ifdef USE_ARB
     else if(type == arb_t) {
-        if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(n->num.real(), n->unit); }
+        if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(mppp::real(n->num.real(), Arb::digitsToPrecision(precision)), n->unit); }
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
         else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str + "p" + std::to_string(cast<String>()->str.length()), 10);
         else if(curType == map_t) throw "Cannot convert map to arb";
@@ -222,7 +222,7 @@ Value Value::convertTo(int type) {
     #endif
     #ifdef GMP_WASM
     else if(type == arb_t) {
-        if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(n->num.real(), n->unit); }
+        if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(mpfr_t(n->num.real(), precision), n->unit); }
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
         else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str + "p" + std::to_string(cast<String>()->str.length()), 10);
         else if(curType == map_t) throw "Cannot convert map to arb";

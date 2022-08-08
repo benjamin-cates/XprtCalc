@@ -552,7 +552,7 @@ public:
     Value derivative(int wrt);
     Value simplify(bool useAddGroup = true, bool useMultGroup = true);
     //Converts value into the return type with given type, throws error if incompatible
-    Value convertTo(int type);
+    Value convertTo(int type, int precision = 15);
     enum { num_t = 1, arb_t = 2, vec_t = 3, lmb_t = 4, str_t = 5, map_t = 6, tre_t = 7, arg_t = 8, var_t = 9 };
 };
 //Stores the base class of the object storing type, since ValueBaseClass is a polymorphic type, use the wrapper Value for most cases
