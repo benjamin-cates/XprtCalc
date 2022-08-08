@@ -216,7 +216,7 @@ Value Value::convertTo(int type, int precision) {
     #ifdef USE_ARB
     else if(type == arb_t) {
         if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(mppp::real(n->num.real(), Arb::digitsToPrecision(precision)), n->unit); }
-        else if(curType == vec_t) { return cast<Vector>()->get(0).convertTo(arb_t,precision); }
+        else if(curType == vec_t) { return cast<Vector>()->get(0).convertTo(arb_t, precision); }
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
         else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str + "p" + std::to_string(cast<String>()->str.length()), 10);
         else if(curType == map_t) throw "Cannot convert map to arb";
@@ -225,7 +225,7 @@ Value Value::convertTo(int type, int precision) {
     #ifdef GMP_WASM
     else if(type == arb_t) {
         if(curType == num_t) { std::shared_ptr<Number> n = cast<Number>(); return std::make_shared<Arb>(mpfr_t(n->num.real(), precision), n->unit); }
-        else if(curType == vec_t) { return cast<Vector>()->get(0).convertTo(arb_t,precision); }
+        else if(curType == vec_t) { return cast<Vector>()->get(0).convertTo(arb_t, precision); }
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
         else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str + "p" + std::to_string(cast<String>()->str.length()), 10);
         else if(curType == map_t) throw "Cannot convert map to arb";
@@ -566,6 +566,13 @@ string Arb::componentToString(
     }
     if(str[i] == '.') str.erase(str.begin() + i);
     if(negative) str = "-" + str;
+    str += "p";
+    #ifdef USE_ARB
+    str += std::to_string(Arb::precisionToDigits(x.get_prec()) + 1);
+    #endif
+    #ifdef GMP_WASM
+    str += std::to_string(x.prec());
+    #endif
     return str;
 }
 string Arb::toStr(ParseCtx& ctx)const {
