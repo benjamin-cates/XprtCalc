@@ -69,8 +69,8 @@ bool decimalPollution(double source, double next) {
 }
 void combineValueList(std::list<Value>& ls, string op) {
     while(ls.size() > 1) {
-        ls.front() = std::make_shared<Tree>(op, ValList{ ls.front(),*(std::next(ls.begin())) });
-        ls.erase(std::next(ls.begin()));
+        ls.back() = std::make_shared<Tree>(op, ValList{ *std::prev(ls.end(),2), ls.back() });
+        ls.erase(std::prev(ls.end(), 2));
     }
 }
 class OperatorGroup {
