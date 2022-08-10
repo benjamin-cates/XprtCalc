@@ -157,6 +157,7 @@ const std::unordered_map<string, Unit::Builtin> Unit::listOfUnits = {
     metric("mol","Mole",mole),
     metric("K","Kelvin",kelvin),
     metric("$","Dollar",dollar),
+    newUnt("bit","Bit",bit),
     metric("b","Bit",bit),
 
     //Derived metric base units
