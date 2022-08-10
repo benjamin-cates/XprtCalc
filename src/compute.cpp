@@ -843,6 +843,11 @@ std::vector<Function> Program::globalFunctions = {
     }},{D(map_t,all),[](inp) {
         def(Map,m,0);
         return (*m)[input[1]];
+    }},{D(str_t,dub | arb),[](inp) {
+        def(String,str,0);
+        int index = input[1]->getR();
+        if(index < 0 || index >= str->str.length()) return Value(std::make_shared<String>(""));
+        return Value(std::make_shared<String>(string(1, str->str[index])));
     }}}),
     Function("fill",{"func","count"},{},{{D(lmb,arb | dub),[](inp) {
         def(Lambda,func,0);
