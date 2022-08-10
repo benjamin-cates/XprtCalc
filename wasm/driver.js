@@ -251,7 +251,7 @@ const keyboardConstructor = {
                 }
                 else {
                     k = keyList[i].k;
-                    if(keyList[i].n) otherAttributes += `onpointerdown="pressKey('${keyList[i].n}')"`;
+                    if(keyList[i].n) otherAttributes += `onpointerdown="pressKey('${keyList[i].n}')" title="${keyList[i].n}"`;
                     if(keyList[i].col || keyList[i].row) {
                         otherAttributes += "style='";
                         if(keyList[i].col) otherAttributes += "grid-column: " + keyList[i].col;
