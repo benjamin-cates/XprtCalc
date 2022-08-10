@@ -157,9 +157,17 @@ void Page::addFunctionData() {
     if(dom.size() == 1 && dom[0].sig == 0) content += " `" + symbol + "` takes no arguments.";
     else {
         content += " Acceptable inputs are: ";
+        bool first = true;
         for(int i = 0;i < dom.size();i++) {
-            if(i != 0) content += ", ";
-            content += dom[i].toString();
+            string domain = dom[i].toString();
+            if(domain == "(arb,num)" || domain == "(num,arb)") continue;
+            else if(domain == "(vec,num|arb)") domain = "(vec,num)";
+            else if(domain == "(num|arb,vec)") domain = "(num,vec)";
+            else if(domain == "(num|arb,num|arb)") domain = "(num,num)";
+            else if(domain == "(num|arb)") domain = "(num)";
+            if(!first) content += ", ";
+            else first = false;
+            content += domain;
         }
         content += ". See ?types? for more info.";
     }

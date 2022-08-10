@@ -534,7 +534,7 @@ std::vector<Function> Program::globalFunctions = {
         #endif
         return Value::zero;
     } }),
-    Function("gcd",{"a","b"},{{D(dub | arb,dub | arb),D(dub,dub)}},{{D(dub,dub),[](inp) {
+    Function("gcd",{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
         uint64_t b = std::abs(input[1]->getR()) + 0.5;
         if(a == 0 || b == 0) return Value::zero;
@@ -545,7 +545,7 @@ std::vector<Function> Program::globalFunctions = {
         }
         return Value(std::make_shared<Number>(a));
     }}}),
-    Function("lcm",{"a","b"},{{D(dub | arb,dub | arb),D(dub,dub)}},{{D(dub,dub),[](inp) {
+    Function("lcm",{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
         uint64_t b = std::abs(input[1]->getR()) + 0.5;
         if(a == 0 || b == 0) return Value::zero;
@@ -555,7 +555,7 @@ std::vector<Function> Program::globalFunctions = {
         while(cur % min != 0) cur += max;
         return Value(std::make_shared<Number>(cur));
     }}}),
-    Function("factors", {"x"}, {{D(arb),D(dub)}}, {{D(dub),[](inp) {
+    Function("factors", {"x"}, {}, {{D(dub | arb),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
         if(a == 0) return std::make_shared<Vector>(Value::zero);
         std::shared_ptr<Vector> out = std::make_shared<Vector>();
@@ -595,7 +595,7 @@ std::vector<Function> Program::globalFunctions = {
     BinaryBaseTemplate("lt_equal","a","b", (getR(num1) < getR(num2) || num1 == num2) ? Value::one : Value::zero),
     BinaryBaseTemplate("gt_equal","a","b", (getR(num1) > getR(num2) || num1 == num2) ? Value::one : Value::zero),
     #define BitwiseOperator(name,operat) Function(name,{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {uint64_t a = std::abs(input[0]->getR() + 0.5), b = std::abs(input[1]->getR() + 0.5);return std::make_shared<Number>(a operat b);}},BinVecApply})
-    Function("not",{"x"},{{D(arb),D(dub)}},{{D(dub),[](inp) {return input[0]->getR() == 0 ? Value::one : Value::zero;}}}),
+    Function("not",{"x"},{},{{D(dub | arb),[](inp) {return input[0]->getR() == 0 ? Value::one : Value::zero;}}}),
     BitwiseOperator("or", | ),
     BitwiseOperator("and",&),
     BitwiseOperator("xor",^),
@@ -607,13 +607,12 @@ std::vector<Function> Program::globalFunctions = {
     Constant("false",0),
     Constant("i",0,1.0),
     Constant("pi",3.14159265358979323),
-    #define downscale {D(arb),D(dub)}
     #if defined(USE_ARB) || defined(GMP_WASM)
-    Function("arb_e",{"prec"},{downscale},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(Math::getE_arb(prec));}}}),
-    Function("arb_pi",{"prec"},{downscale},{{D(dub),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(Math::getPi_arb(prec));}}}),
+    Function("arb_e",{"prec"},{},{{D(dub | arb),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(Math::getE_arb(prec));}}}),
+    Function("arb_pi",{"prec"},{},{{D(dub | arb),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(Math::getPi_arb(prec));}}}),
     #endif
     #ifdef USE_ARB
-    Function("arb_rand",{"prec"},{downscale},{{D(dub),[](inp) {
+    Function("arb_rand",{"prec"},{},{{D(dub | arb),[](inp) {
         double prec = input[0]->getR();
         if(Program::smallCompute) prec = std::min(prec,50.0);
         mpfr_prec_t p = Arb::digitsToPrecision(prec);
@@ -634,14 +633,14 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     #endif
     #ifdef GMP_WASM
-    Function("arb_rand",{"prec"},{downscale},{{D(dub),[](inp) {
+    Function("arb_rand",{"prec"},{},{{D(dub | arb),[](inp) {
         double prec = input[0]->getR();
         if(Program::smallCompute) prec = std::min(prec,50.0);
         return std::make_shared<Arb>(mpfr_t(EM_ASM_INT({return arbRand($0);},prec),true));
     }}}),
     #endif
     Function("rand",{},{},{{D(),[](inp) {double upLim = RAND_MAX + 1.;ret(Number)(rand() / upLim + rand() / upLim / upLim);}}}),
-    Function("srand",{"seed"},{downscale},{{D(dub),[](inp) { srand(getN(0).real() * 100); ret(Number)(0); }}}),
+    Function("srand",{"seed"},{},{{D(dub | arb),[](inp) { srand(getN(0).real() * 100); ret(Number)(0); }}}),
     Constant("e",2.71828182845904523),
     Constant("undefined",NAN),
     Constant("inf",INFINITY),
@@ -768,7 +767,7 @@ std::vector<Function> Program::globalFunctions = {
         return Value(std::make_shared<Number>(calc));
 
     }}}),
-    Function("derivative",{"exp","wrt"},{},{{D(lmb,dub | arb | opt),[](inp) {
+    Function("derivative",{"exp","wrt"},{},{{D(lmb,dub | opt),[](inp) {
         def(Lambda,func,0);
         DefaultInp(1,Value::zero);
         int wrt = input[1]->getR();
