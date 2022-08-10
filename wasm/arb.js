@@ -11,6 +11,7 @@ async function loadArbIfNecessary(str) {
         str.match(/eval/) ||
         str.match(/[0-9A-Z _]p[0-9A-Z _]/) ||
         str.match(/arb_e/) ||
+        str.match(/arb_rand/) ||
         str.match(/arb_pi/)) await loadArb();
 }
 async function loadArb() {

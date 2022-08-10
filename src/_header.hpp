@@ -647,7 +647,7 @@ public:
     mpfr_t real()const { return *this; }
     mpfr_t imag()const { return mpfr_t(0.0); }
     //Get precision of this in bits
-    int prec()const { return EM_ASM_INT({ return (arbProperty('mpfr_get_prec',$0) - 2) / (Math.log(10) / Math.log(2)) + 1; }, get()); }
+    int prec()const { return EM_ASM_INT({ return (arbProperty('mpfr_get_prec',$0) - 2) / (Math.log(10) / Math.log(2)); }, get()); }
 };
 //value.cpp
 class Arb : public ValueBaseClass {
