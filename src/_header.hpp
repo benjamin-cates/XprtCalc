@@ -122,20 +122,23 @@ namespace Help {
         string symbol;
         string type;
         string content;
+        std::vector<string> examples;
         string seeMore;
         std::vector<string> aliases;
         string toPlainText();
         string toString();
         ColoredString toColoredString();
-        string toJSON();
         string toHTML();
         Page() {}
-        Page(string n, string s, string t, string cont, std::vector<string> alias = {}, string more = "") { name = n; symbol = s; type = t; content = cont; aliases = alias;seeMore = more; }
+        Page(string n, string s, string t, string cont, std::vector<string> alias = {}, std::vector<string> examples = {}, string more = "") { name = n; symbol = s; type = t; content = cont; aliases = alias;this->examples = examples;seeMore = more; }
         void addTypeData();
         void addUnitData();
         void addFunctionData();
         void addLibraryData();
         void addListData();
+
+        static string contentToHTML(string content);
+        static ColoredString contentToColoredString(string content);
     };
     extern std::map<uint64_t, std::vector<std::pair<int, int>>> queryHash;
     extern std::vector<Page> pages;

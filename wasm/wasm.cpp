@@ -41,7 +41,7 @@ namespace wasm {
             out += pages[i]->name;
             if(pages[i]->symbol != "") out += " - " + pages[i]->symbol;
             out += "\",\"id\": ";
-            out += std::to_string(pages[i] - &Help::pages[0]);
+            out += std::to_string(pages[i] - Help::pages.data());
             out += "}";
         }
         out += "]";

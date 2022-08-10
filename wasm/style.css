@@ -262,6 +262,69 @@ button:hover .panel_header_icon {
     font-size: 14pt;
 }
 
+.page_help {
+    margin-bottom: 80px;
+    line-height: 1.4em;
+}
+
+mono {
+    font-family: "Roboto Mono", monospace;
+}
+
+hTitle {
+    font-size: 2em;
+    display: block;
+    line-height: 1.3em;
+}
+
+hSym,
+hTags,
+hType {
+    font-size: 0.7em;
+    line-height: 1.3em;
+    font-family: "Roboto Mono", monospace;
+    display: block;
+}
+
+hSymbol:before {
+    content: "Symbol: ";
+}
+
+hTags:before {
+    content: "Tags: ";
+}
+
+hType:before {
+    content: "Type: ";
+
+}
+
+hCont {
+    margin: 10px;
+    display: block;
+}
+
+hExList {
+    display: block;
+    margin-top: 10px;
+}
+
+hEx {
+    margin: 4px;
+    display: block;
+}
+
+hExList:before {
+    content: "Examples: ";
+    font-family: "Lato", sans-serif;
+    font-size: 20pt;
+}
+
+hSeeMore {
+    display: block;
+
+}
+
 
 .search_result {
     font-family: "Roboto Mono", monospace;
@@ -414,55 +477,65 @@ button.key:active:before {
     margin-right: -50%;
 }
 
-.COLn {
+ln {
+    color: #00A2FF;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+ln:hover {
+    color: #03C8FF;
+}
+
+Cn {
     color: rgb(250, 230, 174);
 }
 
-.COLf {
+Cf {
     color: #efec9d;
 }
 
-.COLv {
+Cv {
     color: rgb(238, 156, 238);
 }
 
-.COLa {
+Ca {
     color: #68afea;
 }
 
-.COLe {
+Ce {
     color: #ff4e4e;
 }
 
-.COLb,
-.COLd {
+Cb,
+Cd {
     color: #dddddd;
 }
 
-.COLo {
+Co {
     color: #cccccc;
 }
 
-.COLs {
+Cs {
     color: #ff9532;
 }
 
-.COLc {
+Cc {
     color: #7dff7d;
 }
 
-.COLu {
+Cu {
     color: #52ffa8;
 }
 
-.COLt {
+Ct {
     color: #fff;
 }
 
-.COLx {
+Cx {
     color: #fff;
 }
 
-.COL\/ {
+C {
     color: #856de3;
 }

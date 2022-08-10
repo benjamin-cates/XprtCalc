@@ -27,12 +27,12 @@ function run_line(str, coloredInput = "") {
     out.className = "output_element";
     try {
         let output = Module.runLineWithColor(str).replace(/\n/g, "<br>");
-        if(output.includes("<span class='COLe'>Error:") || output == "")
+        if(output.includes("<Ce>Error:") || output == "")
             out.classList.add("hide_on_next_xpr");
         out.innerHTML = coloredInput + "<br>" + output;
     }
     catch(e) {
-        out.innerHTML = coloredInput + "<br><span class='COLe'>Error:</span> unrecognizable error, please report to <a href='https://github.com/benjamin-cates/XprtCalc/issues'>https://github.com/benjamin-cates/XprtCalc/issues</a> with more information.";
+        out.innerHTML = coloredInput + "<br><Ce>Error:</Ce> unrecognizable error, please report to <a href='https://github.com/benjamin-cates/XprtCalc/issues'>https://github.com/benjamin-cates/XprtCalc/issues</a> with more information.";
     }
     document.querySelector("#input_element").value = "";
     document.querySelector("#highlight_output").innerHTML = "";
@@ -170,7 +170,13 @@ function displayHelpPage(id) {
     setTimeout(_ => {
         document.querySelector("#help_page").style.height = "1px";
         document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
-    }, 0);
+    }, 4);
+    setTimeout(_=> {
+        document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
+    },100);
+    setTimeout(_=> {
+        document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
+    },300);
 }
 function insertAtCursor(myField, myValue) {
     //IE support
@@ -253,8 +259,8 @@ const keyboardConstructor = {
                 if(i >= 20 && i <= 29 && page == 1) {
                     keyClass += " offset_key";
                 }
-                keyClass += " COL" + k.substring(k.length - 1);
-                out += `<button class='${keyClass}'${otherAttributes}>${k.substring(0, k.length - 1)}</button>`;
+                let col = k.substring(k.length - 1);
+                out += `<button class='${keyClass}'${otherAttributes}><C${col}>${k.substring(0, k.length - 1)}</C${col}></button > `;
 
             }
             out += "</div>";
@@ -265,35 +271,35 @@ const keyboardConstructor = {
         [
             [
                 "(b", ")b", "&lt;b", "&gt;b", "=o", "ansf",
-                {k: `${keyboard.svg.leftArrow}t`, n: "left arrow"}, "7n", "8n", "9n", "/o", {k: `${keyboard.svg.backspace}c`, n: "backspace"},
-                {k: `${keyboard.svg.rightArrow}t`, n: "right arrow"}, "4n", "5n", "6n", "*o", {k: "C/", n: "clear"},
-                {k: `${keyboard.svg.shift}t`, n: "shift"}, "1n", "2n", "3n", "-o", {k: `${keyboard.svg.enter}/`, n: "enter", col: "6", row: "4/6"},
-                {k: "ABCt", n: "abc"}, ",d", "0n", ".n", "+o"
+                {k: `${keyboard.svg.leftArrow} t`, n: "left arrow"}, "7n", "8n", "9n", "/o", {k: `${keyboard.svg.backspace} c`, n: "backspace"},
+                {k: `${keyboard.svg.rightArrow} t`, n: "right arrow"}, "4n", "5n", "6n", "*o", {k: "C/", n: "clear"},
+                {k: `${keyboard.svg.shift} t`, n: "shift"}, "1n", "2n", "3n", "-o", {k: `${keyboard.svg.enter} /`, n: "enter", col: "6", row: "4/6"},
+            {k: "ABCt", n: "abc"}, ",d", "0n", ".n", "+o"
             ],
-            [
-                "[b", "]b", "{b", "}b", "=o", "$f",
-                {k: `${keyboard.svg.upArrow}t`, n: "up arrow"}, "7n", "8n", "9n", "\\t", {k: `${keyboard.svg.backspaceFull}c`, n: "backspace"},
-                {k: `${keyboard.svg.downArrow}t`, n: "down arrow"}, "4n", "5n", "6n", "^o", {k: "C/", n: "clear"},
-                {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "1n", "2n", "3n", "_t", {k: `${keyboard.svg.enter}/`, n: "enter", col: "6", row: "4/6"},
-                {k: "ABCt", n: "abc"}, ",d", "0n", ".n", "+o"
-            ],
+[
+    "[b", "]b", "{b", "}b", "=o", "$f",
+    {k: `${keyboard.svg.upArrow}t`, n: "up arrow"}, "7n", "8n", "9n", "\\t", {k: `${keyboard.svg.backspaceFull}c`, n: "backspace"},
+    {k: `${keyboard.svg.downArrow}t`, n: "down arrow"}, "4n", "5n", "6n", "^o", {k: "C/", n: "clear"},
+    {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "1n", "2n", "3n", "_t", {k: `${keyboard.svg.enter}/`, n: "enter", col: "6", row: "4/6"},
+    {k: "ABCt", n: "abc"}, ",d", "0n", ".n", "+o"
+],
         ], [
-            [
-                "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
-                "qt", "wt", "et", "rt", "tt", "yt", "ut", "it", "ot", "pt",
-                "at", "st", "dt", "ft", "gt", "ht", "jt", "kt", "lt", "",
-                {k: `${keyboard.svg.shift}t`, n: "shift"}, "zt", "xt", "ct", "vt", "bt", "nt", "mt", "_t", {k: `${keyboard.svg.backspace}t`, n: "backspace"},
-                {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "&quot;s", n: "\""},
-            ],
-            [
-                "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
-                "Qt", "Wt", "Et", "Rt", "Tt", "Yt", "Ut", "It", "Ot", "Pt",
-                "At", "St", "Dt", "Ft", "Gt", "Ht", "Jt", "Kt", "Lt", "",
-                {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "Zt", "Xt", "Ct", "Vt", "Bt", "Nt", "Mt", "_t", {k: `${keyboard.svg.backspaceFull}t`, n: "backspace"},
-                {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "'s", n: "\""},
+    [
+        "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
+        "qt", "wt", "et", "rt", "tt", "yt", "ut", "it", "ot", "pt",
+        "at", "st", "dt", "ft", "gt", "ht", "jt", "kt", "lt", "",
+        {k: `${keyboard.svg.shift}t`, n: "shift"}, "zt", "xt", "ct", "vt", "bt", "nt", "mt", "_t", {k: `${keyboard.svg.backspace}t`, n: "backspace"},
+        {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "&quot;s", n: "\""},
+    ],
+    [
+        "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
+        "Qt", "Wt", "Et", "Rt", "Tt", "Yt", "Ut", "It", "Ot", "Pt",
+        "At", "St", "Dt", "Ft", "Gt", "Ht", "Jt", "Kt", "Lt", "",
+        {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "Zt", "Xt", "Ct", "Vt", "Bt", "Nt", "Mt", "_t", {k: `${keyboard.svg.backspaceFull}t`, n: "backspace"},
+        {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "'s", n: "\""},
 
-            ],
-        ]],
+    ],
+]],
 };
 
 function pressKey(x) {

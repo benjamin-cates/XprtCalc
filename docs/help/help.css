@@ -4,45 +4,5 @@ html {
     font-family: "Lato", sans-serif;
     font-size: 14pt;
     background: #333;
-}
-
-.mono {
-    font-family: "Roboto Mono", monospace;
-}
-
-.help_title {
-    font-size: 2em;
-    display: block;
-}
-
-.help_symbol,
-.help_aliases,
-.help_type {
-    font-size: 0.7em;
-    font-family: "Roboto Mono", monospace;
-    display: block;
-}
-
-.help_symbol:before {
-    content: "Symbol: ";
-}
-
-.help_aliases:before {
-    content: "Tags: ";
-}
-
-.help_type:before {
-    content: "Type: ";
-
-}
-
-.help_content {
-    margin: 10px 0px 10px 0px;
-    display: block;
-    line-height:1.3em;
-}
-
-.help_seemore {
-    display: block;
-
+    margin:0;
 }
