@@ -147,10 +147,9 @@ pre {
 }
 
 #cover {
-    opacity: 0%;
-    transition: 0.5s ease opacity;
+    transition: 0.5s ease background-color;
+    background: #00000000;
     pointer-events: none;
-    background: #041a15;
     height: 100vh;
     width: 100vw;
     left: 0;
@@ -160,8 +159,8 @@ pre {
 }
 
 .mobile.open>#cover {
-    opacity: 35%;
     pointer-events: all;
+    background: #041a1560;
 }
 
 #panel_open {
