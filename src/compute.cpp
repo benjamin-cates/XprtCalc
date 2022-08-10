@@ -637,23 +637,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("arb_rand",{"prec"},{downscale},{{D(dub),[](inp) {
         double prec = input[0]->getR();
         if(Program::smallCompute) prec = std::min(prec,50.0);
-        mpfr_t out(0,prec);
-        int binDigits = prec * std::log(10) / std::log(2);
-        std::cout << "bindig " << binDigits << std::endl;
-        int i = 0;
-        if(RAND_MAX >= 0xffffffff) while(i * 32 < binDigits) {
-            i++;
-            mpfr_t cur((unsigned long)(0xfff & rand()),prec);
-            cur.set_exp(-i * 32);
-            out = out + cur;
-        }
-        else while(i * 12 < binDigits) {
-            i++;
-            mpfr_t cur((unsigned long)(0xfff & rand()),prec);
-            cur.set_exp(-i * 12);
-            out = out + cur;
-        }
-        return std::make_shared<Arb>(out);
+        return std::make_shared<Arb>(mpfr_t(EM_ASM_INT({return arbRand($0);},prec),true));
     }}}),
     #endif
     Function("rand",{},{},{{D(),[](inp) {double upLim = RAND_MAX + 1.;ret(Number)(rand() / upLim + rand() / upLim / upLim);}}}),

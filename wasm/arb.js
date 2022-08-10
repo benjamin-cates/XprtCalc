@@ -4,6 +4,8 @@ var arbIsLoaded = false;
 var arb;
 var mp;
 var exp_ptr;
+var arbRandInit = false;
+var round = 0;//MPFR_RNDN (round nearest)
 async function loadArbIfNecessary(str) {
     if(str.match(/toarb/) ||
         str.match(/[0-9A-Z_ ]{14,}/) ||
@@ -34,8 +36,6 @@ async function loadArb() {
     return;
 }
 
-const arbNumbers = [];
-var round = 0;//MPFR_RNDN (round nearest)
 
 function runArb(name, arg1, arg2 = -1) {
     let outPtr;
@@ -71,6 +71,16 @@ function mallocArb(prec, isBinary = false) {
     const out = arb.mpfr_t();
     if(isBinary) arb.mpfr_init2(out, prec);
     else arb.mpfr_init2(out, gmp.precisionToBits(prec) + 2);
+    return out;
+}
+function arbRand(prec) {
+    if(!arbRandInit) {
+        //Size estimate based off of gmp website, gmp_wasm documentation does not provide an example sadly
+        arbRandInit = arb.malloc(20000);
+        arb.gmp_randinit_mt(arbRandInit);
+    }
+    const out = mallocArb(prec);
+    arb.mpfr_urandomb(out, arbRandInit, round);
     return out;
 }
 function arbToString(ptr, base = 10) {
