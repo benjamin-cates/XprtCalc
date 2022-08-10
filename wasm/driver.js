@@ -21,10 +21,15 @@ function evaluate(xpr) {
         console.error(e);
     }
 }
-function run_line(str, coloredInput = "") {
+async function run_line(str, coloredInput = "") {
     if(coloredInput == "") coloredInput = Module.highlightLine(str);
     let out = document.createElement("div");
     out.className = "output_element";
+    try {
+        await loadArbIfNecessary(str);
+    } catch(e) {
+        out.innerHTML = coloredInput + "<br><Ce>Error:</Ce> failed to load arb library.";
+    }
     try {
         let output = Module.runLineWithColor(str).replace(/\n/g, "<br>");
         if(output.includes("<Ce>Error:") || output == "")
@@ -95,7 +100,6 @@ window.onload = _ => {
     resize();
     window.addEventListener("resize", resize);
     keyboardConstructor.construct();
-    loadArb();
 }
 
 var panelData = {

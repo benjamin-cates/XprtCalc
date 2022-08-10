@@ -4,21 +4,31 @@ var arbIsLoaded = false;
 var arb;
 var mp;
 var exp_ptr;
-function loadArb() {
+async function loadArbIfNecessary(str) {
+    if(str.match(/toarb/) ||
+        str.match(/[0-9A-Z_ ]{14,}/) ||
+        str.match(/tonumber/) ||
+        str.match(/eval/) ||
+        str.match(/[0-9A-Z _]p[0-9A-Z _]/) ||
+        str.match(/arb_e/) ||
+        str.match(/arb_pi/)) await loadArb();
+}
+async function loadArb() {
     if(!arbIsLoaded) {
         let script = document.createElement("script");
         script.setAttribute("src", "https://cdn.jsdelivr.net/npm/gmp-wasm@1.1.0/dist/index.umd.min.js");
         script.setAttribute("async", "true");
         document.body.appendChild(script);
-        script.addEventListener("load", _ => {
+        await new Promise(resolve => script.addEventListener("load", _ => {
             console.log("Arb script loaded");
             gmp.init().then(g => {
                 console.log("Arb is loaded successfully");
                 arb = g.binding;
                 arbIsLoaded = true;
                 exp_ptr = arb.malloc(4);
+                resolve();
             });
-        }, false);
+        }, false));
     }
     return;
 }
