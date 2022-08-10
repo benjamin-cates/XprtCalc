@@ -69,8 +69,6 @@ Value ParseCtx::getVariable(const string& name)const {
     if(variableExists(san)) {
         return std::make_shared<Variable>(san);
     }
-    if(Program::globalFunctionMap.find(san) != Program::globalFunctionMap.end())
-        return std::make_shared<Tree>(Program::globalFunctionMap[san]);
     if(useUnits()) {
         string unitName = Expression::removeSpaces(name);
         double coef = 1;
@@ -78,6 +76,8 @@ Value ParseCtx::getVariable(const string& name)const {
         if(u.getBits() != 0)
             return std::make_shared<Number>(coef, 0, u);
     }
+    if(Program::globalFunctionMap.find(san) != Program::globalFunctionMap.end())
+        return std::make_shared<Tree>(Program::globalFunctionMap[san]);
     if(san[0] == '$') {
         try {
             int index = std::stoi(san.substr(1));
