@@ -28,14 +28,19 @@
                 <pre><code id="highlight_output" aria-hidden="true"></code></pre>
             </div>
             <div id="output">
-                <span class="hide_on_next_xpr" style="text-align:center;display:inline-block;">Welcome to <Cu>XprtCalc</Cu>.
-                    Type an expression into the box, or open the help pages on the bottom left.</span>
+                <span class="hide_on_next_xpr" style="text-align:center;display:inline-block;">
+                    Welcome to <Cu>XprtCalc</Cu>. Type an expression into the box, or open the help pages on the bottom
+                    left.
+                    <noscript>
+                        <Ce>Error: </Ce> Javascript is not enabled in this browser, please enable it to continue.
+                    </noscript>
+                </span>
 
             </div>
         </div>
-        <button id="keyboard_open" title="Toggle keyboard"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-                 version="1.1" id="Artwork" x="0px" y="0px" width="35" height="35" viewBox="0 0 512 512"
-                 enable-background="new 0 0 512 512" xml:space="preserve">
+        <button id="keyboard_open" title="Toggle keyboard"><svg xmlns="http://www.w3.org/2000/svg"
+                 xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Artwork" x="0px" y="0px" width="35"
+                 height="35" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
                 <g>
                     <circle cx="99.3" cy="273.5" r="15.3" />
                     <path
@@ -110,33 +115,51 @@
                 <div id="help_page_front" class="page_help">
                     <div style='font-size:24pt;margin-bottom:20px;'>Welcome to <Cu>XprtCalc</Cu>!</div>
                     <hCont>
-                    To get started, type an expression into the main box.<br>Please use the search
-                    bar to view the help pages or see these basic pages to understand the more advanced features of the
-                    program:<br><br>
-                    <div style="color:#AAA;font-size:20pt;">Important pages:</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage types');">Types</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage number');">Number</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage vector');">Vector</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage lambda');">Lambda function</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage units');">Units</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage assignment operator');">Assignment operator</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage variables');">Variables</div>
-                    <br><div style="color:#AAA;font-size:20pt;">Powerful features:</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage history');">History</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage derivative');">Derivative</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage simplify');">Simplify</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage infinite series');">Infinite sum</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage include command');">Include command</div>
-                    <br><div style="color:#AAA;font-size:20pt;">Listicles:</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage list of pages');">List of pages</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage list of operators');">List of operators</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage list of functions');">List of functions</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage list of units');">List of units</div>
-                    <div class="search_result" onclick="window.top.postMessage('openhelppage list of commands');">List of commands</div>
-                    <br>
-                    This project was created by Benjamin Cates and is open source on <a
-                       href="https://github.com/benjamin-cates/XprtCalc">GitHub</a>. Visit the link to see an overview
-                    of the project
+                        To get started, type an expression into the main box.<br>Please use the search
+                        bar to view the help pages or see these basic pages to understand the more advanced features of
+                        the
+                        program:<br><br>
+                        <div style="color:#AAA;font-size:20pt;">Important pages:</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage types');">Types</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage number');">Number</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage vector');">Vector</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage lambda');">Lambda
+                            function</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage units');">Units</div>
+                        <div class="search_result"
+                             onclick="window.top.postMessage('openhelppage assignment operator');">Assignment operator
+                        </div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage variables');">Variables
+                        </div>
+                        <br>
+                        <div style="color:#AAA;font-size:20pt;">Powerful features:</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage history');">History
+                        </div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage derivative');">
+                            Derivative</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage simplify');">Simplify
+                        </div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage infinite series');">
+                            Infinite sum</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage include command');">
+                            Include command</div>
+                        <br>
+                        <div style="color:#AAA;font-size:20pt;">Listicles:</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage list of pages');">List
+                            of pages</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage list of operators');">
+                            List of operators</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage list of functions');">
+                            List of functions</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage list of units');">List
+                            of units</div>
+                        <div class="search_result" onclick="window.top.postMessage('openhelppage list of commands');">
+                            List of commands</div>
+                        <br>
+                        This project was created by Benjamin Cates and is open source on <a
+                           href="https://github.com/benjamin-cates/XprtCalc">GitHub</a>. Visit the link to see an
+                        overview
+                        of the project
                     </hCont>
                 </div>
             </div>
