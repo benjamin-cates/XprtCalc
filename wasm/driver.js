@@ -1,3 +1,4 @@
+var Module = {};
 function onProgramInitialized() {
     update_highlight("");
     //parse url arguments
@@ -13,16 +14,9 @@ function onProgramInitialized() {
             run_line(init[i]);
     }
 };
-function evaluate(xpr) {
-    try {
-        return Module.evaluate(xpr);
-    }
-    catch(e) {
-        console.error(e);
-    }
-}
 async function run_line(str, coloredInput = "") {
-    if(coloredInput == "") coloredInput = Module.highlightLine(str);
+    if(coloredInput == "")
+        coloredInput = Module.highlightLine ? Module.highlightLine(str) : str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     let out = document.createElement("div");
     out.className = "output_element";
     try {
@@ -31,10 +25,16 @@ async function run_line(str, coloredInput = "") {
         out.innerHTML = coloredInput + "<br><Ce>Error:</Ce> failed to load arb library.";
     }
     try {
-        let output = Module.runLineWithColor(str).replace(/\n/g, "<br>");
-        if(output.includes("<Ce>Error:") || output == "")
+        if(Module.runLineWithColor) {
+            let output = Module.runLineWithColor(str).replace(/\n/g, "<br>");
+            if(output.includes("<Ce>Error:") || output == "")
+                out.classList.add("hide_on_next_xpr");
+            out.innerHTML = coloredInput + "<br>" + output;
+        }
+        else {
             out.classList.add("hide_on_next_xpr");
-        out.innerHTML = coloredInput + "<br>" + output;
+            out.innerHTML = "<Ce>Error:</Ce> page not finished loading";
+        }
     }
     catch(e) {
         out.innerHTML = coloredInput + "<br><Ce>Error:</Ce> unrecognizable error, please report to <a href='https://github.com/benjamin-cates/XprtCalc/issues'>https://github.com/benjamin-cates/XprtCalc/issues</a> with more information.";
@@ -86,7 +86,8 @@ function update_highlight(str) {
     textArea.style.height = "1px";
     document.querySelector("#input").style.height = (textArea.scrollHeight) + "px";
     textArea.style.height = (textArea.scrollHeight) + "px";
-    this.output.innerHTML = Module.highlightLine(this.text);
+    if(Module.highlightLine) this.output.innerHTML = Module.highlightLine(this.text);
+    else this.output.innerText = this.text;
 }
 window.onload = _ => {
     if(navigator.userAgentData) keyboard.enabled = navigator.userAgentData.mobile;
@@ -175,12 +176,12 @@ function displayHelpPage(id) {
         document.querySelector("#help_page").style.height = "1px";
         document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
     }, 4);
-    setTimeout(_=> {
+    setTimeout(_ => {
         document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
-    },100);
-    setTimeout(_=> {
+    }, 100);
+    setTimeout(_ => {
         document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
-    },300);
+    }, 300);
 }
 function insertAtCursor(myField, myValue) {
     //IE support
@@ -278,32 +279,32 @@ const keyboardConstructor = {
                 {k: `${keyboard.svg.leftArrow} t`, n: "left arrow"}, "7n", "8n", "9n", "/o", {k: `${keyboard.svg.backspace} c`, n: "backspace"},
                 {k: `${keyboard.svg.rightArrow} t`, n: "right arrow"}, "4n", "5n", "6n", "*o", {k: "C/", n: "clear"},
                 {k: `${keyboard.svg.shift} t`, n: "shift"}, "1n", "2n", "3n", "-o", {k: `${keyboard.svg.enter} /`, n: "enter", col: "6", row: "4/6"},
-            {k: "ABCt", n: "abc"}, ",d", "0n", ".n", "+o"
+                {k: "ABCt", n: "abc"}, ",d", "0n", ".n", "+o"
             ],
-[
-    "[b", "]b", "{b", "}b", "=o", "$f",
-    {k: `${keyboard.svg.upArrow}t`, n: "up arrow"}, "7n", "8n", "9n", "\\t", {k: `${keyboard.svg.backspaceFull}c`, n: "backspace"},
-    {k: `${keyboard.svg.downArrow}t`, n: "down arrow"}, "4n", "5n", "6n", "^o", {k: "C/", n: "clear"},
-    {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "1n", "2n", "3n", "_t", {k: `${keyboard.svg.enter}/`, n: "enter", col: "6", row: "4/6"},
-    {k: "ABCt", n: "abc"}, ",d", "0n", ".n", "+o"
-],
+            [
+                "[b", "]b", "{b", "}b", "=o", "$f",
+                {k: `${keyboard.svg.upArrow}t`, n: "up arrow"}, "7n", "8n", "9n", "\\t", {k: `${keyboard.svg.backspaceFull}c`, n: "backspace"},
+                {k: `${keyboard.svg.downArrow}t`, n: "down arrow"}, "4n", "5n", "6n", "^o", {k: "C/", n: "clear"},
+                {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "1n", "2n", "3n", "_t", {k: `${keyboard.svg.enter}/`, n: "enter", col: "6", row: "4/6"},
+                {k: "ABCt", n: "abc"}, ",d", "0n", ".n", "+o"
+            ],
         ], [
-    [
-        "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
-        "qt", "wt", "et", "rt", "tt", "yt", "ut", "it", "ot", "pt",
-        "at", "st", "dt", "ft", "gt", "ht", "jt", "kt", "lt", "",
-        {k: `${keyboard.svg.shift}t`, n: "shift"}, "zt", "xt", "ct", "vt", "bt", "nt", "mt", "_t", {k: `${keyboard.svg.backspace}t`, n: "backspace"},
-        {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "&quot;s", n: "\""},
-    ],
-    [
-        "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
-        "Qt", "Wt", "Et", "Rt", "Tt", "Yt", "Ut", "It", "Ot", "Pt",
-        "At", "St", "Dt", "Ft", "Gt", "Ht", "Jt", "Kt", "Lt", "",
-        {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "Zt", "Xt", "Ct", "Vt", "Bt", "Nt", "Mt", "_t", {k: `${keyboard.svg.backspaceFull}t`, n: "backspace"},
-        {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "'s", n: "\""},
+            [
+                "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
+                "qt", "wt", "et", "rt", "tt", "yt", "ut", "it", "ot", "pt",
+                "at", "st", "dt", "ft", "gt", "ht", "jt", "kt", "lt", "",
+                {k: `${keyboard.svg.shift}t`, n: "shift"}, "zt", "xt", "ct", "vt", "bt", "nt", "mt", "_t", {k: `${keyboard.svg.backspace}t`, n: "backspace"},
+                {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "&quot;s", n: "\""},
+            ],
+            [
+                "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
+                "Qt", "Wt", "Et", "Rt", "Tt", "Yt", "Ut", "It", "Ot", "Pt",
+                "At", "St", "Dt", "Ft", "Gt", "Ht", "Jt", "Kt", "Lt", "",
+                {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "Zt", "Xt", "Ct", "Vt", "Bt", "Nt", "Mt", "_t", {k: `${keyboard.svg.backspaceFull}t`, n: "backspace"},
+                {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "'s", n: "\""},
 
-    ],
-]],
+            ],
+        ]],
 };
 
 function pressKey(x) {
