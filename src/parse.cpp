@@ -627,14 +627,14 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             int endB = matchBracket(sec, 0);
             int underscore = endB + 1;
             double base = -1;
+            bool oldSmallCompute = Program::smallCompute;
+            Program::smallCompute = true;
             try {
-                ParseCtx pctx;
-                Value tr = Tree::parseTree(sec.substr(underscore + 1), ctx);
-                ComputeCtx cctx;
-                Value v = tr->compute(cctx);
+                Value v = Expression::evaluate(sec.substr(underscore + 1));
                 if(v != nullptr) base = v->getR();
             }
             catch(...) {}
+            Program::smallCompute = oldSmallCompute;
             if(base < 2 || base>36) {
                 std::fill(out + underscore + 1, out + sec.length(), ColorType::hl_error);
                 base = ctx.getBase();
@@ -921,7 +921,10 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
         else if(type == squareWithBase) {
             int endBracket = Expression::matchBracket(sect, 0);
             int underscore = Expression::findNext(sect, endBracket, '_');
+            bool oldSmallCompute = Program::smallCompute;
+            Program::smallCompute = true;
             int base = Expression::evaluate(sect.substr(underscore + 1))->getR();
+            Program::smallCompute = oldSmallCompute;
             if(base >= 36) throw "base cannot be over 36";
             if(base <= 1) throw "base cannot be under 2";
             ctx.push(base, true);
