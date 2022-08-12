@@ -105,7 +105,6 @@ int main(int argc, char** argv) {
     Program::implementationStartup = &startup;
     Program::startup();
     int i = 0;
-    string commandPrefix = Preferences::getAs<string>("command_prefix");
     while(true) {
         string input;
         std::getline(std::cin, input);

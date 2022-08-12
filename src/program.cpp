@@ -28,7 +28,6 @@ int Program::getGlobal(const string& name) {
 #pragma endregion
 #pragma region Preferences
 std::map<string, std::pair<Value, void (*)(Value)>> Preferences::pref = {
-    {"command_prefix",{std::make_shared<String>("/"),nullptr}}
 };
 Value Preferences::get(string name) {
     auto it = pref.find(name);
@@ -195,11 +194,10 @@ ColoredString Program::runCommand(string call) {
     return out;
 }
 ColoredString Program::runLine(string str) {
-    string commandPrefix = Preferences::getAs<string>("command_prefix");
     try {
         //Commands
-        if(str.substr(0, commandPrefix.size()) == commandPrefix) {
-            return Program::runCommand(str.substr(commandPrefix.size()));
+        if(str[0]=='/') {
+            return Program::runCommand(str.substr(1));
         }
         //Parsing assignment statements
         std::tuple<string, ValList, string> assign = Expression::parseAssignment(str);

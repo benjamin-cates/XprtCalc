@@ -785,8 +785,7 @@ std::vector<string> Expression::colorArgList(string sec, string::iterator out, P
 string Expression::colorLine(string str, ParseCtx& ctx) {
     string out(str.length(), hl_null);
     if(str == "") return "";
-    string commandPrefix = Preferences::getAs<string>("command_prefix");
-    if(str.substr(0, commandPrefix.length()) == commandPrefix) {
+    if(str[0] == '/') {
         int sp = findNext(str, 1, ' ');
         if(sp == -1) return string(str.length(), ColorType::hl_command);
         else {
