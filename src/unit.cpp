@@ -20,15 +20,18 @@ Unit::Unit(unsigned long long b) {
     bits = b;
 }
 signed char Unit::operator[](int i) {
-    return (bits >> (i * 8)) | 0xff;
+    return (bits >> (i * 8)) & 0xff;
 };
 signed char Unit::get(int i)const {
     if(i < 0 || i >= 8) return 0;
-    return bits >> (i * 8);
+    return (bits >> (i * 8)) & 0xff;
 }
 void Unit::set(int i, signed char value) {
     if(i < 0 || i >= 8) return;
-    bits |= (value << (i * 8));
+    //Erase bits in current slot
+    bits &= 0xFFFFFFFFFFFFFFFFULL ^ (0xFFULL << (i * 8));
+    //Set bits in slot
+    bits |= ((unsigned long long)(value) << (i * 8));
 }
 bool Unit::isUnitless()const {
     return bits == 0;
