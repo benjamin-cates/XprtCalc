@@ -44,7 +44,7 @@ XprtCalc is currently in beta development. It is mainly written in C++ as a comm
 
 Example usage:
 
-This is an example of a user finding the area to the left of a z-score, given a certain data set. They found the mean of the data set using the included functions `mean` and `stddev`, they then used the `infinite_sum` function in conjunction with the lambdas to create an infinite series for the area under the z distribution. They finally used everything calculated to find the area under the z to the left of `0.1` to be `0.05` for that data set.
+This is an example of a user finding the area to the left of a z-score, given a certain data set. They used the included functions `mean`, `z`, and `stddev` to calculate the area under the z curve to the left of `9.2` to be `0.189` for that data set.
 
 ![XprtCalc example usage](docs/Example_Usage.png)
 
