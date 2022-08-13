@@ -906,7 +906,7 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     Function("error",{"str"},{},{{D(str_t),[](inp) {
         def(String,str,0);
-        throw str;
+        throw str->str;
         return Value::zero;
     }}}),
     Function("substr",{"str","begin","len"},{},{{D(str_t,dub | arb,dub | arb | opt),[](inp) {
