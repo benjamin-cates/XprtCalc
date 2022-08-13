@@ -68,6 +68,7 @@ function freeArb(ptr) {
     arb.free(ptr);
 }
 function mallocArb(prec, isBinary = false) {
+    prec = Math.min(prec, 10000);
     const out = arb.mpfr_t();
     if(isBinary) arb.mpfr_init2(out, prec);
     else arb.mpfr_init2(out, gmp.precisionToBits(prec) + 2);

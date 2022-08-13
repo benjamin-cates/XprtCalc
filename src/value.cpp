@@ -22,6 +22,7 @@ Arb::Arb(mppp::real n, Unit u) {
     unit = u;
 }
 mpfr_prec_t Arb::digitsToPrecision(int digits) {
+    if(digits > 10000) digits = 10000;
     if(digits < 1) throw "Cannot have " + std::to_string(digits) + " digits of precision";
     constexpr double conv = std::log(10) / std::log(2);
     return mpfr_prec_t(conv * digits + 2);
@@ -220,7 +221,7 @@ Value Value::convertTo(int type, int precision) {
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
         else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str + "p" + std::to_string(cast<String>()->str.length()), 10);
         else if(curType == map_t) throw "Cannot convert map to arb";
-    }
+}
     #endif
     #ifdef GMP_WASM
     else if(type == arb_t) {
