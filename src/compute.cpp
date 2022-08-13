@@ -127,6 +127,8 @@ Value ComputeCtx::getArgument(int id)const {
     return *(argValue.begin() + id);
 }
 void ComputeCtx::pushArgs(const ValList& args) {
+    //Increment self replacing args
+    for(int i = 0;i < argValue.size();i++) if((*(argValue.begin() + i))->typeID() == Value::arg_t) (*(argValue.begin() + i)).cast<Argument>()->id += args.size();
     //Push args to front
     for(int i = args.size() - 1;i >= 0;i--)
         argValue.push_front(args[i]);
@@ -135,6 +137,8 @@ void ComputeCtx::popArgs(const ValList& args) {
     //Delete front args
     for(int i = 0;i < args.size();i++)
         argValue.pop_front();
+    //Decrement self replacing args
+    for(int i = 0;i < argValue.size();i++) if((*(argValue.begin() + i))->typeID() == Value::arg_t) (*(argValue.begin() + i)).cast<Argument>()->id -= args.size();
 }
 void ComputeCtx::setVariable(const string& n, Value value) {
     std::map<string, std::vector<Value>>::iterator it = variables.find(n);
