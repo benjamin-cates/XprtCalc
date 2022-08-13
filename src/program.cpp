@@ -58,7 +58,7 @@ void Preferences::set(string name, Value val) {
 #pragma region Library
 using namespace Library;
 ColoredString LibFunc::include() {
-    if(Program::parseCtx.getVariable(name) != nullptr) return ColoredString("");
+    if(Program::parseCtx.variableExists(name)) return ColoredString("");
     ColoredString out;
     //Resolve dependencies
     for(int i = 0;i < dependencies.size();i++) {

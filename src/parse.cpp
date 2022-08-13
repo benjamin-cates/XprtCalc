@@ -85,6 +85,10 @@ Value ParseCtx::getVariable(const string& name)const {
         }
         catch(...) { return nullptr; }
     }
+    if(Library::functions.find(san) != Library::functions.end()) {
+        Library::functions[san].include();
+        return getVariable(san);
+    }
     return nullptr;
 }
 #pragma endregion
