@@ -47,6 +47,9 @@ namespace wasm {
         out += "]";
         return out;
     }
+    string helpPage(int id) {
+        return Help::pages[id].toHTML();
+    }
 };
 ColoredString command_query(std::vector<string>& args) {
     string inp = Command::combineArgs(args);
@@ -55,7 +58,7 @@ ColoredString command_query(std::vector<string>& args) {
 }
 ColoredString command_help(std::vector<string>& args) {
     string inp = Command::combineArgs(args);
-    emscripten_run_script(("panelPage('help');window.top.postMessage(\"openhelppage " + String::safeBackspaces(inp) + "\")").c_str());
+    emscripten_run_script(("openHelp(\"" + String::safeBackspaces(inp) + "\")").c_str());
     return ColoredString("");
 }
 
@@ -68,6 +71,7 @@ EMSCRIPTEN_BINDINGS(module) {
     function("runLine", &wasm::runLine);
     function("runLineWithColor", &wasm::runLineWithColor);
     function("query", &wasm::query);
+    function("helpPage",&wasm::helpPage);
 }
 
 void startup() {

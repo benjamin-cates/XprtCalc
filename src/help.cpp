@@ -27,7 +27,7 @@ string Page::contentToHTML(string content) {
             int end = i + 1;
             while(end != content.length() && content[end] != '?') end++;
             string link = content.substr(i + 1, end - i - 1);
-            out += "<ln onclick='openHelp(this)'>" + link + "</ln>";
+            out += "<ln onclick='openHelp(this.innerText)'>" + link + "</ln>";
             i = end;
         }
         else if(content[i] == '`') {

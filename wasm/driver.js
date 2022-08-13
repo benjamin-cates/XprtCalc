@@ -150,7 +150,7 @@ function helpSearch(event, queryBox) {
         let data = JSON.parse(Module.query(queryBox.value.toString()));
         let queryResults = "";
         for(let i = 0; i < data.length; i++) {
-            queryResults += "<div class='search_result' onclick='displayHelpPage(" + data[i].id + ")'>" + data[i].name + "</div>";
+            queryResults += "<div class='search_result' onclick='openHelp(" + data[i].id + ")'>" + data[i].name + "</div>";
         }
         if(data.length == 0)
             queryResults += "No results found for " + queryBox.value;
@@ -161,27 +161,18 @@ function helpSearch(event, queryBox) {
     }
     if(queryBox == "!click") {
         document.querySelector("#help_page").classList.remove("shown");
-        document.querySelector("#help_page").contentWindow.postMessage("hide");
         document.querySelector("#search_results").style.display = "none";
         document.querySelector("#help_page_front").style.display = "block";
     }
 }
-function displayHelpPage(id) {
+function openHelp(token) {
+    panelPage("help");
     document.querySelector("#search_results").style.display = "none";
     document.querySelector("#help_page_front").style.display = "none";
+    let id = token;
+    if(typeof token == "string") id = JSON.parse(Module.query(token))[0].id;
+    document.querySelector("#help_page").innerHTML = Module.helpPage(id);
     document.querySelector("#help_page").classList.add("shown");
-    document.querySelector("#help_page").contentWindow.postMessage("hide");
-    document.querySelector("#help_page").contentWindow.postMessage("show" + id);
-    setTimeout(_ => {
-        document.querySelector("#help_page").style.height = "1px";
-        document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
-    }, 4);
-    setTimeout(_ => {
-        document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
-    }, 100);
-    setTimeout(_ => {
-        document.querySelector("#help_page").style.height = document.querySelector("#help_page").contentWindow.document.body.scrollHeight + 20 + "px";
-    }, 300);
 }
 function insertAtCursor(myField, myValue) {
     //IE support

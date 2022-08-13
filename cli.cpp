@@ -67,12 +67,12 @@ ColoredString command_createhelphtml(std::vector<string>& input) {
     if(currentPath.substr(currentPath.length() - 8) != "xprtcalc") throw "must be within the root directory of xprtcalc";
     using namespace Help;
     string out;
+    out += "<!DOCTYPE html>\n";
     out += "<html lang='en'>\n";
     out += "<head>\n";
     out += "<title>XprtCalc Help</title>\n";
     out += "<meta charset='utf-8'>\n";
     out += "<meta name='description' content='Help pages for XprtCalc.' />\n";
-    out += "<script src='help.js'></script>";
     out += "<link rel='stylesheet' href='../../wasm/style.css'>\n";
     out += "<link rel='stylesheet' href='help.css'>\n";
     out += "<link rel='preconnect' href='https://fonts.googleapis.com'>";
