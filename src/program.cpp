@@ -77,9 +77,11 @@ ColoredString LibFunc::include() {
     catch(const char* mess) {
         return out.append({ {"Error",'e'}," in ",{name,'v'},": ",mess,"\n" });
     }
+    #if not defined(GMP_WASM)
     catch(...) {
-        return out.append({ {"Error",'e'}," in ",{name,'v'},": unknown\n" });
+        return out.append({ {"Error",'e'}," in ",{name,'v'},": unknown. Please report to https://github.com/benjamin-cates/XprtCalc/issues\n" });
     }
+    #endif
     Program::parseCtx.pushVariable(name);
     Program::computeCtx.setVariable(name, lambda);
     out.append({ {name,'v'}," included\n" });
