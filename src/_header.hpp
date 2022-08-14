@@ -608,6 +608,7 @@ public:
     static int precisionToDigits(mpfr_prec_t prec);
     //Converts mppp::real to string given base
     static string componentToString(mppp::real x, int base);
+    int getPrec() { return Arb::precisionToDigits(num.get_prec()); }
     //Virtual functions
     double flatten()const;
     string toStr(ParseCtx& ctx)const;
@@ -658,10 +659,11 @@ public:
     Arb(mpfr_t r, Unit u = Unit()) { num = r; unit = u; }
     Arb(std::complex<mpfr_t> n, Unit u = Unit()) { num = n.real(); unit = u; }
     static string componentToString(mpfr_t x, int base);
+    int getPrec() { return num.prec(); }
     //Virtual functions
     double flatten()const;
     string toStr(ParseCtx& ctx)const;
-    double getR()const { return num.real().toDouble(); }
+    double getR()const { return num.toDouble(); }
     int typeID()const { return Value::arb_t; }
 };
 mpfr_t operator+(mpfr_t a, mpfr_t b);

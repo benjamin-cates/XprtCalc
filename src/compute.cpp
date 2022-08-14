@@ -620,6 +620,19 @@ std::vector<Function> Program::globalFunctions = {
     Constant("false",0),
     Constant("i",0,1.0),
     Constant("pi",3.14159265358979323),
+    Function("deg",{"angle"},{},{
+        {D(),[](inp) {return Value(std::make_shared<Number>(0.0174532925199432957692));}},
+        {D(dub),[](inp) {
+            def(Number,n,0);
+            return Value(std::make_shared<Number>(0.0174532925199432957692*n->num.real(),0.0174532925199432957692*n->num.imag(),n->unit));
+    #if defined(USE_ARB) || defined(GMP_WASM)
+    }},{D(arb),[](inp) {
+        def(Arb,n,0);
+        int prec = n->getPrec();
+        Value ratio = Program::computeGlobal("div",{Program::computeGlobal("arb_pi",{std::make_shared<Number>(prec)},ctx),Expression::parseNumeral("180p"+std::to_string(prec),10)},ctx);
+        return Program::computeGlobal("mul",{input[0],ratio},ctx);
+    #endif
+    }}}),
     #if defined(USE_ARB) || defined(GMP_WASM)
     Function("arb_e",{"prec"},{},{{D(dub | arb),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(Math::getE_arb(prec));}}}),
     Function("arb_pi",{"prec"},{},{{D(dub | arb),[](inp) {double prec = input[0]->getR();if(Program::smallCompute) prec = std::min(prec,50.0);ret(Arb)(Math::getPi_arb(prec));}}}),

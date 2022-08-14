@@ -29,7 +29,7 @@ mpfr_prec_t Arb::digitsToPrecision(int digits) {
 }
 int Arb::precisionToDigits(mpfr_prec_t prec) {
     constexpr double conv = std::log(10) / std::log(2);
-    return int(1.0 * (prec - 2) / conv);
+    return int(1.0 * (prec - 2) / conv) + 1;
 }
 #endif
 #pragma endregion
@@ -580,7 +580,7 @@ string Arb::componentToString(
     if(negative) str = "-" + str;
     str += "p";
     #ifdef USE_ARB
-    str += std::to_string(Arb::precisionToDigits(x.get_prec()) + 1);
+    str += std::to_string(Arb::precisionToDigits(x.get_prec()));
     #endif
     #ifdef GMP_WASM
     str += std::to_string(x.prec());
