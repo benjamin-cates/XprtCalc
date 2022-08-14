@@ -167,6 +167,17 @@ Value ComputeCtx::getVariable(const string& name) {
 }
 #pragma endregion
 #pragma region class Function
+
+#define dub 0b00000001
+#define arb 0b00000010
+#define vec_t 0b00000100
+#define lmb 0b00001000
+#define str_t 0b00010000
+#define map_t 0b00100000
+#define set 0b01000000
+#define opt 0b10000000
+#define all 0b01111111
+
 Function::Function() {
 
 }
@@ -193,11 +204,19 @@ Value Function::operator()(ValList& input, ComputeCtx& ctx) {
     for(auto& dm : domainMap) if(dm.first.match(cur)) {
         ValList convertedInput(input.size(), Value::zero);
         //Find new map and create converted input
-        Domain newMap = domainMap[cur];
-        for(int i = 0;i < input.size();i++)
-            convertedInput[i] = input[i].convertTo(newMap.get(i));
+        Domain newMap = dm.second;
+        for(int i = 0;i < input.size();i++) {
+            int convertTo = newMap.get(i);
+            if(convertTo == (all | opt) || i >= 4) convertedInput[i] = input[i];
+            else if(convertTo == all) convertedInput[i] = input[i];
+            else {
+                int type = 0;
+                for(int x = 0;x < 8;x++) if(((convertTo >> x) & 1) == 1) { type = x + 1;break; }
+                convertedInput[i] = input[i].convertTo(type);
+            }
+        }
         //return function result
-        return funcs[newMap](convertedInput, ctx, name);
+        return (*this)(convertedInput, ctx);
     }
     throw "Cannot run '" + name + "' with types " + cur.toString();
 }
@@ -229,16 +248,6 @@ void Program::buildFunctionNameMap() {
 #pragma endregion
 #pragma region Function::Domain
 
-#define dub 0b00000001
-#define arb 0b00000010
-#define vec_t 0b00000100
-#define lmb 0b00001000
-#define str_t 0b00010000
-#define map_t 0b00100000
-#define set 0b01000000
-#define opt 0b10000000
-
-#define all 0b01111111
 Function::Domain::Domain(const ValList& input) {
     sig = 0;
     for(int i = 0;i < std::min(input.size(), size_t(4));i++) {
@@ -658,20 +667,18 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
 #pragma endregion
 #pragma region Functional
-    Function("run", { "func","..." }, {}, {{D(lmb,all | opt,all | opt,all | opt),[](inp) {
+    Function("run", { "func","..." }, {{D(str_t,all | opt,all | opt, all | opt),D(lmb,all | opt,all | opt,all | opt)}}, {{D(lmb,all | opt,all | opt,all | opt),[](inp) {
         def(Lambda,func,0);
         ValList args(func->inputNames.size(),Value::zero);
         for(int i = 0;i < std::min(input.size() - 1,args.size());i++) args[i] = input[i + 1];
         return (*func)(args,ctx);
     }}}),
-    Function("apply",{"func","args"},{},{{D(lmb,vec_t),[](inp) {
+    Function("apply",{"func","args"},{{D(str_t,vec_t),D(lmb,vec_t)}},{{D(lmb,vec_t),[](inp) {
         def(Vector,v,1);
         ValList toRun = ValList{input[0]};
         for(int i = 0;i < v->size();i++) toRun.push_back(v->vec[i]);
         Value out = Program::computeGlobal("run",toRun,ctx);
         return out;
-    }},{D(str_t,vec_t),[](inp) {
-        return Program::computeGlobal(getV(String,0)->str,getV(Vector,1)->vec,ctx);
     }}}),
     Function("sum",{"func","begin","end","step"},{},{{D(lmb,arb | dub,arb | dub,arb | dub | opt), [](inp) {
         def(Lambda,func,0);
@@ -850,7 +857,7 @@ std::vector<Function> Program::globalFunctions = {
         }
         return out;
     }}}),
-    Function("map_vector",{"map","func"},{},{{D(vec_t,lmb),[](inp) {
+    Function("map_vector",{"map","func"},{{D(vec_t,str_t),D(vec_t,lmb)}},{{D(vec_t,lmb),[](inp) {
         def(Vector,v,0);def(Lambda,func,1);
         shared_ptr<Vector> out = make_shared<Vector>();
         shared_ptr<Number> index = make_shared<Number>(0);

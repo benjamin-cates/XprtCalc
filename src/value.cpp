@@ -221,7 +221,7 @@ Value Value::convertTo(int type, int precision) {
         else if(curType == lmb_t) throw "Cannot convert lambda to arb";
         else if(curType == str_t) return Expression::parseNumeral(cast<String>()->str + "p" + std::to_string(cast<String>()->str.length()), 10);
         else if(curType == map_t) throw "Cannot convert map to arb";
-}
+    }
     #endif
     #ifdef GMP_WASM
     else if(type == arb_t) {
@@ -249,7 +249,17 @@ Value Value::convertTo(int type, int precision) {
     }
     //To lambda
     else if(type == lmb_t) {
-        return std::make_shared<Lambda>(std::vector<string>(), *this);
+        if(curType == str_t) {
+            string str = cast<String>()->str;
+            if(Program::globalFunctionMap.find(str) == Program::globalFunctionMap.end()) throw "function " + str + " not found";
+            int id = Program::globalFunctionMap.at(str);
+            std::vector<string> inputs = Program::globalFunctions[id].getInputNames();
+            ValList treeArgs{ inputs.size() };
+            for(int i = 0;i < treeArgs.size();i++) treeArgs[i] = std::make_shared<Argument>(i);
+            Value tree = std::make_shared<Tree>(id, std::move(treeArgs));
+            return std::make_shared<Lambda>(inputs, tree);
+        }
+        else return std::make_shared<Lambda>(std::vector<string>(), *this);
     }
     //To string
     else if(type == str_t) {
