@@ -282,11 +282,11 @@ Value Expression::parseNumeral(const string& str, int base) {
     if(precision != 15) {
         #ifdef USE_ARB
         mppp::real out(digits, base, Arb::digitsToPrecision(precision));
-        if(exponent != 0) out = out * mppp::pow(mppp::real{ base }, mppp::real{ exponent,Arb::digitsToPrecision(precision + 10) });
+        if(exponent != 0) out = out * mppp::pow(mppp::real{ base }, mppp::real{ exponent,Arb::digitsToPrecision(precision) });
         #endif
         #ifdef GMP_WASM
         mpfr_t out = mpfr_t::stringToArb(digits, precision, base);
-        if(exponent != 0) out = out * std::pow(mpfr_t(double(base), precision + 10), mpfr_t(double(exponent), precision + 10));
+        if(exponent != 0) out = out * std::pow(mpfr_t(double(base), precision), mpfr_t(double(exponent), precision));
         #endif
         return std::make_shared<Arb>(out);
     }
