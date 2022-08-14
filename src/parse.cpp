@@ -380,7 +380,14 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
             if(n >= '0' && n <= '9');
             else if(n >= 'A' && n < maxAlpha);
             else if(n == '.' || n == ' ');
-            else if(n == '-' || n == '+' || n == 'e' || n == 'p');
+            else if(n == '-' || n == '+');
+            else if(n == 'e' || n == 'p') {
+                char next = str[i + 1];
+                if(n == 'e' && (next == '+' || next == '-')) continue;
+                if(next >= '0' && next <= '9');
+                else if(next >= 'A' && next < maxAlpha);
+                else return i;
+            }
             else return i;
         }
         return str.length();
