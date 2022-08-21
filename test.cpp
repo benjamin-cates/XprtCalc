@@ -70,6 +70,7 @@ namespace Generate {
             std::advance(it, fastrand() % Program::globalFunctionMap.size());
             if(argCount)
                 while(!Program::globalFunctions[it->second].assertArgCount(*argCount)) (*argCount)++;
+            if(it->first == "min") return "max";
             return it->first;
         }
         return "pi";
