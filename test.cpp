@@ -25,13 +25,13 @@ namespace Generate {
         return (fastrand_seed >> 16) & 0x7FFF;
     }
     string variable_name() {
-        const static string str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_____.....0123456789";
+        const static string str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ____0123456789";
         const static int chars = str.length();
         int count = fastrand() % 5 + 1;
         string out(size_t(count), ' ');
-        out[0] = fastrand() % (chars - 10);
+        out[0] = str[fastrand() % (chars - 14)];
         for(int i = 1;i < count;i++)
-            out[i] = fastrand() % chars;
+            out[i] = str[fastrand() % chars];
         return out;
     }
     string valid_variable(ParseCtx& ctx, bool isFunction, int* argCount, bool allowUnit) {
@@ -78,7 +78,11 @@ namespace Generate {
     string expression(int nestLeft, ParseCtx& ctx) {
         int type = fastrand();
         if(nestLeft == 0) type %= 3;
-        else type %= 8;
+        #ifdef USE_ARB
+        else type %= 10;
+        #else
+        else type %= 9;
+        #endif
         //Number
         if(type == 0) {
             int num = fastrand();
@@ -126,12 +130,12 @@ namespace Generate {
             return out + ">)";
         }
         //Lambda
-        else if(type == 90) {
+        else if(type == 6) {
             int argCount = fastrand() % 4;
             string out;
             std::vector<string> args;
             if(argCount == 0) out = "_";
-            if(argCount == 1) { args.push_back(variable_name());out = args.back(); }
+            else if(argCount == 1) { args.push_back(variable_name());out = args.back(); }
             else {
                 for(int i = 0;i < argCount;i++) {
                     args.push_back(variable_name());
@@ -154,6 +158,19 @@ namespace Generate {
         else if(type == 8) {
             return "\"stringy\"";
         }
+        //Arb numbers
+        #ifdef USE_ARB
+        else if(type == 9) {
+            string out = "1.";
+            for(int i = 0;i < 4;i++) {
+                int num = fastrand();
+                out += std::to_string(num);
+            }
+            out += "e" + std::to_string(fastrand() % 20);
+            out += "p" + std::to_string(fastrand() % 20 + 3);
+            return out;
+        }
+        #endif
         return "0";
     }
     string valid_str() {
