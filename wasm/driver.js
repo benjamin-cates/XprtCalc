@@ -1,5 +1,6 @@
+const JSFailMessage = setTimeout(function() {document.querySelector(".hide_on_next_xpr").innerHTML = "An error has occured on startup. It's possible that the browser does not support the features required for this program. Please report <a href='https://github.com/benjamin-cates/XprtCalc/issues'>here</a>.";}, 2000);
 var Module = {};
-function onProgramInitialized() {
+async function onProgramInitialized() {
     update_highlight("");
     //parse url arguments
     const params = new URLSearchParams(window.location.search);
@@ -11,8 +12,9 @@ function onProgramInitialized() {
         const init = params.get("init").split(";");
         console.log(init);
         for(let i = 0; i < init.length; i++)
-            run_line(init[i]);
+            await run_line(init[i]);
     }
+    window.clearTimeout(JSFailMessage);
 };
 async function run_line(str, coloredInput = "") {
     if(coloredInput == "")
