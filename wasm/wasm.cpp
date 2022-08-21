@@ -51,12 +51,12 @@ namespace wasm {
         return Help::pages[id].toHTML();
     }
 };
-ColoredString command_query(std::vector<string>& args) {
+ColoredString command_query(std::vector<string>& args, const string& self) {
     string inp = Command::combineArgs(args);
     emscripten_run_script(("panelPage('help');helpSearch({'key':'Enter'},{'value':\"" + String::safeBackspaces(inp) + "\"})").c_str());
     return ColoredString("");
 }
-ColoredString command_help(std::vector<string>& args) {
+ColoredString command_help(std::vector<string>& args, const string& self) {
     string inp = Command::combineArgs(args);
     emscripten_run_script(("openHelp(\"" + String::safeBackspaces(inp) + "\")").c_str());
     return ColoredString("");

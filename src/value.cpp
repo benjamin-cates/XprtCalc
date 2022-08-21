@@ -440,7 +440,7 @@ Value Argument::compute(ComputeCtx& ctx) {
 }
 #pragma endregion
 #pragma region toString
-string ValueBaseClass::toString()const { return this->toStr(Program::parseCtx); }
+string ValueBaseClass::toString(int base)const { return this->toStr(Program::parseCtx, base); }
 string Number::componentToString(double x, int base) {
     if(x == 0) return "0";
     bool isNegative = x < 0;
@@ -493,18 +493,18 @@ string Number::componentToString(double x, int base) {
     if(digitList.size() < exponent) out += string(exponent - digitList.size(), '0');
     return out;
 }
-string Number::toStr(ParseCtx& ctx)const {
+string Number::toStr(ParseCtx& ctx, int base)const {
     string out;
     if(num.real() != 0) {
         if(Math::isInf(num.real())) return "inf";
         else if(Math::isNan(num.real())) return "undefined";
-        else out += Number::componentToString(num.real(), 10);
+        else out += Number::componentToString(num.real(), base);
     }
     if(num.imag() != 0) {
         if(num.imag() > 0 && num.real() != 0) out += '+';
         if(Math::isInf(num.imag())) out += "+inf*";
         else if(Math::isNan(num.imag())) out += "+undefined*";
-        else out += Number::componentToString(num.imag(), 10);
+        else out += Number::componentToString(num.imag(), base);
         out += 'i';
     }
     if(out == "") out = "0";
@@ -587,29 +587,29 @@ string Arb::componentToString(
     #endif
     return str;
 }
-string Arb::toStr(ParseCtx& ctx)const {
+string Arb::toStr(ParseCtx& ctx, int base)const {
     string out;
     if(Math::isInf(num)) out += "inf";
     else if(Math::isNan(num)) return "nan";
-    else out += Arb::componentToString(num, 10);
+    else out += Arb::componentToString(num, base);
     if(!unit.isUnitless()) {
         out += "[" + unit.toString() + "]";
     }
     return out;
 }
 #endif
-string Vector::toStr(ParseCtx& ctx)const {
+string Vector::toStr(ParseCtx& ctx, int base)const {
     string out = "<";
     for(int i = 0;i < vec.size();i++) {
-        out += vec[i]->toStr(ctx);
+        out += vec[i]->toStr(ctx, base);
         if(i != vec.size() - 1) out += ",";
     }
     return out + ">";
 }
-string String::toStr(ParseCtx& ctx)const {
+string String::toStr(ParseCtx& ctx, int base)const {
     return "\"" + String::safeBackspaces(str) + "\"";
 }
-string Lambda::toStr(ParseCtx& ctx)const {
+string Lambda::toStr(ParseCtx& ctx, int base)const {
     string out;
     if(inputNames.size() == 0) out += "_";
     else if(inputNames.size() == 1) out += inputNames[0];
@@ -620,17 +620,17 @@ string Lambda::toStr(ParseCtx& ctx)const {
     }
     ctx.push(inputNames);
     out += "=>";
-    out += func->toStr(ctx);
+    out += func->toStr(ctx, base);
     ctx.pop();
     return out;
 }
-string Map::toStr(ParseCtx& ctx)const {
+string Map::toStr(ParseCtx& ctx, int base)const {
     string out = "{";
     //Add each element individually
     for(auto p : mapObj) {
-        out += p.first->toStr(ctx);
+        out += p.first->toStr(ctx, base);
         out += ":";
-        out += p.second->toStr(ctx);
+        out += p.second->toStr(ctx, base);
         out += ",";
     }
     //Delete trailing comma
@@ -638,15 +638,15 @@ string Map::toStr(ParseCtx& ctx)const {
     out += "}";
     return out;
 }
-string Tree::toStr(ParseCtx& ctx)const {
+string Tree::toStr(ParseCtx& ctx, int base)const {
     string out = Program::globalFunctions[op].getName();
     //Reduce run(a,1,2,3) to a(1,2,3) if a is a variable
     if(out == "run") {
         if(branches[0]->typeID() == Value::var_t || branches[0]->typeID() == Value::arg_t) {
-            out = branches[0]->toStr(ctx);
+            out = branches[0]->toStr(ctx, base);
             out += "(";
             for(int i = 1;i < branches.size();i++) {
-                out += branches[i]->toStr(ctx);
+                out += branches[i]->toStr(ctx, base);
                 if(i != branches.size() - 1) out += ",";
             }
             out += ")";
@@ -657,15 +657,15 @@ string Tree::toStr(ParseCtx& ctx)const {
     if(out == "neg") {
         //Complex numbers
         if(branches[0]->typeID() == Value::num_t && branches[0].cast<Number>()->num.imag() != 0)
-            return "neg(" + branches[0]->toStr(ctx) + ")";
+            return "neg(" + branches[0]->toStr(ctx, base) + ")";
         else if(branches[0]->typeID() == Value::tre_t) {
             string opName = Program::globalFunctions[branches[0].cast<Tree>()->op].getName();
             if(opName != "add" && opName != "sub") {
-                return "-" + branches[0]->toStr(ctx);
+                return "-" + branches[0]->toStr(ctx, base);
             }
-            else return "neg(" + branches[0]->toStr(ctx) + ")";
+            else return "neg(" + branches[0]->toStr(ctx, base) + ")";
         }
-        else return "-" + branches[0]->toStr(ctx);
+        else return "-" + branches[0]->toStr(ctx, base);
     }
     //Operators
     if(out == "add" || out == "sub" || out == "mul" || out == "div" || out == "pow") {
@@ -699,15 +699,15 @@ string Tree::toStr(ParseCtx& ctx)const {
             std::shared_ptr<Number> n = branches[0].cast<Number>();
             if(n->num.imag() == 0 && n->unit.isUnitless())
                 if(rhsType == Value::var_t || rhsType == Value::arg_t)
-                    return branches[0]->toStr(ctx) + branches[1]->toStr(ctx);
+                    return branches[0]->toStr(ctx, base) + branches[1]->toStr(ctx, base);
         }
         out = "";
         if(lhsParenthesis) out += "(";
-        out += branches[0]->toStr(ctx);
+        out += branches[0]->toStr(ctx, base);
         if(lhsParenthesis) out += ")";
         out += operatorSymbol;
         if(rhsParenthesis) out += "(";
-        out += branches[1]->toStr(ctx);
+        out += branches[1]->toStr(ctx, base);
         if(rhsParenthesis) out += ")";
         return out;
     }
@@ -715,17 +715,17 @@ string Tree::toStr(ParseCtx& ctx)const {
     if(out == "equal" || out == "not_equal" || out == "lt" || out == "lt_equal" || out == "gt" || out == "gt_equal") {
         const static std::map<string, string> ops = { {"equal","=="},{"not_equal","!="},{"lt","<"},{"lt_equal","<="},{"gt",">"},{"gt_equal",">="} };
         string symbol = ops.at(out);
-        return "(" + branches[0]->toStr(ctx) + symbol + branches[1]->toStr(ctx) + ")";
+        return "(" + branches[0]->toStr(ctx, base) + symbol + branches[1]->toStr(ctx, base) + ")";
     }
     if(branches.size() == 0) return out;
     out += "(";
     for(int i = 0;i < branches.size();i++) {
-        out += branches[i]->toStr(ctx);
+        out += branches[i]->toStr(ctx, base);
         if(i != branches.size() - 1) out += ",";
     }
     return out + ")";
 }
-string Argument::toStr(ParseCtx& ctx)const {
+string Argument::toStr(ParseCtx& ctx, int base)const {
     string out = ctx.getArgName(id);
     if(out == "") return "{argument object " + std::to_string(id) + "}";
     return out;

@@ -85,8 +85,8 @@ namespace Program {
     extern bool smallCompute;
 
     extern std::map<string, Command> commandList;
-    //Runs command in str (containing whole name and prefix) and returns the output
-    ColoredString runCommand(string str);
+    //Runs command in str (containing command name without prefix) and returns the output
+    ColoredString runCommand(string call);
     //Runs as a command, assignable variable
     ColoredString runLine(string str);
 
@@ -152,7 +152,7 @@ namespace Help {
 //program.cpp
 struct Command {
     //pointer to command
-    ColoredString(*run)(std::vector<string>& inputs);
+    ColoredString(*run)(std::vector<string>& inputs, const string& self);
     static string combineArgs(const std::vector<string>& inputs);
 };
 
@@ -564,8 +564,8 @@ public:
     //Virtual functions
     ValueBaseClass() {}
     virtual ~ValueBaseClass() = default;
-    string toString()const;
-    virtual string toStr(ParseCtx& ctx)const { return "<error-type>"; }
+    string toString(int base = 10)const;
+    virtual string toStr(ParseCtx& ctx, int base = 10)const { return "<error-type>"; }
     //Returns a uniqueish double for each value so they can be sorted without regard for type
     virtual double flatten()const { return 0; }
     //Returns id, see value type enum for type list
@@ -591,7 +591,7 @@ public:
     //Virtual functions
     double flatten()const;
     double getR()const { return num.real(); }
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     int typeID()const { return Value::num_t; }
 };
 #ifdef USE_ARB
@@ -611,7 +611,7 @@ public:
     int getPrec() { return Arb::precisionToDigits(num.get_prec()); }
     //Virtual functions
     double flatten()const;
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     double getR()const { return double(num); }
     int typeID()const { return Value::arb_t; }
 };
@@ -662,7 +662,7 @@ public:
     int getPrec() { return num.prec(); }
     //Virtual functions
     double flatten()const;
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     double getR()const { return num.toDouble(); }
     int typeID()const { return Value::arb_t; }
 };
@@ -698,7 +698,7 @@ public:
     //Virtual functions
     Value compute(ComputeCtx& ctx);
     double flatten()const;
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     double getR()const { if(vec.empty()) return 0; return vec[0]->getR(); }
     int typeID()const { return Value::vec_t; }
 };
@@ -717,7 +717,7 @@ public:
     //Virtual functions
     Value compute(ComputeCtx& ctx);
     double flatten()const;
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     int typeID()const { return Value::lmb_t; }
 };
 //value.cpp
@@ -729,7 +729,7 @@ public:
     static string safeBackspaces(const string& str);
     //Virtual functions
     double flatten()const;
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     int typeID()const { return Value::str_t; }
 };
 //value.cpp
@@ -747,7 +747,7 @@ public:
     //Virtual functions
     double flatten()const;
     Value compute(ComputeCtx& ctx);
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     int typeID()const { return Value::map_t; }
 };
 //tree.cpp
@@ -789,7 +789,7 @@ public:
     bool isLeaf()const;
 
     //Virtual functions
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     double flatten()const;
     int typeID()const { return Value::tre_t; }
 };
@@ -798,7 +798,7 @@ public:
     int id;
     Argument(int i) { id = i; }
     //Virtual functions
-    string toStr(ParseCtx& ctx)const;
+    string toStr(ParseCtx& ctx, int base)const;
     Value compute(ComputeCtx& ctx);
     int typeID()const { return Value::arg_t; }
 };
@@ -807,7 +807,7 @@ public:
     string name;
     Variable(const string& n) { name = n; }
     //Virtual functions
-    string toStr(ParseCtx& ctx)const { return name; }
+    string toStr(ParseCtx& ctx, int base)const { return name; }
     Value compute(ComputeCtx& ctx) { return ctx.getVariable(name); }
     int typeID()const { return Value::var_t; }
 };

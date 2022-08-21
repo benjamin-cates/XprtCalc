@@ -171,15 +171,23 @@ string Command::combineArgs(const std::vector<string>& args) {
     out += args[i];
     return out;
 }
+// Takes in an input such as "sections 12-3"
 ColoredString Program::runCommand(string call) {
+    //Parse name and get command from list
     size_t space = call.find(' ');
     if(space == string::npos) space = call.length();
     string name = call.substr(0, space);
-    if(Program::commandList.find(name) == Program::commandList.end()) {
+    Command comm;
+    if(name.substr(0, 4) == "base")
+        comm = Program::commandList["base"];
+    else if(Program::commandList.find(name) == Program::commandList.end())
         throw "command " + name + " not found";
-    }
+    else
+        comm = Program::commandList[name];
+    //Call if no arguments
     std::vector<string> argsList;
-    if(space == call.length()) return Program::commandList[name].run(argsList);
+    if(space == call.length()) return comm.run(argsList, name);
+    //Else parse the arguments
     string args = call.substr(space + 1);
     int pos = 0;
     while(args[pos] != 0) {
@@ -191,14 +199,16 @@ ColoredString Program::runCommand(string call) {
         argsList.push_back(args.substr(pos, next - pos));
         pos = next + 1;
     }
-    ColoredString out = Program::commandList[name].run(argsList);
+    //Run command
+    ColoredString out = comm.run(argsList, name);
+    //Remove trailing new line
     if(out.getStr().back() == '\n') out.splice(0, out.length() - 1);
     return out;
 }
 ColoredString Program::runLine(string str) {
     try {
         //Commands
-        if(str[0]=='/') {
+        if(str[0] == '/') {
             return Program::runCommand(str.substr(1));
         }
         //Parsing assignment statements
@@ -240,12 +250,12 @@ ColoredString Program::runLine(string str) {
     }
 
 }
-ColoredString command_include(std::vector<string>& input) {
+ColoredString command_include(std::vector<string>& input, const string& self) {
     ColoredString out;
     for(int i = 0;i < input.size();i++) {
         if(Library::categories.find(input[i]) != Library::categories.end()) {
             vector<string> libs = Library::categories[input[i]];
-            out += command_include(libs);
+            out += command_include(libs, "include");
         }
         else if(Library::functions.find(input[i]) != Library::functions.end()) {
             out += Library::functions[input[i]].include();
@@ -297,29 +307,29 @@ string command_sections_internal(const string& inp, string tabbing) {
     }
     return out;
 }
-ColoredString command_sections(std::vector<string>& input) {
+ColoredString command_sections(std::vector<string>& input, const string& self) {
     string inp = Command::combineArgs(input);
     return ColoredString(command_sections_internal(inp, ""));
 }
-ColoredString command_parse(vector<string>& input) {
+ColoredString command_parse(vector<string>& input, const string& self) {
     string inp = Command::combineArgs(input);
     ParseCtx ctx;
     Value tr = Tree::parseTree(inp, ctx);
     return ColoredString::fromXpr(tr->toString());
 }
-ColoredString command_meta(vector<string>& input) {
+ColoredString command_meta(vector<string>& input, const string& self) {
     string out;
     for(auto it = Metadata::info.begin();it != Metadata::info.end();it++)
         out += it->first + ": " + it->second + '\n';
     return { out };
 }
-ColoredString command_def(vector<string>& input) {
+ColoredString command_def(vector<string>& input, const string& self) {
     string inp = Command::combineArgs(input);
     std::tuple<string, ValList, string> assign = Expression::parseAssignment(inp);
     if(std::get<0>(assign) == "") throw "not an assignment";
     return Program::runLine(inp);
 }
-ColoredString command_pref(vector<string>& input) {
+ColoredString command_pref(vector<string>& input, const string& self) {
     string inp = Command::combineArgs(input);
     std::tuple<string, ValList, string> assign = Expression::parseAssignment(inp);
     string& name = std::get<0>(assign);
@@ -340,7 +350,7 @@ ColoredString command_pref(vector<string>& input) {
     out.append({ {" = "," o "},ColoredString::fromXpr(Preferences::pref[name].first->toString()) });
     return out;
 }
-ColoredString command_ls(vector<string>& input) {
+ColoredString command_ls(vector<string>& input, const string& self) {
     auto& vars = Program::computeCtx.variables;
     ColoredString out;
     for(auto it = vars.begin();it != vars.end();it++) {
@@ -348,11 +358,11 @@ ColoredString command_ls(vector<string>& input) {
     }
     return out;
 }
-ColoredString command_highlight(vector<string>& input) {
+ColoredString command_highlight(vector<string>& input, const string& self) {
     string inp = Command::combineArgs(input);
     return { Expression::colorLine(inp,Program::parseCtx) };
 }
-ColoredString command_debug_help(vector<string>& input) {
+ColoredString command_debug_help(vector<string>& input, const string& self) {
     if(Help::queryHash.size() == 0) Help::generateQueryHash();
     string out;
     for(auto it = Help::queryHash.begin();it != Help::queryHash.end();it++) {
@@ -371,6 +381,31 @@ ColoredString command_debug_help(vector<string>& input) {
     }
     return out;
 }
+ColoredString command_base(vector<string>& input, const string& self) {
+    string inp = Command::combineArgs(input);
+    //Attempt to parse base
+    string baseStr = self.substr(4);
+    int base;
+    try {
+        base = stoll(baseStr);
+        if(base < 2 || base > 36) throw "";
+    }
+    catch(...) {
+        ColoredString out("Error: ", Expression::hl_error); out += "invalid base " + baseStr; return out;
+    }
+    //Compute and print
+    Value computedValue = Expression::evaluate(inp);
+    string str = computedValue->toString(base);
+    //Precede with zero if first character is letter
+    if(str[0] > '9' || str[0] < '0') str = "0" + str;
+    //Color with proper base
+    string colored(str.length(), 'e');
+    Program::parseCtx.push(base, false);
+    Expression::color(str, colored.begin(), Program::parseCtx);
+    Program::parseCtx.pop();
+    //Return
+    return ColoredString(str, colored);
+}
 map<string, Command> Program::commandList = {
     {"include",{&command_include}},
     {"sections",{&command_sections}},
@@ -381,5 +416,6 @@ map<string, Command> Program::commandList = {
     {"highlight",{&command_highlight}},
     {"debug_help",{&command_debug_help}},
     {"pref",{&command_pref}},
+    {"base",{&command_base}},
 };
 #pragma endregion

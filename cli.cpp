@@ -29,11 +29,11 @@ void printColoredString(const ColoredString& str) {
     }
     std::cout << "\033[0m";
 }
-ColoredString quitCommand(std::vector<string>& args) {
+ColoredString quitCommand(std::vector<string>& args, const string& self) {
     exit(0);
     return ColoredString("");
 }
-ColoredString command_help(std::vector<string>& input) {
+ColoredString command_help(std::vector<string>& input, const string& self) {
     string inp = Command::combineArgs(input);
     if(inp.length() == 0) inp = "welcome";
     std::vector<Help::Page*> res = Help::search(inp, 1);
@@ -41,7 +41,7 @@ ColoredString command_help(std::vector<string>& input) {
     Help::Page& p = *res[0];
     return res[0]->toColoredString();
 }
-ColoredString command_query(std::vector<string>& input) {
+ColoredString command_query(std::vector<string>& input, const string& self) {
     ColoredString out;
     string inp = input[0];
     //Print out results
@@ -61,7 +61,7 @@ ColoredString command_query(std::vector<string>& input) {
     }
     return out;
 }
-ColoredString command_createhelphtml(std::vector<string>& input) {
+ColoredString command_createhelphtml(std::vector<string>& input, const string& self) {
     string currentPath(std::filesystem::current_path().c_str());
     std::transform(currentPath.begin(), currentPath.end(), currentPath.begin(), ::tolower);
     if(currentPath.substr(currentPath.length() - 8) != "xprtcalc") throw "must be within the root directory of xprtcalc";
