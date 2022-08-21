@@ -91,6 +91,32 @@ Value ParseCtx::getVariable(const string& name)const {
     }
     return nullptr;
 }
+int ParseCtx::getVariableType(const string& name)const {
+    string san = Expression::sanitizeVariable(name);
+    for(auto it = argStack.begin();it != argStack.end();it++) {
+        if(san == *it) return Value::arg_t;
+    }
+    if(variableExists(san)) return Value::var_t;
+    if(useUnits()) {
+        string unitName = Expression::removeSpaces(name);
+        double coef = 1;
+        Unit u = Unit::parseName(unitName, coef);
+        if(u.getBits() != 0)
+            return Value::num_t;
+    }
+    if(Program::globalFunctionMap.find(san) != Program::globalFunctionMap.end())
+        return Value::tre_t;
+    if(san[0] == '$') {
+        try {
+            int index = std::stoi(san.substr(1));
+            return Value::tre_t;
+        }
+        catch(...) { return -1; }
+    }
+    if(Library::functions.find(san) != Library::functions.end())
+        return Value::var_t;
+    return -1;
+}
 #pragma endregion
 #pragma region Expression constants
 const std::map<string, std::pair<string, int>> Expression::operatorList = {
@@ -670,13 +696,13 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
         }
         else if(type == Section::variable) {
             int len = sec.length();
-            Value a = ctx.getVariable(sec);
+            int varType = ctx.getVariableType(sec);
             ColorType type;
-            if(a == nullptr) type = ColorType::hl_error;
-            else if(a->typeID() == Value::tre_t) type = ColorType::hl_function;
-            else if(a->typeID() == Value::arg_t) type = ColorType::hl_argument;
-            else if(a->typeID() == Value::num_t) type = ColorType::hl_unit;
-            else if(a->typeID() == Value::var_t) type = ColorType::hl_variable;
+            if(varType == -1) type = ColorType::hl_error;
+            else if(varType == Value::tre_t) type = ColorType::hl_function;
+            else if(varType == Value::arg_t) type = ColorType::hl_argument;
+            else if(varType == Value::num_t) type = ColorType::hl_unit;
+            else if(varType == Value::var_t) type = ColorType::hl_variable;
             std::fill(out, out + len, type);
         }
         else if(type == Section::function) {
@@ -684,13 +710,13 @@ void Expression::color(string str, string::iterator output, ParseCtx& ctx) {
             //Color name
             string name = sec.substr(0, bracket);
             int nameLen = name.length();
-            Value func = ctx.getVariable(name);
+            int varType = ctx.getVariableType(name);
             ColorType nameType;
-            if(func == nullptr) nameType = ColorType::hl_error;
-            else if(func->typeID() == Value::tre_t) nameType = ColorType::hl_function;
-            else if(func->typeID() == Value::arg_t) nameType = ColorType::hl_argument;
-            else if(func->typeID() == Value::num_t) nameType = ColorType::hl_error;
-            else if(func->typeID() == Value::var_t) nameType = ColorType::hl_variable;
+            if(varType == -1) nameType = ColorType::hl_error;
+            else if(varType == Value::tre_t) nameType = ColorType::hl_function;
+            else if(varType == Value::arg_t) nameType = ColorType::hl_argument;
+            else if(varType == Value::num_t) nameType = ColorType::hl_error;
+            else if(varType == Value::var_t) nameType = ColorType::hl_variable;
             std::fill(out, out + nameLen, nameType);
             //Color commas and arguments
             std::vector<int> commas = getDelimiterList(sec, bracket, sec.length() - 1, ',');

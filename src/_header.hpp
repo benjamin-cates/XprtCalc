@@ -213,6 +213,8 @@ public:
     void pushLocal(const string& name);
     //Returns value with either Tree type with id OR Argument type with id. Returns nullptr if variable not found.
     Value getVariable(const string& name)const;
+    //Returns Value::type type, or -1 if exists
+    int getVariableType(const string& name)const;
     //Returns argument name at given index
     string getArgName(int index)const;
     //Get count of arguments
