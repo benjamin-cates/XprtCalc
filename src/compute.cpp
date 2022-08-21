@@ -666,7 +666,7 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     #endif
     Function("rand",{},{},{{D(),[](inp) {double upLim = RAND_MAX + 1.;ret(Number)(rand() / upLim + rand() / upLim / upLim);}}}),
-    Function("srand",{"seed"},{},{{D(dub | arb),[](inp) { srand(getN(0).real() * 100); ret(Number)(0); }}}),
+    Function("srand",{"seed"},{},{{D(dub | arb),[](inp) { srand(input[0]->getR() * 1000); ret(Number)(0); }}}),
     Constant("e",2.71828182845904523),
     Constant("undefined",NAN),
     Constant("inf",INFINITY),
