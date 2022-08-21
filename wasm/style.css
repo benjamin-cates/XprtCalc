@@ -167,7 +167,7 @@ pre {
 #panel_open {
     position: fixed;
     left: 0;
-    bottom: 0;
+    bottom: 10px;
     opacity: 100%;
     transition: ease 0.5s opacity;
     background: rgba(13, 60, 34, 1);
@@ -176,7 +176,7 @@ pre {
     border: 0;
     padding: 0;
     padding-left: 2px;
-    border-radius: 0 10px 0 0;
+    border-radius: 0 10px 10px 0;
 }
 
 .open>#panel_open {
@@ -372,13 +372,13 @@ hSeeMore {
     z-index: 5;
     position: fixed;
     right: 0;
-    bottom: 0;
+    bottom: 10px;
     background: rgba(13, 60, 34, 1);
     width: 50px;
     height: 50px;
     border: 0;
     padding: 7px 0px 0px 2px;
-    border-radius: 10px 0 0 0;
+    border-radius: 10px 0 0 10px;
 }
 
 #keyboard_open_x {
