@@ -3,7 +3,7 @@
 
     <head>
         <title>XprtCalc</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta name="description"
               content="Expert calculator that supports vectors, arbitrary precision, lambda functions, and algebraic manipulation." />
         <meta charset="utf-8" />
@@ -23,7 +23,7 @@
     <body>
         <div id="io">
             <div id="input">
-                <textarea id="input_element" spellcheck="false" onkeydown="textAreaKeydown(event)" inputmode="text"
+                <textarea id="input_element" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" onkeydown="textAreaKeydown(event)" inputmode="text"
                           oninput="update_highlight(this.value)" title="input textarea"></textarea>
                 <pre><code id="highlight_output" aria-hidden="true"></code></pre>
             </div>

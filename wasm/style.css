@@ -5,6 +5,7 @@ html {
     width: 100vw;
     font-size: 24pt;
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 body {
@@ -237,7 +238,7 @@ button:hover .panel_header_icon {
     box-sizing: border-box;
     display: none;
     font-family: "Lato", sans-serif;
-    font-size:14pt;
+    font-size: 14pt;
     line-height: 1.4em;
 }
 
@@ -443,11 +444,10 @@ button.key {
     width: 100%;
     height: 100%;
     display: inline-block;
+    background:none;
     user-select: none;
-    padding: 0.4em;
-    background-clip: content-box;
-    background: transparent;
     position: relative;
+    touch-action: manipulation;
 }
 
 button.key:before {
@@ -459,7 +459,7 @@ button.key:before {
     left: 4px;
     top: 4px;
     border-radius: 0.4rem;
-    background: #3F3F3F;
+    background-color: #3F3F3F;
     transition: background-color 0.1s linear, box-shadow 0.1s linear;
     box-shadow: 1px 1px 7px 0px #22222244;
     pointer-events: none;
