@@ -550,6 +550,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("gcd",{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
         uint64_t b = std::abs(input[1]->getR()) + 0.5;
+        if(Program::smallCompute && (a > 100000 || b > 100000)) return Value::zero;
         if(a == 0 || b == 0) return Value::zero;
         //Euclidian algorithm for gcd
         while(b != 0) {
@@ -561,6 +562,7 @@ std::vector<Function> Program::globalFunctions = {
     Function("lcm",{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
         uint64_t b = std::abs(input[1]->getR()) + 0.5;
+        if(Program::smallCompute && (a > 100000 || b > 100000)) return Value::zero;
         if(a == 0 || b == 0) return Value::zero;
         uint64_t max = std::max(a,b);
         uint64_t min = std::min(a,b);
@@ -570,7 +572,8 @@ std::vector<Function> Program::globalFunctions = {
     }}}),
     Function("factors", {"x"}, {}, {{D(dub | arb),[](inp) {
         uint64_t a = std::abs(input[0]->getR()) + 0.5;
-        if(a == 0) return std::make_shared<Vector>(Value::zero);
+        if(Program::smallCompute && a > 10000000000) return Value::zero;
+        if(a == 0) return Value(std::make_shared<Vector>(Value::zero));
         std::shared_ptr<Vector> out = std::make_shared<Vector>();
         Value two,three;
         while(a % 2 == 0) {
@@ -597,7 +600,7 @@ std::vector<Function> Program::globalFunctions = {
                 a /= n6 + 1;
             }
         }
-        return out;
+        return Value(out);
     }}}),
     #pragma endregion
 #pragma region Binary logic
