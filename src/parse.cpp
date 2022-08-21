@@ -1088,8 +1088,10 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
         prevSec = type;
     }
     if(treeList.size() == 0) throw "Unable to parse " + str;
-    for(int i = 0;i < unaryOpFront.size();i++) if(unaryOpFront[i] != "")
+    for(int i = 0;i < unaryOpFront.size();i++) if(unaryOpFront[i] != "") {
+        if(treeList.size() <= i) throw "Missing expression after " + unaryOpFront[i];
         treeList[i] = std::make_shared<Tree>(unaryOpFront[i], ValList{ treeList[i] });
+    }
     for(int i = 0;i < unaryOpBack.size();i++) if(unaryOpBack[i] != "")
         treeList[i] = std::make_shared<Tree>(unaryOpBack[i], ValList{ treeList[i] });
     if(operators.size() == treeList.size()) throw "Missing expression after " + operators.back().first;
