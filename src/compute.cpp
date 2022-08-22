@@ -515,16 +515,22 @@ std::vector<Function> Program::globalFunctions = {
         #define CptBin(name,input0,input1) Program::computeGlobal(name,ValList{input0,input1},ctx)
         return CptBin("add",CptBin("mul",input[0],CptBin("sub",Value::one,input[2])),CptBin("mul",input[1],input[2]));
     }}}),
-    Binary("dist","a","b",hypot(getR(num1) - getR(num2),getI(num1) - getI(num2)),{vv,[](inp) {
+    Function("dist",{"a","b"},{samePrecision},{{dd,[](inp) {
+        return std::make_shared<Number>(hypot(input[0]->getR()-input[1]->getR(),getI(input[0].cast<Number>()->num)-getI(input[1].cast<Number>()->num)),getU(0)+getU(1));
+    #if defined(USE_ARB) || defined(GMP_WASM)
+    }},{aa,[](inp) {
+        return Value(std::make_shared<Arb>(hypot(getR(input[0].cast<Arb>()->num)-getR(input[1].cast<Arb>()->num),0),getArbU(0)+getArbU(1)));
+    #endif
+    }},{vv,[](inp) {
         //running total = d1^2 + d2^2 + d3^2 ....
         def(Vector,v1,0);def(Vector,v2,1);
         Value runningTotal = std::make_shared<Number>(0);
         for(int i = 0;i < std::max(v1->size(),v2->size());i++) {
-            Value diff = CptBin("sub",v1->get(i),v2->get(i));
-            runningTotal = CptBin("add",runningTotal,CptBin("lt",diff,diff));
+            Value diff = CptBin("dist",v1->get(i),v2->get(i));
+            runningTotal = CptBin("add",runningTotal,CptBin("mul",diff,diff));
         }
         return Program::computeGlobal("sqrt",ValList{runningTotal},ctx);
-    }}),
+    }}}),
     Unary("sgn", num / abs(num)),
     Unary("abs",abs(num)),
     Function("arg",{"z"},{},{{D(dub),[](inp) {ret(Number)(arg(input[0].cast<Number>()->num));}}}),
