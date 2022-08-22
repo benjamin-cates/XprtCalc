@@ -941,7 +941,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             string out;
             int offset = 1;
             for(int i = 1;i < sect.size() - 1;i++) {
-                if(str[i] == '\\') {
+                if(sect[i] == '\\') {
                     char next = sect[i + 1];
                     if(next == '\"') out += '\"';
                     else if(next == 'n') out += '\n';
@@ -1018,20 +1018,20 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
         else if(type == lambda) {
             std::vector<string> arguments;
             int arrow;
-            if(str[0] == '(') {
+            if(sect[0] == '(') {
                 int endBrace = matchBracket(sect, 0);
                 arguments = splitBy(sect, 0, endBrace, ',');
                 for(int i = 0;i < arguments.size();i++) arguments[i] = Expression::sanitizeVariable(arguments[i]);
-                arrow = str.find('>', endBrace + 1);
+                arrow = sect.find('>', endBrace + 1);
             }
             else {
-                arrow = str.find('>');
+                arrow = sect.find('>');
                 string var = Expression::sanitizeVariable(sect.substr(0, arrow - 1));
                 if(var != "_") arguments.push_back(var);
             }
             ctx.push(arguments);
             Value tr;
-            try { tr = Tree::parseTree(str.substr(arrow + 1), ctx); }
+            try { tr = Tree::parseTree(sect.substr(arrow + 1), ctx); }
             catch(...) { ctx.pop(); throw; }
             ctx.pop();
             treeList.push_back(std::make_shared<Lambda>(arguments, tr));
