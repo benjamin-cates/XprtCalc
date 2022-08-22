@@ -541,11 +541,16 @@ string Arb::componentToString(
             str[i] = str[i] + 'A' - 'a';
         }
     }
-    //Move decimal point if exponent is close to zero
     int exp;
+    #ifdef USE_ARB
+    int prec = Arb::precisionToDigits(x.get_prec());
+    #else
+    int prec = x.prec();
+    #endif
+    //Move decimal point if exponent is close to zero
     if(e == 0) exp = 0, e = str.length();
     else exp = stoi(str.substr(e + 1));
-    if(exp < 8 && exp > 0) {
+    if(exp < 12 && exp > 0 && exp < prec) {
         str.erase(str.begin() + e, str.end());
         str.erase(str.begin() + 1);
         str.insert(str.begin() + exp + 1, '.');
@@ -578,13 +583,7 @@ string Arb::componentToString(
     }
     if(str[i] == '.') str.erase(str.begin() + i);
     if(negative) str = "-" + str;
-    str += "p";
-    #ifdef USE_ARB
-    str += std::to_string(Arb::precisionToDigits(x.get_prec()));
-    #endif
-    #ifdef GMP_WASM
-    str += std::to_string(x.prec());
-    #endif
+    str += "p" + std::to_string(prec);
     return str;
 }
 string Arb::toStr(ParseCtx& ctx, int base)const {
