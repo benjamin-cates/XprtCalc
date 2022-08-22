@@ -1014,7 +1014,12 @@ std::vector<Function> Program::globalFunctions = {
     Function("toarb",{"val","prec"},{},{{D(all,dub | arb | opt),[](inp) {DefaultInp(1,std::make_shared<Number>(15.0));return input[0].convertTo(Value::arb_t,input[1]->getR());}}}),
     Function("tovec",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::vec_t);}}}),
     Function("tomap",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::map_t);}}}),
-    Function("tostring",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::str_t);}}}),
+    Function("tostring",{"val"},{},{{D(all,dub | arb | opt),[](inp) {
+        int base;
+        if(input.size() < 2) base = 10;
+        else base = input[1]->getR();
+        return std::make_shared<String>(input[0]->toString(base));
+    }}}),
     Function("tolambda",{"val"},{},{{D(all),[](inp) {return input[0].convertTo(Value::lmb_t);}}}),
     Function("typeof",{"val"},{},{{D(all),[](inp) {return make_shared<Number>(input[0]->typeID());}}}),
 #pragma endregion

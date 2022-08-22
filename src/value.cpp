@@ -448,7 +448,9 @@ string Number::componentToString(double x, int base) {
     double exponent = std::floor(std::log(x * 1.00000000000001) / std::log(double(base)));
     x /= std::pow(base, exponent);
     //Floating point
-    if(exponent > 9.0 || exponent < -7.0) {
+    int precision = 11;
+    if(base != 10) precision = std::log(10) / std::log(base) * 11.0;
+    if(exponent > precision || exponent < -7.0) {
         return (isNegative ? "-" : "") + componentToString(x, base) + "e" + componentToString(double(exponent), base);
     }
     string out;
@@ -461,7 +463,7 @@ string Number::componentToString(double x, int base) {
     //Create digit list
     std::vector<int> digitList;
     int i;
-    for(i = 0;i < 10;i++) {
+    for(i = 0;i < precision + 1;i++) {
         if(std::floor(x * 1000000000) == 0 && i > exponent) break;
         if(std::floor(x) >= base) {
             digitList.push_back(1);
@@ -472,7 +474,7 @@ string Number::componentToString(double x, int base) {
         x *= base;
     }
     //Rounding digit
-    if(i == 10 && digitList.back() >= base / 2) {
+    if(i == precision && digitList.back() >= base / 2) {
         int x = digitList.size() - 2;
         digitList.resize(digitList.size() - 1);
         digitList[x] += 1;
