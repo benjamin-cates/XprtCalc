@@ -1,4 +1,4 @@
-const JSFailMessage = setTimeout(function() {document.querySelector(".hide_on_next_xpr").innerHTML = "An error has occured on startup. It's possible that the browser does not support the features required for this program. Please report <a href='https://github.com/benjamin-cates/XprtCalc/issues'>here</a>.";}, 2000);
+const JSFailMessage = setTimeout(function () {document.querySelector(".hide_on_next_xpr").innerHTML = "An error has occured on startup. It's possible that the browser does not support the features required for this program. Please report <a href='https://github.com/benjamin-cates/XprtCalc/issues'>here</a>.";}, 2000);
 var Module = {};
 async function onProgramInitialized() {
     update_highlight("");
@@ -287,14 +287,14 @@ const keyboardConstructor = {
                 "qt", "wt", "et", "rt", "tt", "yt", "ut", "it", "ot", "pt",
                 "at", "st", "dt", "ft", "gt", "ht", "jt", "kt", "lt", "",
                 {k: `${keyboard.svg.shift}t`, n: "shift"}, "zt", "xt", "ct", "vt", "bt", "nt", "mt", "_t", {k: `${keyboard.svg.backspace}t`, n: "backspace"},
-                {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "&quot;s", n: "\""},
+                {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "&quot;s", n: "quote"},
             ],
             [
                 "!o", "@t", "#t", "$f", "%o", "^o", "&t", "?t", ":d", ";d",
                 "Qt", "Wt", "Et", "Rt", "Tt", "Yt", "Ut", "It", "Ot", "Pt",
                 "At", "St", "Dt", "Ft", "Gt", "Ht", "Jt", "Kt", "Lt", "",
                 {k: `${keyboard.svg.shiftFull}t`, n: "shift"}, "Zt", "Xt", "Ct", "Vt", "Bt", "Nt", "Mt", "_t", {k: `${keyboard.svg.backspaceFull}t`, n: "backspace"},
-                {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "'s", n: "\""},
+                {k: "123n", n: "123", col: "1/3"}, {k: "Spacet", n: " ", col: "3/10", }, {k: "'s", n: "quote"},
 
             ],
         ]],
@@ -372,6 +372,7 @@ function pressKey(x) {
             keyboard.shift = false;
             keyboard.element.classList.remove("shift");
         }
+        if(key == "quote") key = "\"";
         insertAtCursor(textArea, key);
         update_highlight(textArea.value);
     }
