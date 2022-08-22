@@ -962,7 +962,7 @@ Value Tree::parseTree(const string& str, ParseCtx& ctx) {
             Program::smallCompute = true;
             int base = Expression::evaluate(sect.substr(underscore + 1))->getR();
             Program::smallCompute = oldSmallCompute;
-            if(base >= 36) throw "base cannot be over 36";
+            if(base > 36) throw "base cannot be over 36";
             if(base <= 1) throw "base cannot be under 2";
             ctx.push(base, true);
             try { treeList.push_back(Tree::parseTree(sect.substr(1, endBracket - 1), ctx)); }
