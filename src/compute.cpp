@@ -331,6 +331,8 @@ string Function::Domain::toString()const {
 #define BinVecApply {D(vec_t,dub|arb),applyVecLHS},{D(dub|arb,vec_t),applyVecRHS},{vv,applyBinVec}
 #define UnaryVecApply {D(vec_t),applyToVector}
 
+#define CptBin(name,input0,input1) Program::computeGlobal(name,ValList{input0,input1},ctx)
+
 #pragma endregion
 #pragma region Apply to vector lambdas
 auto applyToVector = [](inp) {
@@ -510,11 +512,6 @@ std::vector<Function> Program::globalFunctions = {
         }
         return min;
     }}),
-    Function("lerp",{"a","b","x"},{},{{D(dub | arb | vec_t,dub | arb | vec_t,dub | arb | vec_t),[](inp) {
-        //return  (a*(1-f)) + (b*f)
-        #define CptBin(name,input0,input1) Program::computeGlobal(name,ValList{input0,input1},ctx)
-        return CptBin("add",CptBin("mul",input[0],CptBin("sub",Value::one,input[2])),CptBin("mul",input[1],input[2]));
-    }}}),
     Function("dist",{"a","b"},{samePrecision},{{dd,[](inp) {
         return std::make_shared<Number>(hypot(input[0]->getR()-input[1]->getR(),getI(input[0].cast<Number>()->num)-getI(input[1].cast<Number>()->num)),getU(0)+getU(1));
     #if defined(USE_ARB) || defined(GMP_WASM)

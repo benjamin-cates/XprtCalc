@@ -102,8 +102,6 @@ namespace Program {
     extern std::vector<Function> globalFunctions;
     //Maps function names to their indicies in globalFunctions (compute.cpp)
     extern std::map<string, int> globalFunctionMap;
-    //Returns index of global function, or -1 if not found
-    int getGlobal(const string& name);
     //Asserts whether argument count is supported with id
     bool assertArgCount(int id, int count);
     //Startup function that builds up the cached name map

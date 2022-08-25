@@ -21,10 +21,6 @@ ParseCtx Program::parseCtx;
 Value Value::zero;
 Value Value::one;
 std::map<string, int> Program::globalFunctionMap;
-int Program::getGlobal(const string& name) {
-    if(globalFunctionMap.find(name) == globalFunctionMap.end()) return -1;
-    else return globalFunctionMap.at(name);
-}
 #pragma endregion
 #pragma region Preferences
 std::map<string, std::pair<Value, void (*)(Value)>> Preferences::pref = {
@@ -104,6 +100,8 @@ std::map<string, std::vector<string>> Library::categories = {
 std::map<string, LibFunc> Library::functions = {
     {"solvequad",LibFunc("solvequad","(a,b,c)","Solve Quadratic:Algebra:Returns two solutions for a quadratic of the form ax^2+bx+c.",
         "(-b- <-1,1>*sqrt(b^2-4a*c))/2a",{})},
+    {"lerp",LibFunc("lerp","(a,b,x)","Linear interpolate:Algebra:Returns the value of x mapped to the range [a,b], where x=0 returns a, and x=1 returns b.",
+        "a*(1-x)+b*x",{})},
     {"cross",LibFunc("cross","(u,v)", "Cross product:Vector:Returns the cross product of two three dimensional vectors.",
         "determinant(<<<1,0,0>,get(u,0),get(v,0)>,<<0,1,0>,get(u,1),get(v,2)>,<<0,0,1>,get(u,2),get(v,2)>>)",{"determinant"})},
     {"dot",LibFunc("dot","(u,v)", "Dot product:Vector:Returns the dot product of two vectors. Assumes the maximum length of either vector.",
@@ -155,7 +153,6 @@ std::map<string, LibFunc> Library::functions = {
         "rand()*(max-min)+min",{})},
     {"rand_member",LibFunc("rand_member","(data)","Random member:Random:Returns a random member from a vector.",
         "get(data,floor(rand*length(data)))",{})},
-
 
 };
 using namespace std;
