@@ -33,6 +33,7 @@ namespace wasm {
         return highlight(res.getStr(), res.getColor());
     }
     string query(string search) {
+        Help::init();
         std::vector<Help::Page*> pages = Help::search(search);
         string out = "[";
         for(int i = 0;i < pages.size();i++) {
@@ -48,15 +49,18 @@ namespace wasm {
         return out;
     }
     string helpPage(int id) {
+        Help::init();
         return Help::pages[id].toHTML();
     }
 };
 ColoredString command_query(std::vector<string>& args, const string& self) {
+    Help::init();
     string inp = Command::combineArgs(args);
     emscripten_run_script(("panelPage('help');helpSearch({'key':'Enter'},{'value':\"" + String::safeBackspaces(inp) + "\"})").c_str());
     return ColoredString("");
 }
 ColoredString command_help(std::vector<string>& args, const string& self) {
+    Help::init();
     string inp = Command::combineArgs(args);
     emscripten_run_script(("openHelp(\"" + String::safeBackspaces(inp) + "\")").c_str());
     return ColoredString("");

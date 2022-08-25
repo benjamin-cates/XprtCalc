@@ -1,5 +1,12 @@
 #include "_header.hpp"
 using namespace Help;
+bool hasInit = false;
+void Help::init() {
+    if(hasInit) return;
+    generateQueryHash();
+    addPageData();
+    hasInit = true;
+}
 #pragma region Exporter functions
 string Page::toPlainText() {
     string out(content.length(), ' ');
@@ -516,7 +523,6 @@ void Help::stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, cons
     }
 }
 void Help::generateQueryHash() {
-    queryHash.clear();
     for(int page = 0;page < pages.size();page++) {
         Page& p = pages[page];
         //Get hashes of words within the page
@@ -537,7 +543,6 @@ void Help::generateQueryHash() {
         queryHash[hashes[i].first].clear();
 }
 std::vector<Page*> Help::search(const string& query, int maxResults) {
-    if(queryHash.size() == 0) generateQueryHash();
     //Initialize results vector
     std::vector<std::pair<int, int>> results(pages.size());
     for(int i = 0;i < results.size();i++)

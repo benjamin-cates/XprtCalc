@@ -34,6 +34,7 @@ ColoredString quitCommand(std::vector<string>& args, const string& self) {
     return ColoredString("");
 }
 ColoredString command_help(std::vector<string>& input, const string& self) {
+    Help::init();
     string inp = Command::combineArgs(input);
     if(inp.length() == 0) inp = "welcome";
     std::vector<Help::Page*> res = Help::search(inp, 1);
@@ -42,6 +43,7 @@ ColoredString command_help(std::vector<string>& input, const string& self) {
     return res[0]->toColoredString();
 }
 ColoredString command_query(std::vector<string>& input, const string& self) {
+    Help::init();
     ColoredString out;
     string inp = input[0];
     //Print out results
@@ -62,6 +64,7 @@ ColoredString command_query(std::vector<string>& input, const string& self) {
     return out;
 }
 ColoredString command_createhelphtml(std::vector<string>& input, const string& self) {
+    Help::init();
     string currentPath(std::filesystem::current_path().c_str());
     std::transform(currentPath.begin(), currentPath.end(), currentPath.begin(), ::tolower);
     if(currentPath.substr(currentPath.length() - 8) != "xprtcalc") throw "must be within the root directory of xprtcalc";

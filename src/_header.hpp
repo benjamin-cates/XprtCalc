@@ -145,6 +145,7 @@ namespace Help {
     void stringToHashList(std::vector<std::pair<uint64_t, int>>& hashOut, const string& str, int basePriority);
     //Returns list of pointers to pages, sorted by relevance of the query
     std::vector<Page*> search(const string& query, int maxResults = 20);
+    void init();
 };
 
 //program.cpp
