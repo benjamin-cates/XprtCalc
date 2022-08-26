@@ -3,8 +3,8 @@ using namespace Help;
 bool hasInit = false;
 void Help::init() {
     if(hasInit) return;
-    generateQueryHash();
     addPageData();
+    generateQueryHash();
     hasInit = true;
 }
 #pragma region Exporter functions
@@ -139,11 +139,21 @@ ColoredString Page::toColoredString() {
 #pragma endregion
 #pragma region Page generator functions
 void Help::addPageData() {
+    //Add page for each library function
+    for(auto it = Library::functions.begin();it != Library::functions.end();it++) {
+        int colon1 = it->second.fullName.find(':');
+        int colon2 = it->second.fullName.find(':', colon1 + 1);
+        const string& symbol = it->first + it->second.inputs;
+        const string& name = it->second.fullName.substr(0, colon1);
+        const string& category = it->second.fullName.substr(colon1 + 1, colon2 - colon1 - 1);
+        const string& description = it->second.fullName.substr(colon2 + 1);
+        pages.push_back(Page(name, symbol, "library", description + " `" + symbol + "` is in the " + category + " of ?library functions. It compiles to: `" + symbol + "=" + it->second.inputs + "=>" + it->second.xpr + "`", { "include" }));
+    }
+    //Add additional data to functions, units, and generate lists
     for(int i = 0;i < pages.size();i++) {
         if(pages[i].type == "function") pages[i].addFunctionData();
         if(pages[i].type == "unit") pages[i].addUnitData();
         if(pages[i].type == "type") pages[i].addTypeData();
-        if(pages[i].type == "library") pages[i].addLibraryData();
         if(pages[i].type == "list") pages[i].addListData();
     }
 }
@@ -184,21 +194,6 @@ void Page::addFunctionData() {
         symbol += (i == 0 ? "(" : ",") + inputs[i];
     if(inputs.size() != 0) symbol += ")";
 }
-void Page::addLibraryData() {
-    Library::LibFunc& func = Library::functions[name];
-    name = func.fullName;
-    symbol = func.name;
-    content += " `" + name + "` compiles from: `" + func.xpr + "`.";
-    if(func.dependencies.size() != 0) {
-        content += "The function is will compile";
-        if(func.dependencies.size() == 1) content += " ?" + func.dependencies[0] + "? ";
-        else {
-            for(int i = 0;i < func.dependencies.size() - 1;i++) content += string(i == 0 ? ", " : " ") + "?" + func.dependencies[i] + "?";
-            content += ", and ?" + func.dependencies.back() + "? ";
-        }
-        content += " before it is included.";
-    }
-}
 void Page::addTypeData() {
     string type = content.substr(0, 1);
     content = content.substr(1);
@@ -207,6 +202,7 @@ void Page::addTypeData() {
 void Page::addListData() {
     if(name == "List of functions") {
         string prevType = "";
+        content += "If there is not a function here, check the ?library? page to see additional functions.\n";
         for(int i = 0;i < Help::pages.size();i++) {
             if(Help::pages[i].type == "function") {
                 //Add function category header if needed
@@ -252,23 +248,21 @@ void Page::addListData() {
         }
     }
     else if(name == "List of includes") {
-        content += "Each of these functions can be included by running `/include {symbol}` on them. You can also batch include categories by running include on the category names shown in this document.\n";
+        content += "Each of these functions is automatically included when it's name is specified.\nSearch for them individually to get more information.\n";
         std::map<string, std::vector<string>> categoryMap;
         for(const std::pair<string, Library::LibFunc>& x : Library::functions) {
             int colon1 = x.second.fullName.find(':');
             int colon2 = x.second.fullName.find(':', colon1 + 1);
-            const string& symbol = x.first + x.second.inputs;
             const string& name = x.second.fullName.substr(0, colon1);
             const string& category = x.second.fullName.substr(colon1 + 1, colon2 - colon1);
-            const string& description = x.second.fullName.substr(colon2 + 1);
             if(categoryMap.find(category) == categoryMap.end()) categoryMap.insert(std::pair<string, std::vector<string>>{category, {}});
-            categoryMap[category].push_back("`" + symbol + "` - " + name + ". " + description + "\nCompiles to: `" + x.first + "=" + x.second.inputs + "=>" + x.second.xpr + "`");
+            categoryMap[category].push_back(name + " - ?" + x.first + "?");
         }
         //Print out sorted by category
         for(const std::pair<string, std::vector<string>>& x : categoryMap) {
-            content += "\n*** " + x.first + "\n\n";
+            content += "\n*** " + x.first + "\n";
             for(int i = 0;i < x.second.size();i++)
-                content += x.second[i] + "\n\n";
+                content += x.second[i] + "\n";
         }
     }
 }
@@ -476,7 +470,6 @@ std::vector<Page> Help::pages = {
     #pragma endregion
     #pragma endregion
     #pragma region Commands
-    Page("Include","/include","command","The include command includes functions from a predetermined list. Several names can be given separated by spaces. Search for ?List of includes? to see them all.",{},{"/include solvequad","/include stddev mean"}),
     Page("Parse","/parse","command","The parse command parses the expression to a tree and then returns it without computing.",{},{"/parse add(1,2)` -> `1+2"}),
     Page("Metadata","/meta","command","The meta command returns a list of metadata for the program like author name and version."),
     Page("List","/ls","command","The ls command lists every ?variable? in the global scope. Variables can be defined with the ?def? command."),
@@ -488,7 +481,7 @@ std::vector<Page> Help::pages = {
     Page("List of functions","","list","",{"builtin"}),
     Page("List of units","","list",""),
     Page("List of commands","","list",""),
-    Page("List of includes","","list",""),
+    Page("List of includes","","list","",{"library","library","include"}),
     Page("List of pages","","list",""),
 
     #pragma endregion

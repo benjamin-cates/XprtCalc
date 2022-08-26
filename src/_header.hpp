@@ -132,7 +132,6 @@ namespace Help {
         void addTypeData();
         void addUnitData();
         void addFunctionData();
-        void addLibraryData();
         void addListData();
 
         static string contentToHTML(string content);
