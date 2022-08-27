@@ -180,6 +180,8 @@ ColoredString Program::runCommand(string call) {
     Command comm;
     if(name.substr(0, 4) == "base")
         comm = Program::commandList["base"];
+    else if(name.substr(0, 4) == "conv")
+        comm = Program::commandList["conv"];
     else if(Program::commandList.find(name) == Program::commandList.end())
         throw "command " + name + " not found";
     else
@@ -406,6 +408,19 @@ ColoredString command_base(vector<string>& input, const string& self) {
     //Return
     return ColoredString(str, colored);
 }
+ColoredString command_conv(vector<string>& input, const string& self) {
+    //Get output unit
+    string outputUnitStr = self.substr(4);
+    if(outputUnitStr[0] == '[') outputUnitStr = outputUnitStr.substr(1, outputUnitStr.length() - 2);
+    Value outputUnit = Expression::evaluate("[" + outputUnitStr + "]");
+    //Get input rhs of command
+    Value inp = Expression::evaluate("[" + Command::combineArgs(input) + "]");
+    //Divide input by output unit
+    string out = Program::computeGlobal("div", { inp,outputUnit }, Program::computeCtx)->toString();
+    //Print out results
+    out += "*[" + outputUnitStr + "]";
+    return ColoredString::fromXpr(out);
+}
 map<string, Command> Program::commandList = {
     {"include",{&command_include}},
     {"sections",{&command_sections}},
@@ -417,5 +432,6 @@ map<string, Command> Program::commandList = {
     {"debug_help",{&command_debug_help}},
     {"pref",{&command_pref}},
     {"base",{&command_base}},
+    {"conv",{&command_conv}},
 };
 #pragma endregion
