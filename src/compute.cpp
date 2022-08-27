@@ -609,10 +609,14 @@ std::vector<Function> Program::globalFunctions = {
 #pragma region Binary logic
     Function("equal",{"a","b"},{},{{D(all,all),[](inp) {return input[0] == input[1] ? Value::one : Value::zero;}}}),
     Function("not_equal",{"a","b"},{},{{D(all,all),[](inp) {return input[0] == input[1] ? Value::zero : Value::one;}}}),
-    BinaryBaseTemplate("lt", "a","b", getR(num1) < getR(num2) ? Value::one : Value::zero),
-    BinaryBaseTemplate("gt", "a","b", getR(num1) > getR(num2) ? Value::one : Value::zero),
-    BinaryBaseTemplate("lt_equal","a","b", (getR(num1) < getR(num2) || num1 == num2) ? Value::one : Value::zero),
-    BinaryBaseTemplate("gt_equal","a","b", (getR(num1) > getR(num2) || num1 == num2) ? Value::one : Value::zero),
+    BinaryBaseTemplate("lt", "a","b", getR(num1) < getR(num2) ? Value::one : Value::zero,
+        {D(str_t,str_t),[](inp){return getS(0) < getS(1) ? Value::one : Value::zero;}}),
+    BinaryBaseTemplate("gt", "a","b", getR(num1) > getR(num2) ? Value::one : Value::zero,
+        {D(str_t,str_t),[](inp){return getS(0) > getS(1) ? Value::one : Value::zero;}}),
+    BinaryBaseTemplate("lt_equal","a","b", (getR(num1) < getR(num2) || num1 == num2) ? Value::one : Value::zero,
+        {D(str_t,str_t),[](inp){return getS(0) <= getS(1) ? Value::one : Value::zero;}}),
+    BinaryBaseTemplate("gt_equal","a","b", (getR(num1) > getR(num2) || num1 == num2) ? Value::one : Value::zero,
+        {D(str_t,str_t),[](inp){return getS(0) >= getS(1) ? Value::one : Value::zero;}}),
     #define BitwiseOperator(name,operat) Function(name,{"a","b"},{},{{D(dub | arb,dub | arb),[](inp) {uint64_t a = std::abs(input[0]->getR() + 0.5), b = std::abs(input[1]->getR() + 0.5);return std::make_shared<Number>(a operat b);}},BinVecApply})
     Function("not",{"x"},{},{{D(dub | arb),[](inp) {return input[0]->getR() == 0 ? Value::one : Value::zero;}}}),
     BitwiseOperator("or", | ),
