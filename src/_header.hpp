@@ -595,6 +595,7 @@ public:
     int typeID()const { return Value::num_t; }
 };
 #ifdef USE_ARB
+#define arbType mppp::real
 //value.cpp
 class Arb : public ValueBaseClass {
 public:
@@ -602,13 +603,14 @@ public:
     Unit unit;
     Arb(mppp::real r, double i, Unit u = Unit());
     Arb(mppp::real n, Unit u = Unit());
+    Arb(double x, int prec) { num = mppp::real(x, Arb::digitsToPrecision(prec)); }
     //Get the mpfr precision given decimal digits
     static mpfr_prec_t digitsToPrecision(int digits);
     //Get decimal digits given binary precision
     static int precisionToDigits(mpfr_prec_t prec);
     //Converts mppp::real to string given base
     static string componentToString(mppp::real x, int base);
-    int getPrec() { return Arb::precisionToDigits(num.get_prec()); }
+    int getPrec()const { return Arb::precisionToDigits(num.get_prec()); }
     //Virtual functions
     double flatten()const;
     string toStr(ParseCtx& ctx, int base)const;
@@ -617,6 +619,7 @@ public:
 };
 #endif
 #ifdef GMP_WASM
+#define arbType mpfr_t
 class mpfr_link {
 public:
     int ptr;
@@ -656,10 +659,11 @@ public:
     mpfr_t num;
     Unit unit;
     Arb(double r, double i, Unit u = Unit()) { num = mpfr_t(r); unit = u; }
+    Arb(double x, int prec) { num = mpfr_t(x, prec); }
     Arb(mpfr_t r, Unit u = Unit()) { num = r; unit = u; }
     Arb(std::complex<mpfr_t> n, Unit u = Unit()) { num = n.real(); unit = u; }
     static string componentToString(mpfr_t x, int base);
-    int getPrec() { return num.prec(); }
+    int getPrec()const { return num.prec(); }
     //Virtual functions
     double flatten()const;
     string toStr(ParseCtx& ctx, int base)const;
