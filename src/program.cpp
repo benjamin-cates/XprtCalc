@@ -64,7 +64,8 @@ ColoredString LibFunc::include() {
     }
     Value lambda;
     try {
-        lambda = Tree::parseTree(inputs + "=>" + xpr, Program::parseCtx);
+        if(inputs == "const") lambda = Expression::evaluate(xpr);
+        else lambda = Tree::parseTree(inputs + "=>" + xpr, Program::parseCtx);
     }
     catch(string mess) {
         return out.append({ {"Error",'e'}," in ",{name,'v'},": ",mess,"\n" });
@@ -152,6 +153,9 @@ std::map<string, LibFunc> Library::functions = {
         "rand()*(max-min)+min",{})},
     {"rand_member",LibFunc("rand_member","(data)","Random member:Random:Returns a random member from a vector.",
         "get(data,floor(rand*length(data)))",{})},
+
+    {"imperial",LibFunc("imperial","const","Imperial unit conversion:Units:Returns a map that maps metric units to imperial units. Set the variable using `unit_output=imperial`. To revert to metric set `unit_output={}`. This is often called the American system or the British system.",
+        "{[lb]:\"lb\",[ft]:\"ft\",[psi]:\"psi\",[mph]:\"mph\",[floz]:\"fl oz\",[ft^2]:\"ft^2\",[ft*lbf]:\"ft*lbf\",[lbf]:\"lbf\",[lb/ft^3]:\"lb/ft^3\"}",{})},
 
 };
 using namespace std;

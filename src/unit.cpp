@@ -249,6 +249,7 @@ const std::unordered_map<string, Unit::Builtin> Unit::listOfUnits = {
     newUnt("gallon","Gallon",meter ^ 3,0.00454609),
     newUnt("in","Inch",meter,0.0254),
     newUnt("lb","Pound",kilogram,0.45359237),
+    newUnt("lbf","Pound force",newton,4.44822),
     newUnt("mi","Mile",meter,1609.344),
     newUnt("mph","Mile per hour",meter / second,0.4470388888888888),
     newUnt("nmi","Nautical Mile",meter,1852.0),

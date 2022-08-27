@@ -143,11 +143,15 @@ void Help::addPageData() {
     for(auto it = Library::functions.begin();it != Library::functions.end();it++) {
         int colon1 = it->second.fullName.find(':');
         int colon2 = it->second.fullName.find(':', colon1 + 1);
-        const string& symbol = it->first + it->second.inputs;
+        string symbol = it->first;
+        if(it->second.inputs != "const") symbol += it->second.inputs;
         const string& name = it->second.fullName.substr(0, colon1);
         const string& category = it->second.fullName.substr(colon1 + 1, colon2 - colon1 - 1);
         const string& description = it->second.fullName.substr(colon2 + 1);
-        pages.push_back(Page(name, symbol, "library", description + " `" + symbol + "` is in the " + category + " of ?library functions. It compiles to: `" + symbol + "=" + it->second.inputs + "=>" + it->second.xpr + "`", { "include" }));
+        string xpr;
+        if(it->second.inputs == "const") xpr = it->second.xpr;
+        else xpr = it->second.inputs + "=>" + it->second.xpr;
+        pages.push_back(Page(name, symbol, "library", description + " `" + symbol + "` is in the " + category + " of ?library functions. It compiles to: `" + symbol + "=" + xpr + "`", { "include" }));
     }
     //Add additional data to functions, units, and generate lists
     for(int i = 0;i < pages.size();i++) {
