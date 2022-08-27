@@ -14,6 +14,17 @@
     Each value in the array is an 8-bit signed integer (from -128 to 127), defaulted to zero;
     This sytem allows a combination of units, for example m/s is {1,0,-1,0,0,0,0,0}
 */
+//Unit list constructor techniques
+Unit meter = Unit(0x1);
+Unit kilogram = Unit(0x100);
+Unit second = Unit(0x10000);
+Unit amp = Unit(0x1000000);
+Unit kelvin = Unit(0x100000000);
+Unit mole = Unit(0x10000000000);
+Unit dollar = Unit(0x1000000000000);
+Unit bit = Unit(0x100000000000000);
+Unit newton = kilogram * meter / (second ^ 2);
+Unit watt = newton * meter / second;
 #include "_header.hpp"
 
 Unit::Unit(unsigned long long b) {
@@ -72,14 +83,42 @@ bool Unit::operator==(const Unit& comp)const {
 }
 string Unit::toString()const {
     //Iterate through each base unit and appends to string
+    if(bits == newton.bits) return "N";
+    if(bits == (newton * meter).bits) return "J";
+    if(bits == watt.bits) return "W";
+    if(bits == (newton / (meter ^ 2)).bits) return "Pa";
+    if(bits == (watt / amp).bits) return "V";
     string out;
+    int exponents[8];
+    int negatives = 0;
+    int positives = 0;
     for(int i = 0;i < 8;i++) {
-        int exponent = get(i);
-        if(exponent != 0) {
+        exponents[i] = get(i);
+        if(exponents[i] < 0) negatives++;
+        if(exponents[i] > 0) positives++;
+    }
+    if(negatives == 1) {
+        string out;
+        int i;
+        for(i = 0;i < 8;i++) if(exponents[i] < 0) break;
+        if(positives == 0)
+            out = "1/";
+        else for(int x = 0;x < 8;x++) if(x != i && exponents[x] != 0) {
+            if(out.length() != 0) out += "*";
+            out += Unit::baseUnits[x];
+            if(exponents[x] != 1) out += "^" + std::to_string(exponents[x]);
+        }
+        out += "/";
+        out += Unit::baseUnits[i];
+        if(exponents[i] != -1) out += "^" + std::to_string(-exponents[i]);
+        return out;
+    }
+    for(int i = 0;i < 8;i++) {
+        if(exponents[i] != 0) {
             if(out != "") out += "*";
             //Add base unit and power
             out += Unit::baseUnits[i];
-            if(exponent != 1) out += "^" + std::to_string(exponent);
+            if(exponents[i] != 1) out += "^" + std::to_string(exponents[i]);
         }
     }
     return out;
@@ -129,17 +168,6 @@ const std::unordered_map<char, double> Unit::powers = {
 const std::vector<string> Unit::baseUnits = {
     "m","kg","s","A","K","mol","$","bit"
 };
-//Unit list constructor techniques
-Unit meter = Unit(0x1);
-Unit kilogram = Unit(0x100);
-Unit second = Unit(0x10000);
-Unit amp = Unit(0x1000000);
-Unit kelvin = Unit(0x100000000);
-Unit mole = Unit(0x10000000000);
-Unit dollar = Unit(0x1000000000000);
-Unit bit = Unit(0x100000000000000);
-Unit newton = kilogram * meter / (second ^ 2);
-Unit watt = newton * meter / second;
 
 std::pair<string, Unit::Builtin> unitConstructor(string symbol, string fullName, Unit u, double coef, bool allowPrefix) {
     return std::pair<string, Unit::Builtin>(symbol, Unit::Builtin(u, coef, allowPrefix, fullName));
