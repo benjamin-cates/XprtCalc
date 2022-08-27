@@ -239,7 +239,14 @@ string Expression::sanitizeVariable(const string& str) {
     for(int i = 0;i < str.size();i++) {
         if(str[i] == ' ') offset++;
         else if(str[i] >= 'A' && str[i] <= 'Z') out[i - offset] = str[i] - 'A' + 'a';
-        else out[i - offset] = str[i];
+        else if(str[i] >= '0' && str[i] <= '9') {
+            out[i - offset] = str[i];
+            if(i - offset == 0) throw "Invalid numeral at start of variable";
+        }
+        else if(str[i] >= 'a' && str[i] <= 'z') out[i - offset] = str[i];
+        else if((unsigned char)(str[i]) > 0x7F) out[i - offset] = str[i];
+        else if(str[i] == '_' || str[i] == ' ' || str[i] == '$') out[i - offset] = str[i];
+        else throw "Invalid character '" + string(1, str[i]) + "' in variable name";
     }
     out.resize(str.size() - offset);
     return out;
@@ -315,7 +322,7 @@ Value Expression::parseNumeral(const string& str, int base) {
         if(exponent != 0) out = out * std::pow(mpfr_t(double(base), precision), mpfr_t(double(exponent), precision));
         #endif
         return std::make_shared<Arb>(out);
-    }
+}
     #else
     if(precision != 15) throw "Precision could not be specified, arb library not present";
     #endif
@@ -419,7 +426,7 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
         return str.length();
     }
     //Variables
-    else if((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '$' || ch == '_') {
+    else if((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '$' || ch == '_' || (unsigned char)(ch) > 0x7F) {
         int i;
         for(i = start + 1;i < str.length();i++) {
             char c = str[i];
@@ -427,6 +434,8 @@ int Expression::nextSection(const string& str, int start, Expression::Section* t
             else if(c >= 'A' && c <= 'Z') continue;
             else if(c >= '0' && c <= '9') continue;
             else if(c == ' ' || c == '_' || c == '$') continue;
+            //Unicode characters
+            else if((unsigned char)(c) > 0x7F) continue;
             else if(c == '(') {
                 if(type) *type = Section::function;
                 return nextSection(str, i, nullptr, ctx);
@@ -497,6 +506,8 @@ std::tuple<string, ValList, string> Expression::parseAssignment(string str) {
         else if(str[i] >= 'a' && str[i] <= 'z') continue;
         else if(str[i] >= '0' && str[i] <= '9') continue;
         else if(str[i] == '_' || str[i] == ' ') continue;
+        //If unicode codepoint
+        else if((unsigned char)(str[i]) > 0x7F) continue;
         else if(str[i] == '=') {
             //Ignore lambdas
             if(str[i + 1] == '>') break;
@@ -807,6 +818,7 @@ std::vector<string> Expression::colorArgList(string sec, string::iterator out, P
             else if(arg[x] >= 'A' && arg[x] <= 'Z') {}
             else if(arg[x] >= '0' && arg[x] <= '9') {}
             else if(arg[x] == '_' || arg[x] == ' ') {}
+            else if((unsigned char)(arg[x]) > 0x7F) {}
             else { isValid = false;break; }
         }
         ColorType type = isValid ? hl_argument : hl_error;
