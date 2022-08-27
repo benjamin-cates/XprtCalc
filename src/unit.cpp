@@ -81,7 +81,26 @@ Unit Unit::operator+(Unit a) {
 bool Unit::operator==(const Unit& comp)const {
     return bits == comp.bits;
 }
-string Unit::toString()const {
+string Unit::toString(double* outputRatio)const {
+    //Unit output environment variable
+    Value unit_output = Program::computeCtx.getVariable("unit_output");
+    if(outputRatio && unit_output != nullptr) {
+        if(unit_output->typeID() == Value::map_t) {
+            //Iterate through map to find a unit match
+            //The map is something like: {[kg]:"lb",[m]:"ft"}. It maps pure units to a string of a different unit name
+            std::map<Value, Value>& map = unit_output.cast<Map>()->getMapObj();
+            for(auto it = map.begin();it != map.end();it++) {
+                if(it->first->typeID() == Value::num_t) {
+                    if(it->first.cast<Number>()->unit.bits == bits) {
+                        //Set output ratio and return name within map
+                        Value ratio = Expression::evaluate("[" + it->second.cast<String>()->str + "]");
+                        *outputRatio = ratio->getR();
+                        return it->second.cast<String>()->str;
+                    }
+                }
+            }
+        }
+    }
     //Iterate through each base unit and appends to string
     if(bits == newton.bits) return "N";
     if(bits == (newton * meter).bits) return "J";

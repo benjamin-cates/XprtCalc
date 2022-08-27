@@ -497,22 +497,36 @@ string Number::componentToString(double x, int base) {
 }
 string Number::toStr(ParseCtx& ctx, int base)const {
     string out;
-    if(num.real() != 0) {
-        if(Math::isInf(num.real())) return "inf";
-        else if(Math::isNan(num.real())) return "undefined";
-        else out += Number::componentToString(num.real(), base);
+    string unitStr;
+    double real = num.real();
+    double imag = num.imag();
+    if(!unit.isUnitless()) {
+        double outputRatio = 1;
+        unitStr = "[" + unit.toString(&outputRatio) + "]";
+        real /= outputRatio;
+        imag /= outputRatio;
+        //wrap in brackets if both are not
+        if(real != 0 && imag != 0) {
+            out += "(";
+            unitStr = ")*" + unitStr;
+        }
     }
-    if(num.imag() != 0) {
-        if(num.imag() > 0 && num.real() != 0) out += '+';
-        if(Math::isInf(num.imag())) out += "+inf*";
-        else if(Math::isNan(num.imag())) out += "+undefined*";
-        else out += Number::componentToString(num.imag(), base);
+    if(real != 0) {
+        if(Math::isInf(real)) return "inf";
+        else if(Math::isNan(real)) return "undefined";
+        else out += Number::componentToString(real, base);
+    }
+    if(imag != 0) {
+        if(imag > 0 && real != 0) out += '+';
+        if(Math::isInf(imag)) out += "+inf*";
+        else if(Math::isNan(imag)) out += "+undefined*";
+        else out += Number::componentToString(imag, base);
         out += 'i';
+        //Prevent accessor notation problem
+        if(unitStr.length() != 0 && real == 0) unitStr = "*" + unitStr;
     }
     if(out == "") out = "0";
-    if(!unit.isUnitless()) {
-        out += "*[" + unit.toString() + "]";
-    }
+    out += unitStr;
     return out;
 }
 #if defined( USE_ARB) || defined(GMP_WASM)
@@ -590,13 +604,19 @@ string Arb::componentToString(
 }
 string Arb::toStr(ParseCtx& ctx, int base)const {
     string out;
-    if(Math::isInf(num)) out += "inf";
-    else if(Math::isNan(num)) return "nan";
-    else out += Arb::componentToString(num, base);
+    string unitStr;
+    arbType n = num;
     if(!unit.isUnitless()) {
-        out += "[" + unit.toString() + "]";
+        double outputRatio = 1;
+        unitStr = "[" + unit.toString(&outputRatio) + "]";
+        if(outputRatio != 1) {
+            n = n / arbType(outputRatio, getPrec());
+        }
     }
-    return out;
+    if(Math::isInf(n)) out += "inf";
+    else if(Math::isNan(n)) return "nan";
+    else out += Arb::componentToString(n, base);
+    return out + unitStr;
 }
 #endif
 string Vector::toStr(ParseCtx& ctx, int base)const {

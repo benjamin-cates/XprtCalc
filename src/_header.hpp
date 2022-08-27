@@ -464,7 +464,7 @@ public:
     //Returns the bitset of the unit
     unsigned long long getBits()const;
     //Prints unit as a list of powers multiplied together, e.g. m*s^-1
-    string toString()const;
+    string toString(double* outputRatio = 0)const;
     //Multiplies two units (adds powers)
     Unit operator*(Unit a);
     //Divides two units (subtracts powers)
