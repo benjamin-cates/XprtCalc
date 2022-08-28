@@ -47,18 +47,6 @@ typedef std::vector<Value> ValList;
 using std::string;
 #pragma endregion
 #pragma region Program Information
-//This namespace holds runtime preferences that are deeply engrained into the system, or are particular to the implementation (like a dark mode on a web version). All implementation files are in program.cpp.
-namespace Preferences {
-    Value get(string name);
-    //Supported types are getAs<double> and getAs<string>
-    template<typename T>
-    T getAs(string name);
-    void set(string name, Value val);
-
-    //Each preference has a value and an optional update function
-    extern std::map<string, std::pair<Value, void (*)(Value)>> pref;
-
-};
 
 //Metadata stores important information about the program, these are only defined in the header file.
 namespace Metadata {
@@ -479,8 +467,6 @@ public:
     bool operator==(const Unit& comp)const;
     //Parses a singular unit symbol, such as "kg" or "Mb". Sets outCoefficient if it is not metric
     static Unit parseName(const string& name, double& outCoefficient);
-    //Output preference, this could be something like "kg"->"lb" and every weight unit will be expressed in pounds
-    static std::map<Unit, string> outputPreference();
     typedef std::tuple<Unit, double, bool, string> Builtin;
 };
 

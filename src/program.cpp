@@ -21,35 +21,6 @@ Value Value::zero;
 Value Value::one;
 std::map<string, int> Program::globalFunctionMap;
 #pragma endregion
-#pragma region Preferences
-std::map<string, std::pair<Value, void (*)(Value)>> Preferences::pref = {
-};
-Value Preferences::get(string name) {
-    auto it = pref.find(name);
-    if(it == pref.end()) throw "Preference " + name + " not found";
-    else return it->second.first;
-}
-template<>
-double Preferences::getAs<double>(string name) {
-    Value val = get(name);
-    return val->getR();
-}
-template<>
-string Preferences::getAs<string>(string name) {
-    Value val = get(name);
-    if(val->typeID() == Value::str_t) {
-        return val.cast<String>()->str;
-    }
-    else return val->toString();
-}
-void Preferences::set(string name, Value val) {
-    //Run set command if it exists
-    if(pref[name].second != nullptr) {
-        (pref[name].second)(val);
-    }
-    pref[name].first = val;
-}
-#pragma endregion
 #pragma region Library
 using namespace Library;
 ColoredString LibFunc::include() {
@@ -252,20 +223,6 @@ ColoredString Program::runLine(string str) {
     }
 
 }
-ColoredString command_include(std::vector<string>& input, const string& self) {
-    ColoredString out;
-    for(int i = 0;i < input.size();i++) {
-        if(Library::categories.find(input[i]) != Library::categories.end()) {
-            vector<string> libs = Library::categories[input[i]];
-            out += command_include(libs, "include");
-        }
-        else if(Library::functions.find(input[i]) != Library::functions.end()) {
-            out += Library::functions[input[i]].include();
-        }
-        else out.append({ {"Error: ",'e'},{input[i],'v'}," not found\n" });
-    }
-    return out;
-}
 string command_sections_internal(const string& inp, string tabbing) {
     using sec = Expression::Section;
     string out;
@@ -324,33 +281,6 @@ ColoredString command_meta(vector<string>& input, const string& self) {
     for(auto it = Metadata::info.begin();it != Metadata::info.end();it++)
         out += it->first + ": " + it->second + '\n';
     return { out };
-}
-ColoredString command_def(vector<string>& input, const string& self) {
-    string inp = Command::combineArgs(input);
-    std::tuple<string, ValList, string> assign = Expression::parseAssignment(inp);
-    if(std::get<0>(assign) == "") throw "not an assignment";
-    return Program::runLine(inp);
-}
-ColoredString command_pref(vector<string>& input, const string& self) {
-    string inp = Command::combineArgs(input);
-    std::tuple<string, ValList, string> assign = Expression::parseAssignment(inp);
-    string& name = std::get<0>(assign);
-    //Just display
-    if(name == "") {
-        name = inp;
-        name = Expression::sanitizeVariable(name);
-        if(Preferences::pref.find(name) == Preferences::pref.end()) throw "preference " + name + " not found";
-    }
-    else {
-        if(Preferences::pref.find(name) == Preferences::pref.end()) throw "preference " + name + " not found";
-        Value& val = Preferences::pref[name].first;
-        Value set = Expression::evaluate(std::get<2>(assign));
-        Value::set(val, std::get<1>(assign), set);
-        if(Preferences::pref[name].second) Preferences::pref[name].second(Preferences::pref[name].first);
-    }
-    ColoredString out(name, Expression::hl_function);
-    out.append({ {" = "," o "},ColoredString::fromXpr(Preferences::pref[name].first->toString()) });
-    return out;
 }
 ColoredString command_ls(vector<string>& input, const string& self) {
     auto& vars = Program::computeCtx.variables;
@@ -422,15 +352,12 @@ ColoredString command_conv(vector<string>& input, const string& self) {
     return ColoredString::fromXpr(out);
 }
 map<string, Command> Program::commandList = {
-    {"include",{&command_include}},
     {"sections",{&command_sections}},
     {"parse",{&command_parse}},
     {"meta",{&command_meta}},
-    {"def",{&command_def}},
     {"ls",{&command_ls}},
     {"highlight",{&command_highlight}},
     {"debug_help",{&command_debug_help}},
-    {"pref",{&command_pref}},
     {"base",{&command_base}},
     {"conv",{&command_conv}},
 };
