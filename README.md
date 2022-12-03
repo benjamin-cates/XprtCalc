@@ -49,4 +49,7 @@ This is an example of a user finding the area to the left of a z-score, given a 
 ![XprtCalc example usage](docs/Example_Usage.png)
 
 ## Contributions
+
+The most helpful contribution you can make is to fill out the [user experience feedback form](https://forms.gle/EL7NJbcHFuVe9eYg8). This will help a lot because I can understand what parts are easy to use and what parts are not.
+
 This project is under the [MIT License](docs/LICENSE), and the [compiling guide](build/compiling.md) will assist you in setting up the project if you would like to edit the command line version.
