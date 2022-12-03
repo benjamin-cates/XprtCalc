@@ -78,7 +78,7 @@ std::map<string, LibFunc> Library::functions = {
     {"arb_phi",LibFunc("arb_phi","(prec)","Arbitrary golden ratio:Algebra:Returns the golden ratio to `prec` digits of precision.",
         "(1+sqrt(toarb(5,prec)))/2",{})},
     {"cross",LibFunc("cross","(u,v)", "Cross product:Vector:Returns the cross product of two three dimensional vectors.",
-        "determinant(<<<1,0,0>,get(u,0),get(v,0)>,<<0,1,0>,get(u,1),get(v,2)>,<<0,0,1>,get(u,2),get(v,2)>>)",{"determinant"})},
+        "<u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]>",{})},
     {"dot",LibFunc("dot","(u,v)", "Dot product:Vector:Returns the dot product of two vectors. Assumes the maximum length of either vector.",
         "sum(x=>get(u,x)*get(v,x),0,max(length(u),length(v)))",{})},
     {"angle_between",LibFunc("angle_between","(u,v)","Angle between vector:Vector:Returns the angle between two vectors as a radian. It is equal to the arccosine of the dot product divided by the magnitude of both vectors.",
