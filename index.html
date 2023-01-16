@@ -23,7 +23,8 @@
     <body>
         <div id="io">
             <div id="input">
-                <textarea id="input_element" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" onkeydown="textAreaKeydown(event)" inputmode="text"
+                <textarea id="input_element" spellcheck="false" autocomplete="off" autocorrect="off"
+                          autocapitalize="off" onkeydown="textAreaKeydown(event)" inputmode="text"
                           oninput="update_highlight(this.value)" title="input textarea"></textarea>
                 <pre><code id="highlight_output" aria-hidden="true"></code></pre>
             </div>
@@ -107,8 +108,17 @@
                     </svg></button>
             </div>
             <div id="help_panel" class="panel_page">
-                <input type="text" id="help_search" placeholder="Search the docs..." onkeydown="helpSearch(event,this)"
-                       onclick="helpSearch(event,'!click')">
+                <div id="help_search_div">
+                    <button onclick="openHelp('back')" id="help_back"><svg width='1em' height='1em' viewbox='0 0 13 13'>
+                            <g transform='translate(-2,-1.5)rotate(180,7.5,7.5)'>
+                                <path
+                                      d='M 3 3 L 3 2 L 4 1 L 5 1 L 10 6 L 10 7 L 5 12 L 4 12 L 3 11 L 3 10 L 6 7 L 6 6 L 3 3'>
+                                </path>
+                            </g>
+                        </svg></button>
+                    <input type="text" id="help_search" placeholder="Search the docs..."
+                           onkeydown="helpSearch(event,this)" onclick="helpSearch(event,'!click')">
+                </div>
                 <div id="search_results">
                 </div>
                 <div id="help_page"></div>

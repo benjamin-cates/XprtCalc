@@ -167,12 +167,31 @@ function helpSearch(event, queryBox) {
         document.querySelector("#help_page_front").style.display = "block";
     }
 }
+let helpPageHistory = [];
 function openHelp(token) {
+    //Handle back button
+    if(token == "back") {
+        //Go to front page if it was previous
+        if(helpPageHistory.length <= 1) {
+            helpSearch({key: "none"}, "!click");
+            helpPageHistory = [];
+            return;
+        }
+        //Pop current page
+        helpPageHistory.pop();
+        //Open last page
+        token = helpPageHistory.pop();
+    }
+    //Open help panel
     panelPage("help");
+    //Hide search results and front page
     document.querySelector("#search_results").style.display = "none";
     document.querySelector("#help_page_front").style.display = "none";
     let id = token;
+    //Get id of help page if token is a string
     if(typeof token == "string") id = JSON.parse(Module.query(token))[0].id;
+    helpPageHistory.push(id);
+    //Open help page
     document.querySelector("#help_page").innerHTML = Module.helpPage(id);
     document.querySelector("#help_page").classList.add("shown");
 }
