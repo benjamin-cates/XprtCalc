@@ -136,6 +136,13 @@ pre {
     margin-bottom: 10px;
 }
 
+#panel_open {
+    color:white;
+    font-family:Lato;
+    font-size:40px;
+    vertical-align:center;
+}
+
 #panel {
     position: fixed;
     top: 0;
