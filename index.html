@@ -70,99 +70,68 @@
 
         </div>
         <div id="panel">
-            <div id="cover" onclick="panelPage(false)"></div>
-            <button id="panel_open" onclick="panelPage('help')" title="Open panel"><svg width="35" height="35"
+            <button id="panel_open" onclick="openHelpPanel('help')" title="Open panel"><svg width="35" height="35"
                      viewbox="0 0 13 13">
                     <path d="M 3 3 L 3 2 L 4 1 L 5 1 L 10 6 L 10 7 L 5 12 L 4 12 L 3 11 L 3 10 L 6 7 L 6 6 L 3 3"
                           class="panel_header_icon"></path>
                 </svg></button>
             <div id="panel_header">
-                <button onclick="panelPage('pref')" title="Preferences" id="header_button_pref">
-                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"
-                         width="30" height="30" viewBox="0 0 256 256" xml:space="preserve">
-                        <g transform="translate(128 128) scale(0.72 0.72)" style="">
-                            <g transform="translate(-175.05 -175.05000000000004) scale(3.89 3.89)">
-                                <path class="panel_header_icon"
-                                      d="M 52.1 90 H 37.9 c -2.867 0 -5.2 -2.333 -5.2 -5.2 v -2.114 c 0 -0.329 -0.191 -0.634 -0.454 -0.725 c -1.482 -0.511 -2.955 -1.122 -4.375 -1.816 c -0.246 -0.118 -0.576 -0.046 -0.802 0.18 l -1.516 1.516 c -0.981 0.982 -2.288 1.523 -3.677 1.523 c -1.389 0 -2.695 -0.541 -3.677 -1.524 L 8.16 71.799 c -2.027 -2.027 -2.027 -5.326 0 -7.354 l 1.516 -1.516 c 0.223 -0.223 0.299 -0.56 0.181 -0.8 c -0.695 -1.423 -1.307 -2.895 -1.818 -4.377 C 7.947 57.49 7.643 57.3 7.314 57.3 H 5.2 c -2.867 0 -5.2 -2.333 -5.2 -5.2 V 37.9 c 0 -2.867 2.333 -5.2 5.2 -5.2 h 2.115 c 0.329 0 0.633 -0.19 0.724 -0.454 c 0.513 -1.483 1.124 -2.956 1.817 -4.374 c 0.12 -0.246 0.046 -0.576 -0.181 -0.802 L 8.16 25.555 c -2.027 -2.028 -2.027 -5.327 0 -7.354 L 18.201 8.159 c 0.982 -0.982 2.288 -1.522 3.677 -1.522 c 1.389 0 2.695 0.541 3.677 1.522 l 1.516 1.517 c 0.224 0.223 0.559 0.3 0.801 0.18 c 1.418 -0.693 2.891 -1.305 4.375 -1.818 C 32.51 7.947 32.7 7.643 32.7 7.314 V 5.2 c 0 -2.867 2.333 -5.2 5.2 -5.2 h 14.2 c 2.867 0 5.2 2.333 5.2 5.2 v 2.115 c 0 0.329 0.19 0.633 0.453 0.724 c 1.482 0.512 2.954 1.124 4.375 1.818 c 0.247 0.118 0.575 0.045 0.802 -0.181 l 1.516 -1.516 c 2.027 -2.027 5.326 -2.027 7.354 0 L 81.84 18.2 c 2.027 2.028 2.027 5.327 0 7.354 l -1.516 1.516 c -0.227 0.227 -0.301 0.556 -0.181 0.802 c 0.695 1.42 1.307 2.893 1.818 4.376 c 0.09 0.262 0.395 0.452 0.724 0.452 H 84.8 c 2.867 0 5.2 2.333 5.2 5.2 V 52.1 c 0 2.867 -2.333 5.2 -5.2 5.2 h -2.114 c -0.329 0 -0.634 0.19 -0.725 0.454 c -0.51 1.478 -1.121 2.95 -1.815 4.373 c -0.119 0.244 -0.044 0.58 0.179 0.803 l 1.516 1.516 c 2.027 2.027 2.027 5.326 0 7.354 L 71.799 81.84 c -0.982 0.982 -2.288 1.523 -3.677 1.523 c -1.39 0 -2.696 -0.542 -3.678 -1.525 l -1.514 -1.513 c -0.228 -0.226 -0.557 -0.302 -0.803 -0.182 c -1.42 0.695 -2.893 1.307 -4.376 1.818 c -0.262 0.09 -0.452 0.395 -0.452 0.724 V 84.8 C 57.3 87.667 54.967 90 52.1 90 z M 39.7 83 h 10.6 v -0.314 c 0 -3.322 2.076 -6.272 5.167 -7.34 c 1.216 -0.42 2.422 -0.921 3.588 -1.491 c 2.936 -1.434 6.481 -0.822 8.824 1.521 l 0.243 0.242 l 7.495 -7.495 l -0.242 -0.243 c -2.345 -2.344 -2.955 -5.891 -1.519 -8.825 c 0.569 -1.166 1.07 -2.373 1.488 -3.585 c 1.068 -3.093 4.019 -5.169 7.341 -5.169 H 83 V 39.7 h -0.314 c -3.322 0 -6.272 -2.076 -7.34 -5.167 c -0.42 -1.216 -0.921 -2.422 -1.491 -3.588 c -1.434 -2.936 -0.823 -6.482 1.521 -8.825 l 0.242 -0.243 l -7.495 -7.495 l -0.243 0.243 c -2.344 2.344 -5.89 2.953 -8.824 1.52 c -1.166 -0.57 -2.373 -1.071 -3.587 -1.491 c -3.091 -1.067 -5.168 -4.017 -5.168 -7.34 V 7 H 39.7 v 0.314 c 0 3.323 -2.077 6.272 -5.168 7.34 c -1.217 0.42 -2.424 0.922 -3.587 1.491 c -2.936 1.434 -6.481 0.823 -8.825 -1.52 l -0.243 -0.243 l -7.495 7.495 l 0.243 0.243 c 2.343 2.344 2.954 5.89 1.52 8.825 c -0.568 1.163 -1.07 2.37 -1.49 3.587 c -1.068 3.092 -4.018 5.168 -7.34 5.168 H 7 v 10.6 h 0.314 c 3.323 0 6.272 2.077 7.34 5.168 c 0.419 1.214 0.921 2.421 1.491 3.588 c 1.435 2.933 0.824 6.479 -1.52 8.823 l -0.243 0.243 l 7.496 7.495 l 0.242 -0.242 c 2.344 -2.346 5.891 -2.954 8.826 -1.52 c 1.164 0.568 2.37 1.07 3.585 1.489 c 3.092 1.068 5.168 4.019 5.168 7.341 V 83 z M 45.028 70.402 c -6.738 0 -13.204 -2.652 -17.991 -7.439 c -5.265 -5.265 -7.947 -12.561 -7.359 -20.016 c 0.97 -12.296 10.974 -22.3 23.27 -23.27 c 7.457 -0.588 14.751 2.095 20.016 7.359 c 5.265 5.266 7.947 12.561 7.36 20.017 c -0.971 12.297 -10.975 22.3 -23.271 23.27 l 0 0 C 46.376 70.376 45.701 70.402 45.028 70.402 z M 44.969 26.598 c -0.489 0 -0.979 0.02 -1.471 0.058 c -8.899 0.702 -16.14 7.943 -16.842 16.843 c -0.427 5.41 1.516 10.7 5.331 14.515 s 9.1 5.761 14.516 5.331 l 0 0 c 8.899 -0.701 16.141 -7.941 16.843 -16.842 c 0.427 -5.41 -1.517 -10.701 -5.331 -14.516 C 54.546 28.519 49.857 26.598 44.969 26.598 z" />
-                            </g>
-                        </g>
-                    </svg>
-                </button>
-                <button onclick="panelPage('help')" title="Help" id="header_button_help">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 367.1 373.3">
-                        <g>
-                            <g id="Your_Icon_2_">
-                                <path class="panel_header_icon"
-                                      d="M183.3,365.5c99.3,0,179.8-80.5,179.8-179.8S282.6,5.9,183.3,5.9S3.5,86.4,3.5,185.7S84,365.5,183.3,365.5    z M183.3,329.5c-79.4,0-143.9-64.4-143.9-143.9S103.8,41.8,183.3,41.8s143.9,64.4,143.9,143.9S262.7,329.5,183.3,329.5z" />
-                            </g>
-                            <g>
-                                <path class="panel_header_icon"
-                                      d="M151.1,226.7v-12.5c0-10.8,2.3-20.2,6.9-28.2c4.6-8,13-16.5,25.3-25.5c11.8-8.4,19.6-15.3,23.4-20.6    c3.8-5.3,5.6-11.2,5.6-17.7c0-7.3-2.7-12.9-8.1-16.7c-5.4-3.8-12.9-5.7-22.6-5.7c-16.9,0-36.1,5.5-57.7,16.5l-18.4-36.9    c25.1-14.1,51.7-21.1,79.8-21.1c23.2,0,41.6,5.6,55.2,16.7c13.7,11.1,20.5,26,20.5,44.5c0,12.4-2.8,23-8.4,32    c-5.6,9-16.3,19.1-32,30.4c-10.8,8-17.6,14.1-20.5,18.2c-2.9,4.2-4.3,9.6-4.3,16.4v10.1H151.1z M145.7,284.3    c0-9.4,2.5-16.6,7.6-21.4c5.1-4.8,12.4-7.3,22.1-7.3c9.3,0,16.6,2.5,21.7,7.4c5.1,4.9,7.7,12,7.7,21.2c0,8.9-2.6,15.9-7.8,21    c-5.2,5.1-12.4,7.7-21.6,7.7c-9.4,0-16.8-2.5-21.9-7.5C148.3,300.5,145.7,293.4,145.7,284.3z" />
-                            </g>
+                <button onclick="openHelp('back')" id="help_back"><svg width='30' height='30' viewbox='0 0 13 13'>
+                        <g transform='translate(-2,-2)rotate(180,7.5,7.5)'>
+                            <path
+                                  d='M 3 3 L 3 2 L 4 1 L 5 1 L 10 6 L 10 7 L 5 12 L 4 12 L 3 11 L 3 10 L 6 7 L 6 6 L 3 3'>
+                            </path>
                         </g>
                     </svg></button>
-                <button onclick="panelPage(false)" title="Close panel"><svg width="30" height="30"
+                <input type="text" id="help_search" placeholder="Search the docs..." onkeydown="helpSearch(event,this)"
+                       onclick="helpSearch(event,'!click')">
+                <button onclick="openHelpPanel(false)" title="Close panel"><svg width="30" height="30"
                          viewBox="0 0 461 461">
                         <path class="panel_header_icon" xmlns="http://www.w3.org/2000/svg"
                               d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55  c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55  c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505  c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55  l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719  c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z" />
                     </svg></button>
             </div>
-            <div id="help_panel" class="panel_page">
-                <div id="help_search_div">
-                    <button onclick="openHelp('back')" id="help_back"><svg width='1em' height='1em' viewbox='0 0 13 13'>
-                            <g transform='translate(-2,-1.5)rotate(180,7.5,7.5)'>
-                                <path
-                                      d='M 3 3 L 3 2 L 4 1 L 5 1 L 10 6 L 10 7 L 5 12 L 4 12 L 3 11 L 3 10 L 6 7 L 6 6 L 3 3'>
-                                </path>
-                            </g>
-                        </svg></button>
-                    <input type="text" id="help_search" placeholder="Search the docs..."
-                           onkeydown="helpSearch(event,this)" onclick="helpSearch(event,'!click')">
-                </div>
-                <div id="search_results">
-                </div>
-                <div id="help_page"></div>
-                <div id="help_page_front">
-                    <div style='font-size:24pt;margin-bottom:20px;'>Welcome to <Cu>XprtCalc</Cu>!</div>
-                    <hCont>
-                        To get started, type an expression into the main box.<br>Please use the search
-                        bar to view the help pages or see these basic pages to understand the more advanced features of
-                        the
-                        program:<br><br>
-                        <div style="color:#AAA;font-size:20pt;">Important pages:</div>
-                        <div class="search_result" onclick="openHelp('types');">Types</div>
-                        <div class="search_result" onclick="openHelp('number');">Number</div>
-                        <div class="search_result" onclick="openHelp('vector');">Vector</div>
-                        <div class="search_result" onclick="openHelp('lambda');">Lambda function</div>
-                        <div class="search_result" onclick="openHelp('units');">Units</div>
-                        <div class="search_result" onclick="openHelp('assignment operator');">Assignment operator </div>
-                        <div class="search_result" onclick="openHelp('variables');">Variables </div>
-                        <br>
-                        <div style="color:#AAA;font-size:20pt;">Powerful features:</div>
-                        <div class="search_result" onclick="openHelp('history');">History </div>
-                        <div class="search_result" onclick="openHelp('derivative');"> Derivative</div>
-                        <div class="search_result" onclick="openHelp('simplify');">Simplify </div>
-                        <div class="search_result" onclick="openHelp('infinite series');"> Infinite sum</div>
-                        <div class="search_result" onclick="openHelp('include command');"> Include command</div>
-                        <br>
-                        <div style="color:#AAA;font-size:20pt;">Listicles:</div>
-                        <div class="search_result" onclick="openHelp('list of pages');">List of pages</div>
-                        <div class="search_result" onclick="openHelp('list of operators');"> List of operators</div>
-                        <div class="search_result" onclick="openHelp('list of functions');"> List of functions</div>
-                        <div class="search_result" onclick="openHelp('list of units');">List of units</div>
-                        <div class="search_result" onclick="openHelp('list of commands');"> List of commands</div>
-                        <br>
-                        This project was created by Benjamin Cates and is open source on <a
-                           href="https://github.com/benjamin-cates/XprtCalc">GitHub</a>. Visit the link to see an
-                        overview
-                        of the project
-                    </hCont>
-                </div>
+            <div id="search_results">
             </div>
-            <div id="pref_panel" class="panel_page">
-
+            <div id="help_page"></div>
+            <div id="help_page_front">
+                <div style='font-size:24pt;margin-bottom:20px;'>Welcome to <Cu>XprtCalc</Cu>!</div>
+                <hCont>
+                    To get started, type an expression into the main box.<br>Please use the search
+                    bar to view the help pages or see these basic pages to understand the more advanced features of
+                    the
+                    program:<br><br>
+                    <div style="color:#AAA;font-size:20pt;">Important pages:</div>
+                    <div class="search_result" onclick="openHelp('types');">Types</div>
+                    <div class="search_result" onclick="openHelp('number');">Number</div>
+                    <div class="search_result" onclick="openHelp('vector');">Vector</div>
+                    <div class="search_result" onclick="openHelp('lambda');">Lambda function</div>
+                    <div class="search_result" onclick="openHelp('units');">Units</div>
+                    <div class="search_result" onclick="openHelp('assignment operator');">Assignment operator </div>
+                    <div class="search_result" onclick="openHelp('variables');">Variables </div>
+                    <br>
+                    <div style="color:#AAA;font-size:20pt;">Powerful features:</div>
+                    <div class="search_result" onclick="openHelp('history');">History </div>
+                    <div class="search_result" onclick="openHelp('derivative');"> Derivative</div>
+                    <div class="search_result" onclick="openHelp('simplify');">Simplify </div>
+                    <div class="search_result" onclick="openHelp('infinite series');"> Infinite sum</div>
+                    <div class="search_result" onclick="openHelp('include command');"> Include command</div>
+                    <br>
+                    <div style="color:#AAA;font-size:20pt;">Listicles:</div>
+                    <div class="search_result" onclick="openHelp('list of pages');">List of pages</div>
+                    <div class="search_result" onclick="openHelp('list of operators');"> List of operators</div>
+                    <div class="search_result" onclick="openHelp('list of functions');"> List of functions</div>
+                    <div class="search_result" onclick="openHelp('list of units');">List of units</div>
+                    <div class="search_result" onclick="openHelp('list of commands');"> List of commands</div>
+                    <br>
+                    This project was created by Benjamin Cates and is open source on <a
+                       href="https://github.com/benjamin-cates/XprtCalc">GitHub</a>. Visit the link to see an
+                    overview
+                    of the project
+                </hCont>
             </div>
         </div>
+        <div id="cover" onclick="openHelpPanel(false)"></div>
     </body>
     <script src="wasm/driver.js"></script>
 

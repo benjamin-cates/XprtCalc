@@ -137,14 +137,18 @@ pre {
 }
 
 #panel {
-    z-index: 10;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: calc(0px - min(400px, 100vw));
     height: 100vh;
     width: min(400px, 100vw);
     background: #333;
     transition: 0.5s ease left;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom:1.5em;
+    box-sizing:border-box;
+    z-index:10;
 }
 
 #cover {
@@ -155,11 +159,12 @@ pre {
     width: 100vw;
     left: 0;
     top: 0;
-    z-index: -1;
+    z-index: 6;
     position: fixed;
 }
 
-.mobile.open>#cover {
+/* show help page cover on mobile */
+.mobile.open + #cover {
     pointer-events: all;
     background: #041a1560;
 }
@@ -193,8 +198,9 @@ pre {
     box-shadow: -2px 4px 5px 0px rgba(5, 30, 10, 0.2);
     height: 50px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
+
 }
 
 #panel_header>button {
@@ -229,6 +235,10 @@ button:hover .panel_header_icon {
     display: block;
 }
 
+#help_page_front {
+    margin-top: 0.5rem;
+}
+
 #help_page {
     border: 0;
     width: 100%;
@@ -248,20 +258,22 @@ button:hover .panel_header_icon {
 }
 
 #help_search_div {
-    display:flex;
-    justify-content:center;
-    margin-top:10px;
-    margin-bottom:10px;
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 #help_back {
-    width:1.2rem;
-    height:1.2rem;
+    width: 1.2rem;
+    height: 1.2rem;
 
 }
-#help_search, #help_back {
-    margin-left:5px;
-    margin-right:5px;
+
+#help_search,
+#help_back {
+    margin-left: 5px;
+    margin-right: 5px;
     outline: 0;
     background: #222;
     border-radius: 5px;
@@ -456,7 +468,7 @@ button.key {
     width: 100%;
     height: 100%;
     display: inline-block;
-    background:none;
+    background: none;
     user-select: none;
     position: relative;
     touch-action: manipulation;

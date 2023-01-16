@@ -110,17 +110,11 @@ var panelData = {
     page: "help"
 };
 
-function panelPage(open) {
+function openHelpPanel(open) {
     if(open == false)
         panelData.isOpen = false;
-    else {
+    else
         panelData.isOpen = true;
-        if(panelData.page) document.querySelector("#header_button_" + panelData.page).classList.remove("header_button_active");
-        if(panelData.page) document.querySelector("#" + panelData.page + "_panel").classList.remove("panel_page_active");
-        panelData.page = open;
-        document.querySelector("#header_button_" + panelData.page).classList.add("header_button_active");
-        document.querySelector("#" + panelData.page + "_panel").classList.add("panel_page_active");
-    }
     resize();
 }
 
@@ -183,7 +177,7 @@ function openHelp(token) {
         token = helpPageHistory.pop();
     }
     //Open help panel
-    panelPage("help");
+    openHelpPanel(true);
     //Hide search results and front page
     document.querySelector("#search_results").style.display = "none";
     document.querySelector("#help_page_front").style.display = "none";
