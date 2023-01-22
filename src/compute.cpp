@@ -27,7 +27,7 @@ namespace Math {
     double rightShift(double x, long shift) { return long(x) >> shift; }
     std::complex<double> pow(std::complex<double> a, std::complex<double> b) {
         if(a.imag() == 0 && b.imag() == 0) {
-            if(a.real() == std::floor(a.real()) && b.real() == std::floor(b.real())) {
+            if(a.real() == std::floor(a.real()) && b.real() == std::floor(b.real()) && b.real() >= 0) {
                 return std::complex<double>(std::round(std::pow(a.real(), b.real())), 0.0);
             }
             return std::complex<double>(std::pow(a.real(), b.real()), 0.0);
