@@ -474,7 +474,7 @@ string Number::componentToString(double x, int base) {
         x *= base;
     }
     //Rounding digit
-    if(i == precision && digitList.back() >= base / 2) {
+    if(i == precision + 1 && digitList.back() >= base / 2) {
         int x = digitList.size() - 2;
         digitList.resize(digitList.size() - 1);
         digitList[x] += 1;
